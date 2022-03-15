@@ -13,7 +13,6 @@ import ClayCard from '@clayui/card';
 import classNames from 'classnames';
 import {STATUS_TAG_TYPE_NAMES} from '../../../utils/constants';
 import StatusTag from '../../StatusTag';
-
 const ActivationStatusLayout = ({
 	activationStatus,
 	activationStatusDate,
@@ -75,9 +74,13 @@ const ActivationStatusLayout = ({
 									title={null}
 									truncate={false}
 								>
-									<StatusTag
-										currentStatus={activationStatus.id}
-									/>
+									<div className="align-items-center d-flex">
+										<StatusTag
+											currentStatus={activationStatus.id}
+										/>
+
+										{activationStatus.dropdownIcon}
+									</div>
 								</ClayCard.Description>
 							</div>
 						</div>

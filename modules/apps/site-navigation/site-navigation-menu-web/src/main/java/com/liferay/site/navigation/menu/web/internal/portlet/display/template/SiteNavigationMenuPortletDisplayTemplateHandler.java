@@ -12,21 +12,20 @@
  * details.
  */
 
-package com.liferay.site.navigation.breadcrumb.web.internal.portlet.template;
+package com.liferay.site.navigation.menu.web.internal.portlet.display.template;
 
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portletdisplaytemplate.BasePortletDisplayTemplateHandler;
-import com.liferay.portal.kernel.servlet.taglib.ui.BreadcrumbEntry;
-import com.liferay.portal.kernel.servlet.taglib.ui.BreadcrumbUtil;
 import com.liferay.portal.kernel.template.TemplateHandler;
 import com.liferay.portal.kernel.template.TemplateVariableGroup;
+import com.liferay.portal.kernel.theme.NavItem;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portlet.display.template.constants.PortletDisplayTemplateConstants;
-import com.liferay.site.navigation.breadcrumb.web.internal.configuration.SiteNavigationBreadcrumbWebTemplateConfiguration;
-import com.liferay.site.navigation.breadcrumb.web.internal.constants.SiteNavigationBreadcrumbPortletKeys;
+import com.liferay.site.navigation.menu.web.internal.configuration.SiteNavigationMenuWebTemplateConfiguration;
+import com.liferay.site.navigation.menu.web.internal.constants.SiteNavigationMenuPortletKeys;
 
 import java.util.List;
 import java.util.Locale;
@@ -39,39 +38,39 @@ import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 
 /**
- * @author José Manuel Navarro
+ * @author Juergen Kappler
  */
 @Component(
-	configurationPid = "com.liferay.site.navigation.breadcrumb.web.internal.configuration.SiteNavigationBreadcrumbWebTemplateConfiguration",
+	configurationPid = "com.liferay.site.navigation.menu.web.internal.configuration.SiteNavigationMenuWebTemplateConfiguration",
 	configurationPolicy = ConfigurationPolicy.OPTIONAL, immediate = true,
-	property = "javax.portlet.name=" + SiteNavigationBreadcrumbPortletKeys.SITE_NAVIGATION_BREADCRUMB,
+	property = "javax.portlet.name=" + SiteNavigationMenuPortletKeys.SITE_NAVIGATION_MENU,
 	service = TemplateHandler.class
 )
-public class SiteNavigationBreadcrumbPortletDisplayTemplateHandler
+public class SiteNavigationMenuPortletDisplayTemplateHandler
 	extends BasePortletDisplayTemplateHandler {
 
 	@Override
 	public String getClassName() {
-		return BreadcrumbEntry.class.getName();
+		return NavItem.class.getName();
 	}
 
 	@Override
 	public Map<String, Object> getCustomContextObjects() {
 		return HashMapBuilder.<String, Object>put(
-			"breadcrumbUtil", BreadcrumbUtil.class
+			"navItem", NavItem.class
 		).build();
 	}
 
 	@Override
 	public String getDefaultTemplateKey() {
-		return _siteNavigationBreadcrumbWebTemplateConfiguration.
+		return _siteNavigationMenuWebTemplateConfiguration.
 			ddmTemplateKeyDefault();
 	}
 
 	@Override
 	public String getName(Locale locale) {
 		String portletTitle = _portal.getPortletTitle(
-			SiteNavigationBreadcrumbPortletKeys.SITE_NAVIGATION_BREADCRUMB,
+			SiteNavigationMenuPortletKeys.SITE_NAVIGATION_MENU,
 			ResourceBundleUtil.getBundle(locale, getClass()));
 
 		return LanguageUtil.format(locale, "x-template", portletTitle, false);
@@ -79,7 +78,7 @@ public class SiteNavigationBreadcrumbPortletDisplayTemplateHandler
 
 	@Override
 	public String getResourceName() {
-		return SiteNavigationBreadcrumbPortletKeys.SITE_NAVIGATION_BREADCRUMB;
+		return SiteNavigationMenuPortletKeys.SITE_NAVIGATION_MENU;
 	}
 
 	@Override
@@ -90,26 +89,28 @@ public class SiteNavigationBreadcrumbPortletDisplayTemplateHandler
 		Map<String, TemplateVariableGroup> templateVariableGroups =
 			super.getTemplateVariableGroups(classPK, language, locale);
 
-		TemplateVariableGroup breadcrumbUtilTemplateVariableGroup =
-			new TemplateVariableGroup(
-				"breadcrumb-util", getRestrictedVariables(language));
-
-		breadcrumbUtilTemplateVariableGroup.addVariable(
-			"breadcrumb-util", BreadcrumbUtil.class, "breadcrumbUtil");
-
-		templateVariableGroups.put(
-			"breadcrumb-util", breadcrumbUtilTemplateVariableGroup);
-
-		TemplateVariableGroup fieldsTemplateVariableGroup =
+		TemplateVariableGroup templateVariableGroup =
 			templateVariableGroups.get("fields");
 
-		fieldsTemplateVariableGroup.addCollectionVariable(
-			"breadcrumb-entries", List.class,
-			PortletDisplayTemplateConstants.ENTRIES, "breadcrumb-entry",
-			BreadcrumbEntry.class, "curEntry", "getTitle()");
-		fieldsTemplateVariableGroup.addVariable(
-			"breadcrumb-entry", BreadcrumbEntry.class,
-			PortletDisplayTemplateConstants.ENTRY, "getTitle()");
+		templateVariableGroup.empty();
+
+		templateVariableGroup.addVariable(
+			"header-type", String.class, "headerType");
+		templateVariableGroup.addVariable(
+			"included-layouts", String.class, "includedLayouts");
+		templateVariableGroup.addVariable(
+			"nested-children", String.class, "nestedChildren");
+		templateVariableGroup.addVariable(
+			"root-layout-level", Integer.class, "rootLayoutLevel");
+		templateVariableGroup.addVariable(
+			"root-layout-type", String.class, "rootLayoutType");
+		templateVariableGroup.addCollectionVariable(
+			"navigation-items", List.class,
+			PortletDisplayTemplateConstants.ENTRIES, "navigation-item",
+			NavItem.class, "navigationEntry", "getName()");
+
+		templateVariableGroups.put(
+			"navigation-util", _getUtilTemplateVariableGroup());
 
 		return templateVariableGroups;
 	}
@@ -117,22 +118,31 @@ public class SiteNavigationBreadcrumbPortletDisplayTemplateHandler
 	@Activate
 	@Modified
 	protected void activate(Map<String, Object> properties) {
-		_siteNavigationBreadcrumbWebTemplateConfiguration =
+		_siteNavigationMenuWebTemplateConfiguration =
 			ConfigurableUtil.createConfigurable(
-				SiteNavigationBreadcrumbWebTemplateConfiguration.class,
-				properties);
+				SiteNavigationMenuWebTemplateConfiguration.class, properties);
 	}
 
 	@Override
 	protected String getTemplatesConfigPath() {
-		return "com/liferay/site/navigation/breadcrumb/web/portlet/template" +
+		return "com/liferay/site/navigation/menu/web/portlet/display/template" +
 			"/dependencies/portlet-display-templates.xml";
+	}
+
+	private TemplateVariableGroup _getUtilTemplateVariableGroup() {
+		TemplateVariableGroup templateVariableGroup = new TemplateVariableGroup(
+			"navigation-util");
+
+		templateVariableGroup.addVariable(
+			"navigation-item", NavItem.class, "navItem");
+
+		return templateVariableGroup;
 	}
 
 	@Reference
 	private Portal _portal;
 
-	private volatile SiteNavigationBreadcrumbWebTemplateConfiguration
-		_siteNavigationBreadcrumbWebTemplateConfiguration;
+	private volatile SiteNavigationMenuWebTemplateConfiguration
+		_siteNavigationMenuWebTemplateConfiguration;
 
 }
