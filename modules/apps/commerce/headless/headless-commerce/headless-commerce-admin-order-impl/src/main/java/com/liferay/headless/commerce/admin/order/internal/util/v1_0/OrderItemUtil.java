@@ -227,9 +227,7 @@ public class OrderItemUtil {
 			commerceOrderItemService.fetchCommerceOrderItem(
 				GetterUtil.getLong(orderItem.getId()));
 
-		if ((commerceOrderItem == null) &&
-			!Validator.isBlank(orderItem.getExternalReferenceCode())) {
-
+		if (commerceOrderItem == null) {
 			commerceOrderItemService.fetchByExternalReferenceCode(
 				orderItem.getExternalReferenceCode(),
 				serviceContext.getCompanyId());

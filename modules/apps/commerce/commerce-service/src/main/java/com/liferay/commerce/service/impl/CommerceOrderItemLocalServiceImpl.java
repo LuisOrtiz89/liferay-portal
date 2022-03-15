@@ -519,13 +519,12 @@ public class CommerceOrderItemLocalServiceImpl
 		User user = userLocalService.getUser(serviceContext.getUserId());
 
 		CommerceOrderItem commerceOrderItem =
-			commerceOrderItemPersistence.fetchByPrimaryKey(commerceOrderItemId);
-
-		if ((commerceOrderItem == null) &&
-			!Validator.isBlank(externalReferenceCode)) {
-
-			commerceOrderItem = commerceOrderItemPersistence.fetchByC_ERC(
+			commerceOrderItemPersistence.fetchByC_ERC(
 				serviceContext.getCompanyId(), externalReferenceCode);
+
+		if (commerceOrderItem == null) {
+			commerceOrderItem = commerceOrderItemPersistence.fetchByPrimaryKey(
+				commerceOrderItemId);
 		}
 
 		if (commerceOrderItem == null) {

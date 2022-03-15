@@ -98,17 +98,20 @@ public class DXPCloudClientTestrayImporter {
 		JenkinsResultsParserUtil.write(
 			resultsFile, Dom4JUtil.format(rootElement));
 
-		File resultsTarGzFile = new File(
-			JenkinsResultsParserUtil.combine(
-				String.valueOf(JenkinsResultsParserUtil.getCurrentTimeMillis()),
-				"-", String.valueOf(testrayBuild.getID()), "-results.tar.gz"));
+		File resultsTarGzFile = new File("results.tar.gz");
 
 		JenkinsResultsParserUtil.tarGzip(testrayResultsDir, resultsTarGzFile);
 
 		TestrayS3Bucket testrayS3Bucket = TestrayS3Bucket.getInstance();
 
 		testrayS3Bucket.createTestrayS3Object(
-			"inbox/" + resultsTarGzFile.getName(), resultsTarGzFile);
+			JenkinsResultsParserUtil.combine(
+				_getRelativeURLPath(), "/", resultsTarGzFile.getName()),
+			resultsTarGzFile);
+		testrayS3Bucket.createTestrayS3Object(
+			JenkinsResultsParserUtil.combine(
+				_getRelativeURLPath(), "/.lfr-testray-completed"),
+			"");
 
 		JenkinsResultsParserUtil.delete(testrayResultsDir);
 		JenkinsResultsParserUtil.delete(resultsTarGzFile);

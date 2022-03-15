@@ -2523,15 +2523,6 @@ plugins.includes=</echo>
 					/>
 				</chmod>
 
-				<chmod
-					perm="777"
-				>
-					<fileset
-						dir="dist/${tstamp.value}/liferay-portal-${lp.version}/elasticsearch-sidecar"
-						includes="**/controller"
-					/>
-				</chmod>
-
 				<if>
 					<equals arg1="${zip.executable.file}" arg2="liferay-portal-tomcat" />
 					<then>

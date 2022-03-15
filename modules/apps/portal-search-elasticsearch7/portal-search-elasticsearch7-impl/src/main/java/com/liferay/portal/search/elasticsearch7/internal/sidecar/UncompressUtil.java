@@ -14,7 +14,6 @@
 
 package com.liferay.portal.search.elasticsearch7.internal.sidecar;
 
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.OSDetector;
@@ -40,7 +39,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
  */
 public class UncompressUtil {
 
-	public static String unarchive(
+	public static void unarchive(
 			Path tarGzFilePath, Path destinationDirectoryPath)
 		throws IOException {
 
@@ -54,18 +53,12 @@ public class UncompressUtil {
 			TarArchiveInputStream tarArchiveInputStream =
 				new TarArchiveInputStream(gzipCompressorInputStream)) {
 
-			String rootArchiveName = StringPool.BLANK;
-
 			TarArchiveEntry tarArchiveEntry = null;
 
 			while ((tarArchiveEntry =
 						tarArchiveInputStream.getNextTarEntry()) != null) {
 
 				if (tarArchiveInputStream.canReadEntryData(tarArchiveEntry)) {
-					if (rootArchiveName.equals(StringPool.BLANK)) {
-						rootArchiveName = tarArchiveEntry.getName();
-					}
-
 					Path path = destinationDirectoryPath.resolve(
 						tarArchiveEntry.getName());
 
@@ -86,8 +79,6 @@ public class UncompressUtil {
 					}
 				}
 			}
-
-			return rootArchiveName;
 		}
 	}
 

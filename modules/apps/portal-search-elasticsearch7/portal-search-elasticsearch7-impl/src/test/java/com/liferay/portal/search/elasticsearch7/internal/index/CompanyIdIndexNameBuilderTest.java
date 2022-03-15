@@ -100,7 +100,7 @@ public class CompanyIdIndexNameBuilderTest {
 
 	@Test(expected = ElasticsearchStatusException.class)
 	public void testIndexNamePrefixInvalidIndexName() throws Exception {
-		createIndices(StringPool.SLASH, 0);
+		createIndices(StringPool.STAR, 0);
 	}
 
 	@Test

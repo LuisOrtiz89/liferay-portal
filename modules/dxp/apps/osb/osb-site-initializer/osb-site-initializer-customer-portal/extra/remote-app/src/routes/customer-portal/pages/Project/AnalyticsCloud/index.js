@@ -17,7 +17,10 @@ import ActivationStatus from '../../../components/ActivationStatus/index';
 import {PRODUCT_TYPES} from '../../../utils/constants';
 
 const AnalyticsCloud = ({project, subscriptionGroups, userAccount}) => {
-	const [analyticsCloudWorkspace, setAnalyticsCloudWorkspace] = useState();
+	const [
+		analyticsCloudEnvironment,
+		setAnalyticsCloudEnvironment,
+	] = useState();
 
 	useEffect(() => {
 		const getAnalyticsCloudData = async () => {
@@ -30,10 +33,10 @@ const AnalyticsCloud = ({project, subscriptionGroups, userAccount}) => {
 			});
 
 			if (data) {
-				const items = data.c?.analyticsCloudWorkspaces?.items;
+				const items = data.c?.AnalyticsCloudWorkspaces?.items;
 
 				if (items.length) {
-					setAnalyticsCloudWorkspace(items[0]);
+					setAnalyticsCloudEnvironment(items[0]);
 				}
 			}
 		};
@@ -44,7 +47,7 @@ const AnalyticsCloud = ({project, subscriptionGroups, userAccount}) => {
 	return (
 		<div className="mr-4">
 			<ActivationStatus.AnalyticsCloud
-				analyticsCloudWorkspace={analyticsCloudWorkspace}
+				analyticsCloudEnvironment={analyticsCloudEnvironment}
 				project={project}
 				subscriptionGroupAnalyticsCloud={subscriptionGroups.find(
 					(subscriptionGroup) =>

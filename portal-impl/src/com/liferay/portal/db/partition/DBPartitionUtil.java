@@ -311,8 +311,6 @@ public class DBPartitionUtil {
 			}
 		}
 		finally {
-			executorService.shutdown();
-
 			for (Future<Void> future : futures) {
 				future.get();
 			}

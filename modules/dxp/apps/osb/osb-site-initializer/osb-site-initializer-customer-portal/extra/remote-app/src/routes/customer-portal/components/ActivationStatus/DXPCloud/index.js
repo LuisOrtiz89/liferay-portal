@@ -9,12 +9,11 @@
  * distribution rights of the Software.
  */
 
-import {ButtonWithIcon} from '@clayui/core';
 import ClayIcon from '@clayui/icon';
 import ClayModal, {useModal} from '@clayui/modal';
 import React, {useEffect, useState} from 'react';
 import client from '../../../../../apolloClient';
-import {Button, ButtonDropDown} from '../../../../../common/components';
+import {Button} from '../../../../../common/components';
 import SetupDXPCloud from '../../../../../common/containers/setup-forms/SetupDXPCloudForm';
 import {
 	getAccountSubscriptionGroups,
@@ -27,7 +26,6 @@ import {
 	STATUS_TAG_TYPES,
 	STATUS_TAG_TYPE_NAMES,
 } from '../../../utils/constants';
-import ModalDXPCActivationStatus from '../../ModalDXPCActivationStatus';
 import ActivationStatusLayout from '../Layout';
 
 const SetupDXPCloudModal = ({
@@ -105,11 +103,6 @@ const ActivationStatusDXPCloud = ({
 	const modalProps = useModal({
 		onClose: () => setVisible(false),
 	});
-	const [isVisible, setIsVisible] = useState(false);
-	const {observer, onClose} = useModal({
-		onClose: () => setIsVisible(false),
-	});
-	const projectID = dxpCloudEnvironment?.projectId;
 
 	const subscriptionGroupActivationStatus =
 		subscriptionGroupDXPCloud?.activationStatus;
@@ -160,38 +153,18 @@ const ActivationStatusDXPCloud = ({
 			title: 'Activation Status',
 		},
 		[STATUS_TAG_TYPE_NAMES.inProgress]: {
-			dropdownIcon: userAccount.isStaff && (
-				<ButtonDropDown
-					customDropDownButton={
-						<ButtonWithIcon
-							displayType="null"
-							small
-							symbol="caret-bottom"
-						/>
-					}
-					items={[
-						{
-							label: 'Set to Active',
-							onClick: () => setIsVisible(true),
-						},
-					]}
-					menuElementAttrs={{
-						className: 'p-0 cp-activation-key-icon rounded-xs',
-					}}
-				/>
-			),
 			id: STATUS_TAG_TYPES.inProgress,
 			subtitle:
 				'Your DXP Cloud environments are being set up and will be available soon.',
 			title: 'Activation Status',
 		},
 		[STATUS_TAG_TYPE_NAMES.notActivated]: {
-			buttonLink: (userAccount.isAdmin || userAccount.isStaff) && (
+			buttonLink: userAccount.isAdmin && (
 				<Button
 					appendIcon="order-arrow-right"
 					className="btn btn-link font-weight-semi-bold p-0 text-brand-primary text-paragraph"
 					displayType="link"
-					onClick={() => setIsVisible(true)}
+					onClick={() => setVisible(true)}
 				>
 					Finish Activation
 				</Button>
@@ -220,10 +193,10 @@ const ActivationStatusDXPCloud = ({
 			});
 
 			if (data) {
-				const activationStatusDateRange = getActivationStatusDateRange(
+				const ActivationStatusDateRange = getActivationStatusDateRange(
 					data.c?.accountSubscriptionTerms?.items
 				);
-				setActivationStatusDate(activationStatusDateRange);
+				setActivationStatusDate(ActivationStatusDateRange);
 			}
 		};
 
@@ -252,14 +225,6 @@ const ActivationStatusDXPCloud = ({
 					subscriptionGroupActivationStatus
 				}
 			/>
-
-			{isVisible && (
-				<ModalDXPCActivationStatus
-					observer={observer}
-					onClose={onClose}
-					projectID={projectID}
-				/>
-			)}
 		</>
 	);
 };
