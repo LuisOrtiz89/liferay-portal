@@ -476,6 +476,10 @@ public class PropsValues {
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.DATABASE_INDEXES_UPDATE_ON_STARTUP));
 
+	public static final long DATABASE_LOCK_REFRESH_TIME =
+		GetterUtil.getLong(
+			PropsUtil.get(PropsKeys.DATABASE_LOCK_REFRESH_TIME)) * Time.SECOND;
+
 	public static final String DATABASE_MYSQL_ENGINE = PropsUtil.get(
 		PropsKeys.DATABASE_MYSQL_ENGINE);
 
@@ -2388,7 +2392,7 @@ public class PropsValues {
 	public static final boolean UPGRADE_DATABASE_AUTO_RUN =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.UPGRADE_DATABASE_AUTO_RUN));
-
+	
 	public static final boolean UPGRADE_DATABASE_TRANSACTIONS_DISABLED =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.UPGRADE_DATABASE_TRANSACTIONS_DISABLED));
