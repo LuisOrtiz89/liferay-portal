@@ -54,6 +54,7 @@ import com.liferay.portal.spring.aop.DynamicProxyCreator;
 import com.liferay.portal.spring.configurator.ConfigurableApplicationContextConfigurator;
 import com.liferay.portal.spring.override.OverrideBeanDefinitionRegistryPostProcessor;
 import com.liferay.portal.tools.DBUpgrader;
+import com.liferay.portal.tools.DatabaseLockRunner;
 import com.liferay.portal.util.InitUtil;
 import com.liferay.portal.util.PortalClassPathUtil;
 import com.liferay.portal.util.PropsUtil;
@@ -353,7 +354,14 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 			ClassNameLocalServiceUtil.checkClassNames();
 		}
 
-		ModuleFrameworkUtil.registerContext(applicationContext);
+		try {
+			DatabaseLockRunner.runWithLock(
+				_MODULES_CONTEXT_LOCK_KEY,
+				() -> ModuleFrameworkUtil.registerContext(applicationContext));
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
 
 		CustomJspBagRegistryUtil.getCustomJspBags();
 	}
@@ -490,6 +498,9 @@ public class PortalContextLoaderListener extends ContextLoaderListener {
 	}
 
 	private static final Field _FILTERED_PROPERTY_DESCRIPTORS_CACHE_FIELD;
+
+	private static final String _MODULES_CONTEXT_LOCK_KEY =
+		"ModulesContextProcess";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		PortalContextLoaderListener.class);

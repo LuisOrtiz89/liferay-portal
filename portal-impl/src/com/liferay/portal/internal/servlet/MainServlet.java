@@ -14,6 +14,7 @@
 
 package com.liferay.portal.internal.servlet;
 
+import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.io.StreamUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -91,6 +92,7 @@ import com.liferay.portal.struts.model.ActionForward;
 import com.liferay.portal.struts.model.ActionMapping;
 import com.liferay.portal.struts.model.ModuleConfig;
 import com.liferay.portal.tools.DBUpgrader;
+import com.liferay.portal.tools.DatabaseLockRunner;
 import com.liferay.portal.util.MaintenanceUtil;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsUtil;
@@ -253,155 +255,16 @@ public class MainServlet extends HttpServlet {
 			}
 		}
 
-		if (_log.isDebugEnabled()) {
-			_log.debug("Process startup events");
-		}
-
 		try {
-			StartupAction startupAction = new StartupAction();
-
-			startupAction.run(null);
-		}
-		catch (Exception exception) {
-			_log.error(exception);
-
-			System.out.println(
-				"Stopping the server due to unexpected startup errors");
-
-			System.exit(0);
-		}
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Initialize plugin package");
-		}
-
-		PluginPackage pluginPackage = null;
-
-		try {
-			pluginPackage = PluginPackageUtil.readPluginPackageServletContext(
+			UnsafeRunnable<Exception> unsafeRunnable = () -> _startupModules(
 				servletContext);
+
+			DatabaseLockRunner.runWithLock(
+				_STARTUP_MODULES_LOCK_KEY, unsafeRunnable);
 		}
 		catch (Exception exception) {
 			_log.error(exception);
 		}
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Initialize portlets");
-		}
-
-		List<Portlet> portlets = new ArrayList<>();
-
-		try {
-			portlets.addAll(_initPortlets(pluginPackage));
-		}
-		catch (Exception exception) {
-			_log.error(exception);
-		}
-
-		for (Portlet portlet : portlets) {
-			try {
-				ResourceActionsUtil.populatePortletResource(
-					portlet, MainServlet.class.getClassLoader(),
-					PropsValues.RESOURCE_ACTIONS_CONFIGS);
-			}
-			catch (Exception exception) {
-				_log.error(exception);
-			}
-		}
-
-		try {
-			_initLayoutTemplates(pluginPackage);
-		}
-		catch (Exception exception) {
-			_log.error(exception);
-		}
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Initialize social");
-		}
-
-		try {
-			SocialConfigurationUtil.read(
-				PortalClassLoaderUtil.getClassLoader(),
-				new String[] {
-					StreamUtil.toString(
-						servletContext.getResourceAsStream(
-							"/WEB-INF/liferay-social.xml")),
-					StreamUtil.toString(
-						servletContext.getResourceAsStream(
-							"/WEB-INF/liferay-social-ext.xml"))
-				});
-		}
-		catch (Exception exception) {
-			_log.error(exception);
-		}
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Initialize web settings");
-		}
-
-		try {
-			_checkShieldedContainerWebXml(
-				StreamUtil.toString(
-					servletContext.getResourceAsStream(
-						"/WEB-INF/shielded-container-web.xml")));
-
-			_checkWebXml(
-				StreamUtil.toString(
-					servletContext.getResourceAsStream("/WEB-INF/web.xml")));
-		}
-		catch (Exception exception) {
-			_log.error(exception);
-		}
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Process global startup events");
-		}
-
-		try {
-			EventsProcessorUtil.process(
-				PropsKeys.GLOBAL_STARTUP_EVENTS,
-				PropsValues.GLOBAL_STARTUP_EVENTS);
-		}
-		catch (Exception exception) {
-			_log.error(exception);
-		}
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Initialize resource actions");
-		}
-
-		try {
-			_initCompanies();
-		}
-		catch (Exception exception) {
-			_log.error(exception);
-		}
-
-		if (_log.isDebugEnabled()) {
-			_log.debug("Initialize plugins");
-		}
-
-		try {
-			HotDeployUtil.setCapturePrematureEvents(false);
-
-			PortalLifecycleUtil.flushInits();
-		}
-		catch (Exception exception) {
-			_log.error(exception);
-		}
-
-		if (PropsValues.UPGRADE_DATABASE_AUTO_RUN) {
-			DBUpgrader.upgradeModules();
-
-			StartupHelperUtil.setUpgrading(false);
-		}
-
-		servletContext.setAttribute(WebKeys.STARTUP_FINISHED, Boolean.TRUE);
-
-		StartupHelperUtil.setStartupFinished(true);
-
-		_registerPortalInitialized();
 
 		if ((_releaseManager != null) && _log.isWarnEnabled()) {
 			String message = _releaseManager.getStatusMessage(true);
@@ -1289,6 +1152,163 @@ public class MainServlet extends HttpServlet {
 				).build()));
 	}
 
+	private void _startupModules(ServletContext servletContext) {
+		if (_log.isDebugEnabled()) {
+			_log.debug("Process startup events");
+		}
+
+		try {
+			StartupAction startupAction = new StartupAction();
+
+			startupAction.run(null);
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+
+			System.out.println(
+				"Stopping the server due to unexpected startup errors");
+
+			System.exit(0);
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Initialize plugin package");
+		}
+
+		PluginPackage pluginPackage = null;
+
+		try {
+			pluginPackage = PluginPackageUtil.readPluginPackageServletContext(
+				servletContext);
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Initialize portlets");
+		}
+
+		List<Portlet> portlets = new ArrayList<>();
+
+		try {
+			portlets.addAll(_initPortlets(pluginPackage));
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		for (Portlet portlet : portlets) {
+			try {
+				ResourceActionsUtil.populatePortletResource(
+					portlet, MainServlet.class.getClassLoader(),
+					PropsValues.RESOURCE_ACTIONS_CONFIGS);
+			}
+			catch (Exception exception) {
+				_log.error(exception);
+			}
+		}
+
+		try {
+			_initLayoutTemplates(pluginPackage);
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Initialize social");
+		}
+
+		try {
+			SocialConfigurationUtil.read(
+				PortalClassLoaderUtil.getClassLoader(),
+				new String[] {
+					StreamUtil.toString(
+						servletContext.getResourceAsStream(
+							"/WEB-INF/liferay-social.xml")),
+					StreamUtil.toString(
+						servletContext.getResourceAsStream(
+							"/WEB-INF/liferay-social-ext.xml"))
+				});
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Initialize web settings");
+		}
+
+		try {
+			_checkShieldedContainerWebXml(
+				StreamUtil.toString(
+					servletContext.getResourceAsStream(
+						"/WEB-INF/shielded-container-web.xml")));
+
+			_checkWebXml(
+				StreamUtil.toString(
+					servletContext.getResourceAsStream("/WEB-INF/web.xml")));
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Process global startup events");
+		}
+
+		try {
+			EventsProcessorUtil.process(
+				PropsKeys.GLOBAL_STARTUP_EVENTS,
+				PropsValues.GLOBAL_STARTUP_EVENTS);
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Initialize resource actions");
+		}
+
+		try {
+			_initCompanies();
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Initialize plugins");
+		}
+
+		try {
+			HotDeployUtil.setCapturePrematureEvents(false);
+
+			PortalLifecycleUtil.flushInits();
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		try {
+			if (PropsValues.UPGRADE_DATABASE_AUTO_RUN) {
+				DBUpgrader.upgradeModules();
+
+				StartupHelperUtil.setUpgrading(false);
+			}
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		servletContext.setAttribute(WebKeys.STARTUP_FINISHED, Boolean.TRUE);
+
+		StartupHelperUtil.setStartupFinished(true);
+
+		_registerPortalInitialized();
+	}
+
 	private static final boolean _HTTP_HEADER_VERSION_VERBOSITY_DEFAULT =
 		StringUtil.equalsIgnoreCase(
 			PropsValues.HTTP_HEADER_VERSION_VERBOSITY, "off");
@@ -1299,6 +1319,9 @@ public class MainServlet extends HttpServlet {
 
 	private static final String _LIFERAY_PORTAL_REQUEST_HEADER =
 		"Liferay-Portal";
+
+	private static final String _STARTUP_MODULES_LOCK_KEY =
+		"StartupModulesProcess";
 
 	private static final Log _log = LogFactoryUtil.getLog(MainServlet.class);
 
