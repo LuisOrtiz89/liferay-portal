@@ -504,6 +504,8 @@ public class DBUpgrader {
 
 			DependencyManagerSyncUtil.sync();
 		}
+
+		StartupHelperUtil.setUpgrading(false);
 	}
 
 	private static void _upgradeModules(ApplicationContext applicationContext) {
