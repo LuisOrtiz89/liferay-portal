@@ -560,6 +560,9 @@ public interface PropsKeys {
 	public static final String DATABASE_INDEXES_UPDATE_ON_STARTUP =
 		"database.indexes.update.on.startup";
 
+	public static final String DATABASE_LOCK_MANAGED_STARTUP =
+		"database.lock.managed.startup";
+
 	public static final String DATABASE_LOCK_REFRESH_TIME =
 		"database.lock.refresh.time";
 
