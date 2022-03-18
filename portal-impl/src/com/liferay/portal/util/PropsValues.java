@@ -24,9 +24,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Time;
 
-import java.util.Map;
-import java.util.Properties;
-
 /**
  * @author Brian Wing Shun Chan
  */
@@ -2452,6 +2449,10 @@ public class PropsValues {
 		GetterUtil.getLong(
 			PropsUtil.get(PropsKeys.UPGRADE_DATABASE_LOCK_REFRESH_TIME)) *
 				Time.SECOND;
+
+	public static final boolean UPGRADE_DATABASE_MANAGED_STARTUP =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.UPGRADE_DATABASE_MANAGED_STARTUP));
 
 	public static final boolean UPGRADE_DATABASE_TRANSACTIONS_DISABLED =
 		GetterUtil.getBoolean(
