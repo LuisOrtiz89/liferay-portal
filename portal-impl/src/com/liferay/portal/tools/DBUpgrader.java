@@ -15,6 +15,7 @@
 package com.liferay.portal.tools;
 
 import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalServiceUtil;
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
@@ -23,6 +24,7 @@ import com.liferay.portal.kernel.cache.CacheRegistryUtil;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
 import com.liferay.portal.kernel.dao.db.DB;
+import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dependency.manager.DependencyManagerSyncUtil;
@@ -33,6 +35,7 @@ import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.module.framework.ModuleServiceLifecycle;
 import com.liferay.portal.kernel.module.util.ServiceLatch;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
+import com.liferay.portal.kernel.security.SecureRandomUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.ReleaseInfo;
@@ -55,6 +58,8 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.logging.log4j.core.Appender;
@@ -67,6 +72,7 @@ import org.springframework.context.ApplicationContext;
 /**
  * @author Michael C. Han
  * @author Brian Wing Shun Chan
+ * @author Luis Ortiz
  */
 public class DBUpgrader {
 
@@ -157,27 +163,16 @@ public class DBUpgrader {
 	public static void upgrade(ApplicationContext applicationContext)
 		throws Exception {
 
-		StartupHelperUtil.setUpgrading(true);
+		UnsafeConsumer<ApplicationContext, Exception> unsafeConsumer =
+			appContext -> _upgrade(appContext);
 
-		_upgradePortal();
+		if (PropsValues.UPGRADE_DATABASE_MANAGED_STARTUP) {
+			_upgradeWithLocking(applicationContext, unsafeConsumer);
 
-		DLFileEntryTypeLocalServiceUtil.getBasicDocumentDLFileEntryType();
-
-		_upgradeModules(applicationContext);
-
-		StoreFactory storeFactory = StoreFactory.getInstance();
-
-		if (storeFactory.getStore(PropsValues.DL_STORE_IMPL) == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(
-					"Store \"" + PropsValues.DL_STORE_IMPL +
-						"\" is not available");
-			}
+			return;
 		}
 
-		if (applicationContext == null) {
-			DependencyManagerSyncUtil.sync();
-		}
+		unsafeConsumer.accept(applicationContext);
 	}
 
 	public static void verify() throws VerifyException {
@@ -209,6 +204,60 @@ public class DBUpgrader {
 		StartupHelperUtil.initResourceActions();
 	}
 
+	private static void _createLockTableIfNotExists() throws Exception {
+		while (true) {
+			if (_hasLockTable()) {
+				return;
+			}
+
+			DB db = DBManagerUtil.getDB();
+
+			try (Connection connection = DataAccess.getConnection();
+				PreparedStatement preparedStatement1 =
+					connection.prepareStatement(
+						db.buildSQL(
+							StringBundler.concat(
+								"create table ", _UPGRADES_LOCK_TABLE,
+								" (lockId LONG not null primary key, ",
+								"createDate DATE default null, className ",
+								"VARCHAR(75) default null, key_ VARCHAR(200) ",
+								"default null)")));
+				PreparedStatement preparedStatement2 =
+					connection.prepareStatement(
+						db.buildSQL(
+							StringBundler.concat(
+								"create unique index IX_UPGDLOCK on ",
+								_UPGRADES_LOCK_TABLE, " (className, key_)")))) {
+
+				preparedStatement1.executeUpdate();
+				preparedStatement2.executeUpdate();
+			}
+			catch (SQLException sqlException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(sqlException);
+				}
+			}
+		}
+	}
+
+	private static PreparedStatement _getBlockingSelectLockPreparedStatement(
+			Connection connection, long lockId)
+		throws SQLException {
+
+		PreparedStatement preparedStatement = connection.prepareStatement(
+			SQLTransformer.transform(
+				StringBundler.concat(
+					"select lockId from ", _UPGRADES_LOCK_TABLE,
+					" where className = ? and key_ = ? and lockId = ? ",
+					"FOR_UPDATE")));
+
+		preparedStatement.setString(1, DBUpgrader.class.getName());
+		preparedStatement.setString(2, _LOCK_KEY);
+		preparedStatement.setLong(3, lockId);
+
+		return preparedStatement;
+	}
+
 	private static int _getBuildNumberForMissedUpgradeProcesses(int buildNumber)
 		throws Exception {
 
@@ -224,6 +273,79 @@ public class DBUpgrader {
 		}
 
 		return buildNumber;
+	}
+
+	private static PreparedStatement _getDeleteLockPreparedStatement(
+			Connection connection, long lockId)
+		throws SQLException {
+
+		PreparedStatement preparedStatement = connection.prepareStatement(
+			StringBundler.concat(
+				"delete from ", _UPGRADES_LOCK_TABLE, " where lockId = ?"));
+
+		preparedStatement.setLong(1, lockId);
+
+		return preparedStatement;
+	}
+
+	private static PreparedStatement _getDropLockTablePreparedStatement(
+			Connection connection)
+		throws SQLException {
+
+		return connection.prepareStatement(
+			SQLTransformer.transform(
+				StringBundler.concat(
+					"DROP_TABLE_IF_EXISTS(", _UPGRADES_LOCK_TABLE, ")")));
+	}
+
+	private static PreparedStatement _getInsertLockPreparedStatement(
+			Connection connection, long lockId)
+		throws SQLException {
+
+		PreparedStatement preparedStatement = connection.prepareStatement(
+			StringBundler.concat(
+				"insert into ", _UPGRADES_LOCK_TABLE, " (lockId, createDate, ",
+				"className, key_) values (?, ?, ?, ?)"));
+
+		Timestamp now = new Timestamp(System.currentTimeMillis());
+
+		preparedStatement.setLong(1, lockId);
+		preparedStatement.setTimestamp(2, now);
+		preparedStatement.setString(3, DBUpgrader.class.getName());
+		preparedStatement.setString(4, _LOCK_KEY);
+
+		return preparedStatement;
+	}
+
+	private static long _getOrCreateLock() throws Exception {
+		while (true) {
+			_createLockTableIfNotExists();
+
+			try (Connection connection = DataAccess.getConnection();
+				PreparedStatement preparedStatement =
+					_getSelectLockPreparedStatement(connection);
+				ResultSet resultSet = preparedStatement.executeQuery()) {
+
+				if (resultSet.next()) {
+					return resultSet.getLong(1);
+				}
+
+				long lockId = SecureRandomUtil.nextLong();
+
+				try (PreparedStatement preparedStatement2 =
+						_getInsertLockPreparedStatement(connection, lockId)) {
+
+					if (preparedStatement2.executeUpdate() == 1) {
+						return lockId;
+					}
+				}
+			}
+			catch (SQLException sqlException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(sqlException);
+				}
+			}
+		}
 	}
 
 	private static int _getReleaseColumnValue(String columnName)
@@ -245,6 +367,29 @@ public class DBUpgrader {
 			throw new IllegalArgumentException(
 				"No Release exists with the primary key " +
 					ReleaseConstants.DEFAULT_ID);
+		}
+	}
+
+	private static PreparedStatement _getSelectLockPreparedStatement(
+			Connection connection)
+		throws SQLException {
+
+		PreparedStatement preparedStatement = connection.prepareStatement(
+			StringBundler.concat(
+				"select lockId from ", _UPGRADES_LOCK_TABLE,
+				" where className = ? and key_ = ?"));
+
+		preparedStatement.setString(1, DBUpgrader.class.getName());
+		preparedStatement.setString(2, _LOCK_KEY);
+
+		return preparedStatement;
+	}
+
+	private static boolean _hasLockTable() throws Exception {
+		try (Connection connection = DataAccess.getConnection()) {
+			DBInspector dbInspector = new DBInspector(connection);
+
+			return dbInspector.hasTable(_UPGRADES_LOCK_TABLE);
 		}
 	}
 
@@ -333,6 +478,34 @@ public class DBUpgrader {
 		}
 	}
 
+	private static void _upgrade(ApplicationContext applicationContext)
+		throws Exception {
+
+		StartupHelperUtil.setUpgrading(true);
+
+		_upgradePortal();
+
+		DLFileEntryTypeLocalServiceUtil.getBasicDocumentDLFileEntryType();
+
+		_upgradeModules(applicationContext);
+
+		StoreFactory storeFactory = StoreFactory.getInstance();
+
+		if (storeFactory.getStore(PropsValues.DL_STORE_IMPL) == null) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Store \"" + PropsValues.DL_STORE_IMPL +
+						"\" is not available");
+			}
+		}
+
+		if ((applicationContext == null) ||
+			PropsValues.UPGRADE_DATABASE_MANAGED_STARTUP) {
+
+			DependencyManagerSyncUtil.sync();
+		}
+	}
+
 	private static void _upgradeModules(ApplicationContext applicationContext) {
 		_registerModuleServiceLifecycle("database.initialized");
 
@@ -418,6 +591,60 @@ public class DBUpgrader {
 
 		verify();
 	}
+
+	private static void _upgradeWithLocking(
+			ApplicationContext applicationContext,
+			UnsafeConsumer<ApplicationContext, Exception> unsafeConsumer)
+		throws Exception {
+
+		while (true) {
+			long lockId = _getOrCreateLock();
+
+			try (Connection connection = DataAccess.getConnection();
+				PreparedStatement preparedStatement =
+					_getBlockingSelectLockPreparedStatement(
+						connection, lockId)) {
+
+				boolean autoCommit = connection.getAutoCommit();
+
+				try {
+					connection.setAutoCommit(false);
+
+					try (ResultSet resultSet =
+							preparedStatement.executeQuery()) {
+
+						if (!resultSet.next()) {
+							continue;
+						}
+					}
+
+					unsafeConsumer.accept(applicationContext);
+
+					try (PreparedStatement preparedStatement1 =
+							_getDeleteLockPreparedStatement(connection, lockId);
+						PreparedStatement preparedStatement2 =
+							_getDropLockTablePreparedStatement(connection)) {
+
+						preparedStatement1.executeUpdate();
+						preparedStatement2.executeUpdate();
+						connection.commit();
+					}
+
+					return;
+				}
+				finally {
+					connection.setAutoCommit(autoCommit);
+				}
+			}
+			catch (SQLException sqlException) {
+				Thread.sleep(PropsValues.UPGRADE_DATABASE_LOCK_REFRESH_TIME);
+			}
+		}
+	}
+
+	private static final String _LOCK_KEY = "UpgradeProcess";
+
+	private static final String _UPGRADES_LOCK_TABLE = "UpgradesLock_";
 
 	private static final Version _VERSION_7010 = new Version(0, 0, 6);
 
