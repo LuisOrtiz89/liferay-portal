@@ -17,17 +17,22 @@ package com.liferay.portal.verify;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.BaseDBProcess;
+import com.liferay.portal.kernel.dao.jdbc.ConnectionThreadProxyHandler;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.util.ClassUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -61,7 +66,30 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	public void verify() throws VerifyException {
 		long start = System.currentTimeMillis();
 
-		try (Connection connection = DataAccess.getConnection()) {
+		boolean partitionConcurrencyEnabled = false;
+
+		if (GetterUtil.getBoolean(
+				PropsUtil.get("database.partition.enabled")) &&
+			GetterUtil.getBoolean(
+				PropsUtil.get("database.partition.thread.pool.enabled"),
+				true)) {
+
+			partitionConcurrencyEnabled = true;
+		}
+
+		Connection connection = null;
+
+		try {
+			if (partitionConcurrencyEnabled) {
+				connection = (Connection)ProxyUtil.newProxyInstance(
+					ClassLoader.getSystemClassLoader(),
+					new Class<?>[] {Connection.class},
+					new ConnectionThreadProxyHandler());
+			}
+			else {
+				connection = DataAccess.getConnection();
+			}
+
 			this.connection = connection;
 
 			process(
@@ -84,6 +112,17 @@ public abstract class VerifyProcess extends BaseDBProcess {
 			throw new VerifyException(exception);
 		}
 		finally {
+			if (connection != null) {
+				try {
+					connection.close();
+				}
+				catch (SQLException sqlException) {
+					_log.error(
+						"Error closing connection on verify process ",
+						sqlException);
+				}
+			}
+
 			this.connection = null;
 
 			if (_log.isInfoEnabled()) {

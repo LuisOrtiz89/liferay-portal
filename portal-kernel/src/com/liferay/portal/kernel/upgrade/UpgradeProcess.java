@@ -22,13 +22,17 @@ import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBProcessContext;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
+import com.liferay.portal.kernel.dao.jdbc.ConnectionThreadProxyHandler;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ClassUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
+import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -86,7 +90,30 @@ public abstract class UpgradeProcess
 
 		String message = "Completed upgrade process ";
 
-		try (Connection connection = getConnection()) {
+		boolean partitionConcurrencyEnabled = false;
+
+		if (GetterUtil.getBoolean(
+				PropsUtil.get("database.partition.enabled")) &&
+			GetterUtil.getBoolean(
+				PropsUtil.get("database.partition.thread.pool.enabled"),
+				true)) {
+
+			partitionConcurrencyEnabled = true;
+		}
+
+		Connection connection = null;
+
+		try {
+			if (partitionConcurrencyEnabled) {
+				connection = (Connection)ProxyUtil.newProxyInstance(
+					ClassLoader.getSystemClassLoader(),
+					new Class<?>[] {Connection.class},
+					new ConnectionThreadProxyHandler());
+			}
+			else {
+				connection = getConnection();
+			}
+
 			this.connection = connection;
 
 			if (isSkipUpgradeProcess()) {
@@ -115,6 +142,17 @@ public abstract class UpgradeProcess
 			throw new UpgradeException(throwable);
 		}
 		finally {
+			if (connection != null) {
+				try {
+					connection.close();
+				}
+				catch (SQLException sqlException) {
+					_log.error(
+						"Error closing connection on upgrade process ",
+						sqlException);
+				}
+			}
+
 			this.connection = null;
 
 			if (_log.isInfoEnabled()) {
