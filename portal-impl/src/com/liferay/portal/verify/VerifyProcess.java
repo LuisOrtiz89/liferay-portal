@@ -17,6 +17,7 @@ package com.liferay.portal.verify;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.BaseDBProcess;
+import com.liferay.portal.kernel.dao.jdbc.ConnectionThreadProxy;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -61,7 +62,18 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	public void verify() throws VerifyException {
 		long start = System.currentTimeMillis();
 
-		try (Connection connection = DataAccess.getConnection()) {
+		boolean partitionConcurrencyEnabled = false;
+
+		if (DATABASE_PARTITION_ENABLED &&
+			DATABASE_PARTITION_THREAD_POOL_ENABLED) {
+
+			partitionConcurrencyEnabled = true;
+		}
+
+		try (Connection connection =
+				partitionConcurrencyEnabled ? new ConnectionThreadProxy() :
+					DataAccess.getConnection()) {
+
 			this.connection = connection;
 
 			process(

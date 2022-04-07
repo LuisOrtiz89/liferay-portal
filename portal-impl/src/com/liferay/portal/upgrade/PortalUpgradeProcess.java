@@ -15,6 +15,7 @@
 package com.liferay.portal.upgrade;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.dao.jdbc.ConnectionThreadProxy;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ReleaseConstants;
@@ -138,7 +139,18 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 		String message = "Completed upgrade process ";
 
-		try (Connection connection = getConnection()) {
+		boolean partitionConcurrencyEnabled = false;
+
+		if (DATABASE_PARTITION_ENABLED &&
+			DATABASE_PARTITION_THREAD_POOL_ENABLED) {
+
+			partitionConcurrencyEnabled = true;
+		}
+
+		try (Connection connection =
+				partitionConcurrencyEnabled ? new ConnectionThreadProxy() :
+					getConnection()) {
+
 			this.connection = connection;
 
 			if (_log.isInfoEnabled()) {

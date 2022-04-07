@@ -346,6 +346,13 @@ public abstract class BaseDBProcess implements DBProcess {
 		db.removePrimaryKey(connection, tableName);
 	}
 
+	protected static final boolean DATABASE_PARTITION_ENABLED =
+		GetterUtil.getBoolean(PropsUtil.get("database.partition.enabled"));
+
+	protected static final boolean DATABASE_PARTITION_THREAD_POOL_ENABLED =
+		GetterUtil.getBoolean(
+			PropsUtil.get("database.partition.thread.pool.enabled"), true);
+
 	protected Connection connection;
 
 	private <T> void _processConcurrently(

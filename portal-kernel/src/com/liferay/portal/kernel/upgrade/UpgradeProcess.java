@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBProcessContext;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
+import com.liferay.portal.kernel.dao.jdbc.ConnectionThreadProxy;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.log.Log;
@@ -94,7 +95,18 @@ public abstract class UpgradeProcess
 
 		String message = "Completed upgrade process ";
 
-		try (Connection connection = getConnection()) {
+		boolean partitionConcurrencyEnabled = false;
+
+		if (DATABASE_PARTITION_ENABLED &&
+			DATABASE_PARTITION_THREAD_POOL_ENABLED) {
+
+			partitionConcurrencyEnabled = true;
+		}
+
+		try (Connection connection =
+				partitionConcurrencyEnabled ? new ConnectionThreadProxy() :
+					getConnection()) {
+
 			this.connection = connection;
 
 			if (isSkipUpgradeProcess()) {
