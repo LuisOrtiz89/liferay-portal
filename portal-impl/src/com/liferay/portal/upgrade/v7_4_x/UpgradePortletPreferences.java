@@ -89,15 +89,21 @@ public class UpgradePortletPreferences extends UpgradeProcess {
 			return;
 		}
 
+		String sqlQuery = StringBundler.concat(
+			"insert into PortletPreferenceValue (mvccVersion, ",
+			"ctCollectionId, portletPreferenceValueId, ",
+			"companyId, portletPreferencesId, index_, ",
+			"largeValue, name, readOnly, smallValue) values ",
+			"(0, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+		for (int i=1; i < preferenceMap.size(); i++) {
+			sqlQuery = sqlQuery + ",(0, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		}
+
 		try (PreparedStatement preparedStatement =
-				AutoBatchPreparedStatementUtil.autoBatch(
-					connection.prepareStatement(
-						StringBundler.concat(
-							"insert into PortletPreferenceValue (mvccVersion, ",
-							"ctCollectionId, portletPreferenceValueId, ",
-							"companyId, portletPreferencesId, index_, ",
-							"largeValue, name, readOnly, smallValue) values ",
-							"(0, ?, ?, ?, ?, ?, ?, ?, ?, ?)")))) {
+				 connection.prepareStatement(sqlQuery)) {
+
+			int j = 1;
 
 			for (Preference preference : preferenceMap.values()) {
 				String[] values = preference.getValues();
@@ -117,22 +123,20 @@ public class UpgradePortletPreferences extends UpgradeProcess {
 						smallValue = value;
 					}
 
-					preparedStatement.setLong(1, ctCollectionId);
+					preparedStatement.setLong(j++, ctCollectionId);
 					preparedStatement.setLong(
-						2, increment(PortletPreferenceValue.class.getName()));
-					preparedStatement.setLong(3, companyId);
-					preparedStatement.setLong(4, portletPreferencesId);
-					preparedStatement.setInt(5, i);
-					preparedStatement.setString(6, largeValue);
-					preparedStatement.setString(7, preference.getName());
-					preparedStatement.setBoolean(8, preference.isReadOnly());
-					preparedStatement.setString(9, smallValue);
-
-					preparedStatement.addBatch();
+						j++, increment(PortletPreferenceValue.class.getName()));
+					preparedStatement.setLong(j++, companyId);
+					preparedStatement.setLong(j++, portletPreferencesId);
+					preparedStatement.setInt(j++, i);
+					preparedStatement.setString(j++, largeValue);
+					preparedStatement.setString(j++, preference.getName());
+					preparedStatement.setBoolean(j++, preference.isReadOnly());
+					preparedStatement.setString(j++, smallValue);
 				}
 			}
 
-			preparedStatement.executeBatch();
+			preparedStatement.executeUpdate();
 		}
 	}
 
