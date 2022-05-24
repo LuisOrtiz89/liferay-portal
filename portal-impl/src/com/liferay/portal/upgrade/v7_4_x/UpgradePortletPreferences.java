@@ -16,7 +16,6 @@ package com.liferay.portal.upgrade.v7_4_x;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
-import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.model.PortletConstants;
 import com.liferay.portal.kernel.model.PortletPreferenceValue;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
@@ -90,18 +89,17 @@ public class UpgradePortletPreferences extends UpgradeProcess {
 		}
 
 		String sqlQuery = StringBundler.concat(
-			"insert into PortletPreferenceValue (mvccVersion, ",
-			"ctCollectionId, portletPreferenceValueId, ",
-			"companyId, portletPreferencesId, index_, ",
-			"largeValue, name, readOnly, smallValue) values ",
-			"(0, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-		for (int i=1; i < preferenceMap.size(); i++) {
+			"insert into PortletPreferenceValue (mvccVersion, ctCollectionId, ",
+			"portletPreferenceValueId, companyId, portletPreferencesId, ",
+			"index_, largeValue, name, readOnly, smallValue) values (0, ?, ?, ",
+			"?, ?, ?, ?, ?, ?, ?)");
+		
+		for (int i = 1; i < preferenceMap.size(); i++) {
 			sqlQuery = sqlQuery + ",(0, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		}
 
-		try (PreparedStatement preparedStatement =
-				 connection.prepareStatement(sqlQuery)) {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				sqlQuery)) {
 
 			int j = 1;
 
