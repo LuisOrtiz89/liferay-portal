@@ -254,7 +254,6 @@ public abstract class BaseDBProcess implements DBProcess {
 	}
 
 	protected Connection getConnection() throws Exception {
-
 		return (Connection)ProxyUtil.newProxyInstance(
 			ClassLoader.getSystemClassLoader(),
 			new Class<?>[] {Connection.class},
@@ -521,9 +520,11 @@ public abstract class BaseDBProcess implements DBProcess {
 			if (!connection.isValid(0)) {
 				try {
 					_connectionMap.remove(Thread.currentThread());
+
 					connection.close();
 				}
-				catch (SQLException sqlException) {}
+				catch (SQLException sqlException) {
+				}
 			}
 
 			return method.invoke(
