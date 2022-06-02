@@ -515,6 +515,17 @@ public abstract class BaseDBProcess implements DBProcess {
 				return null;
 			}
 
+			Connection connection = _connectionMap.computeIfAbsent(
+				Thread.currentThread(), thread -> _getConnection());
+
+			if (!connection.isValid(0)) {
+				try {
+					_connectionMap.remove(Thread.currentThread());
+					connection.close();
+				}
+				catch (SQLException sqlException) {}
+			}
+
 			return method.invoke(
 				_connectionMap.computeIfAbsent(
 					Thread.currentThread(), thread -> _getConnection()),
