@@ -243,10 +243,24 @@ public class PortalUpgradeProcessTest {
 	}
 
 	@Test
-	public void testSchemaVersionIsInitializedPreviousTo7100()
+	public void testSchemaVersionIsInitializedVersion6210()
 		throws SQLException {
 
 		Version schemaVersion = Version.parseVersion("6.2.1.0");
+
+		_updateSchemaVersion(schemaVersion);
+
+		try (Connection connection = DataAccess.getConnection()) {
+			Assert.assertFalse(
+				PortalUpgradeProcess.isSchemaVersionInitialized(connection));
+		}
+	}
+
+	@Test
+	public void testSchemaVersionIsInitializedVersion7010()
+		throws SQLException {
+
+		Version schemaVersion = Version.parseVersion("7.0.10");
 
 		_updateSchemaVersion(schemaVersion);
 
