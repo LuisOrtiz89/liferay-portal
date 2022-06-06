@@ -371,6 +371,8 @@ public class DBUpgrader {
 
 				_checkClassNamesAndResourceActions();
 
+				_updateReleaseState(ReleaseConstants.STATE_GOOD);
+
 				return;
 			}
 		}
