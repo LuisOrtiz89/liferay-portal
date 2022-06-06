@@ -139,7 +139,10 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 		if ((currentVersion.compareTo(_initialSchemaVersion) < 0) ||
 			((currentVersion.getMajor() == 6) &&
-			 (currentVersion.getMinor() == 2))) {
+			 (currentVersion.getMinor() == 2)) ||
+			((currentVersion.getMajor() == 7) &&
+			 (currentVersion.getMinor() == 0) &&
+			 (currentVersion.getMicro() > 0))) {
 
 			return false;
 		}
@@ -225,7 +228,8 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 				StringBundler.concat(
 					"update Release_ set schemaVersion = ? where ",
 					"servletContextName = ? and buildNumber < 7100 and ",
-					"schemaVersion like '6.2.%'"))) {
+					"(schemaVersion like '6.2.%' or schemaVersion like ",
+					"'7.0.%')"))) {
 
 			preparedStatement.setString(1, _initialSchemaVersion.toString());
 			preparedStatement.setString(
