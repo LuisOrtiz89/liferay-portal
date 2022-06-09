@@ -520,7 +520,7 @@ public abstract class BaseDBProcess implements DBProcess {
 						Thread.currentThread(), thread -> _getConnection()),
 					args);
 			}
-			catch (Exception exception) {
+			catch (Throwable throwable) {
 				Connection connection = _connectionMap.computeIfAbsent(
 					Thread.currentThread(), thread -> _getConnection());
 
@@ -539,7 +539,7 @@ public abstract class BaseDBProcess implements DBProcess {
 						args);
 				}
 
-				throw exception;
+				throw throwable;
 			}
 		}
 
