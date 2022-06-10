@@ -521,24 +521,31 @@ public abstract class BaseDBProcess implements DBProcess {
 					args);
 			}
 			catch (Throwable throwable) {
+
+				_log.warn("Captured the throwable");
+
 				Connection connection = _connectionMap.computeIfAbsent(
 					Thread.currentThread(), thread -> _getConnection());
 
 				if (!connection.isValid(0)) {
+					_log.warn("Connections is not valid");
 					try {
 						_connectionMap.remove(Thread.currentThread());
 
 						connection.close();
 					}
 					catch (SQLException sqlException) {
+						_log.warn("Captured exception when closing");
 					}
 
+					_log.warn("Trying to invoke again");
 					return method.invoke(
 						_connectionMap.computeIfAbsent(
 							Thread.currentThread(), thread -> _getConnection()),
 						args);
 				}
 
+				_log.warn("Rethrowing the throwable");
 				throw throwable;
 			}
 		}
