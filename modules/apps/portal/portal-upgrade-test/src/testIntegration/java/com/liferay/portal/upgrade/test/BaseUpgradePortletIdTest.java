@@ -115,23 +115,17 @@ public class BaseUpgradePortletIdTest extends BasePortletIdUpgradeProcess {
 
 	@After
 	public void tearDown() throws Exception {
-		try (Connection connection = DataAccess.getConnection()) {
-			this.connection = connection;
 
-			String[][] renamePortletIdsArray = getRenamePortletIdsArray();
+		String[][] renamePortletIdsArray = getRenamePortletIdsArray();
 
-			for (String[] renamePortletIds : renamePortletIdsArray) {
-				String oldRootPortletId = renamePortletIds[1];
-				String newRootPortletId = renamePortletIds[0];
+		for (String[] renamePortletIds : renamePortletIdsArray) {
+			String oldRootPortletId = renamePortletIds[1];
+			String newRootPortletId = renamePortletIds[0];
 
-				updatePortlet(oldRootPortletId, newRootPortletId);
-				updateLayoutRevisions(
-					oldRootPortletId, newRootPortletId, false);
-				updateLayouts(oldRootPortletId, newRootPortletId, false);
-			}
-		}
-		finally {
-			this.connection = null;
+			updatePortlet(oldRootPortletId, newRootPortletId);
+			updateLayoutRevisions(
+				oldRootPortletId, newRootPortletId, false);
+			updateLayouts(oldRootPortletId, newRootPortletId, false);
 		}
 
 		for (String portletId : _PORTLET_IDS) {

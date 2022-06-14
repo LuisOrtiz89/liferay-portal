@@ -33,14 +33,14 @@ public class UpgradeDatabaseTestHelperImpl
 	public UpgradeDatabaseTestHelperImpl(Connection connection)
 		throws SQLException {
 
-		this.connection = connection;
+		//this.connection = connection;
 	}
 
 	@Override
 	public void close() throws Exception {
-		connection.close();
+		//connection.close();
 
-		connection = null;
+		//connection = null;
 	}
 
 	@Override
