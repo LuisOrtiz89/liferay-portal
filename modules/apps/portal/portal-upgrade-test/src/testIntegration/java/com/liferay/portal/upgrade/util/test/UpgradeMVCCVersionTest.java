@@ -41,8 +41,6 @@ public class UpgradeMVCCVersionTest extends PortalMVCCVersionUpgradeProcess {
 
 	@Before
 	public void setUp() throws Exception {
-		connection = DataAccess.getConnection();
-
 		_createTable(_HIBERNATE_MAPPING_TABLE_NAME);
 		_createTable(_TABLE_NAME);
 	}
@@ -51,8 +49,6 @@ public class UpgradeMVCCVersionTest extends PortalMVCCVersionUpgradeProcess {
 	public void tearDown() throws Exception {
 		_dropTable(_HIBERNATE_MAPPING_TABLE_NAME);
 		_dropTable(_TABLE_NAME);
-
-		connection.close();
 	}
 
 	@Test

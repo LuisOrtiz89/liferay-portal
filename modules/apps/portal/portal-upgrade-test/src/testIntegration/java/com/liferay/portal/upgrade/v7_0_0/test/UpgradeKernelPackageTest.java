@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeKernelPackage;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -65,18 +66,6 @@ public class UpgradeKernelPackageTest extends UpgradeKernelPackage {
 		_db.runSQL("drop table UpgradeKernelPackageTest");
 	}
 
-	@Before
-	public void setUp() throws Exception {
-		connection = DataAccess.getConnection();
-	}
-
-	@After
-	public void tearDown() {
-		DataAccess.cleanUp(connection);
-
-		connection = null;
-	}
-
 	@Test
 	public void testDoUpgrade() throws Exception {
 
@@ -86,17 +75,19 @@ public class UpgradeKernelPackageTest extends UpgradeKernelPackage {
 
 		// Check that the table and column combination is correct
 
-		DBInspector dbInspector = new DBInspector(connection);
+		try (Connection connection = getConnection()) {
+			DBInspector dbInspector = new DBInspector(connection);
 
-		_assertTableAndColumn(dbInspector, "ClassName_", "value");
-		_assertTableAndColumn(dbInspector, "Counter", "name");
-		_assertTableAndColumn(dbInspector, "Lock_", "className");
-		_assertTableAndColumn(dbInspector, "ResourceAction", "name");
-		_assertTableAndColumn(dbInspector, "ResourcePermission", "name");
-		_assertTableAndColumn(dbInspector, "ListType", "type_");
-		_assertTableAndColumn(
-			dbInspector, "UserNotificationEvent", "payload",
-			"userNotificationEventId");
+			_assertTableAndColumn(dbInspector, "ClassName_", "value");
+			_assertTableAndColumn(dbInspector, "Counter", "name");
+			_assertTableAndColumn(dbInspector, "Lock_", "className");
+			_assertTableAndColumn(dbInspector, "ResourceAction", "name");
+			_assertTableAndColumn(dbInspector, "ResourcePermission", "name");
+			_assertTableAndColumn(dbInspector, "ListType", "type_");
+			_assertTableAndColumn(
+				dbInspector, "UserNotificationEvent", "payload",
+				"userNotificationEventId");
+		}
 	}
 
 	@Test
@@ -254,12 +245,13 @@ public class UpgradeKernelPackageTest extends UpgradeKernelPackage {
 	private void _assertData(long id, String columnName, String expectedValue)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(
 					StringBundler.concat(
 						"select ", columnName,
 						" from UpgradeKernelPackageTest where id =", id)));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			if (expectedValue == null) {
 				Assert.assertFalse(

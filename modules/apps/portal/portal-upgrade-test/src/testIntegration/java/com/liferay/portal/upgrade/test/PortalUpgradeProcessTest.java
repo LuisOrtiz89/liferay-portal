@@ -50,10 +50,8 @@ public class PortalUpgradeProcessTest {
 
 	@BeforeClass
 	public static void setUpClass() throws SQLException {
-		try (Connection connection = DataAccess.getConnection()) {
-			_currentSchemaVersion =
-				PortalUpgradeProcess.getCurrentSchemaVersion(connection);
-		}
+		_currentSchemaVersion =
+			PortalUpgradeProcess.getCurrentSchemaVersion();
 	}
 
 	@Before
@@ -64,8 +62,6 @@ public class PortalUpgradeProcessTest {
 	@After
 	public void tearDown() throws Exception {
 		_updateSchemaVersion(_currentSchemaVersion);
-
-		_innerPortalUpgradeProcess.close();
 	}
 
 	@Test
@@ -297,14 +293,6 @@ public class PortalUpgradeProcessTest {
 
 	private static class InnerPortalUpgradeProcess
 		extends PortalUpgradeProcess {
-
-		public void close() throws SQLException {
-			connection.close();
-		}
-
-		private InnerPortalUpgradeProcess() throws SQLException {
-			connection = DataAccess.getConnection();
-		}
 
 	}
 
