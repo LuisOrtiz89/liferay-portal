@@ -87,10 +87,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 		DB db = DBManagerUtil.getDB();
 
-		if (connection == null) {
-			db.runSQL(dbTypeToSQLMap);
-		}
-		else {
+		try (Connection connection = getConnection()) {
 			db.runSQL(connection, dbTypeToSQLMap);
 		}
 	}
@@ -99,10 +96,7 @@ public abstract class BaseDBProcess implements DBProcess {
 	public void runSQL(String template) throws IOException, SQLException {
 		DB db = DBManagerUtil.getDB();
 
-		if (connection == null) {
-			db.runSQL(template);
-		}
-		else {
+		try (Connection connection = getConnection()) {
 			db.runSQL(connection, template);
 		}
 	}
@@ -111,10 +105,7 @@ public abstract class BaseDBProcess implements DBProcess {
 	public void runSQL(String[] templates) throws IOException, SQLException {
 		DB db = DBManagerUtil.getDB();
 
-		if (connection == null) {
-			db.runSQL(templates);
-		}
-		else {
+		try (Connection connection = getConnection()) {
 			db.runSQL(connection, templates);
 		}
 	}
@@ -171,22 +162,18 @@ public abstract class BaseDBProcess implements DBProcess {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
 			DB db = DBManagerUtil.getDB();
 
-			if (connection == null) {
-				db.runSQLTemplateString(template, failOnError);
-			}
-			else {
-				db.runSQLTemplateString(connection, template, failOnError);
-			}
+			db.runSQLTemplateString(template, failOnError);
 		}
 	}
 
-	protected void addIndexes(
-			Connection connection, List<IndexMetadata> indexMetadatas)
+	protected void addIndexes(List<IndexMetadata> indexMetadatas)
 		throws IOException, SQLException {
 
 		DB db = DBManagerUtil.getDB();
 
-		db.addIndexes(connection, indexMetadatas);
+		try (Connection connection = getConnection()) {
+			db.addIndexes(connection, indexMetadatas);
+		}
 	}
 
 	protected void alterColumnName(
@@ -195,8 +182,10 @@ public abstract class BaseDBProcess implements DBProcess {
 
 		DB db = DBManagerUtil.getDB();
 
-		db.alterColumnName(
-			connection, tableName, oldColumnName, newColumnDefinition);
+		try (Connection connection = getConnection()) {
+			db.alterColumnName(
+				connection, tableName, oldColumnName, newColumnDefinition);
+		}
 	}
 
 	protected void alterColumnType(
@@ -205,7 +194,10 @@ public abstract class BaseDBProcess implements DBProcess {
 
 		DB db = DBManagerUtil.getDB();
 
-		db.alterColumnType(connection, tableName, columnName, newColumnType);
+		try (Connection connection = getConnection()) {
+			db.alterColumnType(
+				connection, tableName, columnName, newColumnType);
+		}
 	}
 
 	protected void alterTableAddColumn(
@@ -214,7 +206,10 @@ public abstract class BaseDBProcess implements DBProcess {
 
 		DB db = DBManagerUtil.getDB();
 
-		db.alterTableAddColumn(connection, tableName, columnName, columnType);
+		try (Connection connection = getConnection()) {
+			db.alterTableAddColumn(
+				connection, tableName, columnName, columnType);
+		}
 	}
 
 	protected void alterTableDropColumn(String tableName, String columnName)
@@ -222,7 +217,9 @@ public abstract class BaseDBProcess implements DBProcess {
 
 		DB db = DBManagerUtil.getDB();
 
-		db.alterTableDropColumn(connection, tableName, columnName);
+		try (Connection connection = getConnection()) {
+			db.alterTableDropColumn(connection, tableName, columnName);
+		}
 	}
 
 	protected void alterTableName(String tableName, String newTableName)
@@ -235,9 +232,12 @@ public abstract class BaseDBProcess implements DBProcess {
 	}
 
 	protected boolean doHasTable(String tableName) throws Exception {
-		DBInspector dbInspector = new DBInspector(connection);
+		try (Connection connection = getConnection()) {
 
-		return dbInspector.hasTable(tableName, true);
+			DBInspector dbInspector = new DBInspector(connection);
+
+			return dbInspector.hasTable(tableName, true);
+		}
 	}
 
 	protected List<IndexMetadata> dropIndexes(
@@ -246,18 +246,17 @@ public abstract class BaseDBProcess implements DBProcess {
 
 		DB db = DBManagerUtil.getDB();
 
-		return db.dropIndexes(connection, tableName, columnName);
+		try (Connection connection = getConnection()) {
+			return db.dropIndexes(connection, tableName, columnName);
+		}
 	}
 
 	protected void dropTable(String tableName) throws Exception {
 		runSQL("DROP_TABLE_IF_EXISTS(" + tableName + ")");
 	}
 
-	protected Connection getConnection() throws Exception {
-		return (Connection)ProxyUtil.newProxyInstance(
-			ClassLoader.getSystemClassLoader(),
-			new Class<?>[] {Connection.class},
-			new ConnectionThreadProxyInvocationHandler());
+	protected Connection getConnection() {
+		return _getConnection();
 	}
 
 	protected String[] getPrimaryKeyColumnNames(
@@ -272,26 +271,35 @@ public abstract class BaseDBProcess implements DBProcess {
 	protected boolean hasColumn(String tableName, String columnName)
 		throws Exception {
 
-		DBInspector dbInspector = new DBInspector(connection);
+		try (Connection connection = getConnection()) {
 
-		return dbInspector.hasColumn(tableName, columnName);
+			DBInspector dbInspector = new DBInspector(connection);
+
+			return dbInspector.hasColumn(tableName, columnName);
+		}
 	}
 
 	protected boolean hasColumnType(
 			String tableName, String columnName, String columnType)
 		throws Exception {
 
-		DBInspector dbInspector = new DBInspector(connection);
+		try (Connection connection = getConnection()) {
 
-		return dbInspector.hasColumnType(tableName, columnName, columnType);
+			DBInspector dbInspector = new DBInspector(connection);
+
+			return dbInspector.hasColumnType(tableName, columnName, columnType);
+		}
 	}
 
 	protected boolean hasIndex(String tableName, String indexName)
 		throws Exception {
 
-		DBInspector dbInspector = new DBInspector(connection);
+		try (Connection connection = getConnection()) {
 
-		return dbInspector.hasIndex(tableName, indexName);
+			DBInspector dbInspector = new DBInspector(connection);
+
+			return dbInspector.hasIndex(tableName, indexName);
+		}
 	}
 
 	protected boolean hasRows(Connection connection, String tableName) {
@@ -301,13 +309,19 @@ public abstract class BaseDBProcess implements DBProcess {
 	}
 
 	protected boolean hasRows(String tableName) throws Exception {
-		return hasRows(connection, tableName);
+
+		try (Connection connection = getConnection()) {
+			return hasRows(connection, tableName);
+		}
 	}
 
 	protected boolean hasTable(String tableName) throws Exception {
-		DBInspector dbInspector = new DBInspector(connection);
+		try (Connection connection = getConnection()) {
 
-		return dbInspector.hasTable(tableName);
+			DBInspector dbInspector = new DBInspector(connection);
+
+			return dbInspector.hasTable(tableName);
+		}
 	}
 
 	protected void process(UnsafeConsumer<Long, Exception> unsafeConsumer)
@@ -328,7 +342,8 @@ public abstract class BaseDBProcess implements DBProcess {
 		int fetchSize = GetterUtil.getInteger(
 			PropsUtil.get(PropsKeys.UPGRADE_CONCURRENT_FETCH_SIZE));
 
-		try (Statement statement = connection.createStatement()) {
+		try ( Connection connection = getConnection();
+			  Statement statement = connection.createStatement()) {
 			statement.setFetchSize(fetchSize);
 
 			try (ResultSet resultSet = statement.executeQuery(sqlQuery)) {
@@ -368,10 +383,11 @@ public abstract class BaseDBProcess implements DBProcess {
 	protected void removePrimaryKey(String tableName) throws Exception {
 		DB db = DBManagerUtil.getDB();
 
-		db.removePrimaryKey(connection, tableName);
-	}
+		try (Connection connection = getConnection()) {
 
-	protected Connection connection;
+			db.removePrimaryKey(connection, tableName);
+		}
+	}
 
 	private Connection _getConnection() {
 		try {
@@ -488,71 +504,5 @@ public abstract class BaseDBProcess implements DBProcess {
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(BaseDBProcess.class);
-
-	private class ConnectionThreadProxyInvocationHandler
-		implements InvocationHandler {
-
-		@Override
-		public Object invoke(Object proxy, Method method, Object[] args)
-			throws Throwable {
-
-			String methodName = method.getName();
-
-			if (methodName.equals("close")) {
-				Collection<Connection> connections = _connectionMap.values();
-
-				Iterator<Connection> iterator = connections.iterator();
-
-				while (iterator.hasNext()) {
-					Connection connection = iterator.next();
-
-					iterator.remove();
-
-					method.invoke(connection, args);
-				}
-
-				return null;
-			}
-
-			try {
-				return method.invoke(
-					_connectionMap.computeIfAbsent(
-						Thread.currentThread(), thread -> _getConnection()),
-					args);
-			}
-			catch (Throwable throwable) {
-
-				_log.warn("Captured the throwable");
-
-				Connection connection = _connectionMap.computeIfAbsent(
-					Thread.currentThread(), thread -> _getConnection());
-
-				if (!connection.isValid(0)) {
-					_log.warn("Connections is not valid");
-					try {
-						_connectionMap.remove(Thread.currentThread());
-
-						connection.close();
-					}
-					catch (SQLException sqlException) {
-						_log.warn("Captured exception when closing");
-					}
-
-					_log.warn("Trying to invoke again");
-					return method.invoke(
-						_connectionMap.computeIfAbsent(
-							Thread.currentThread(), thread -> _getConnection()),
-						args);
-				}
-
-				_log.warn("Rethrowing the throwable");
-				throw throwable;
-			}
-		}
-
-		private final Map<Thread, Connection> _connectionMap =
-			new ConcurrentHashMap<>();
-
-	}
 
 }
