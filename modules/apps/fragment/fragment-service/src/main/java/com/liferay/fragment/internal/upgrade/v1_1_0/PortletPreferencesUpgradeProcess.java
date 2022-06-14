@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -55,13 +56,14 @@ public class PortletPreferencesUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _computeControlPanelPlids() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select Layout.plid, Group_.groupKey from Layout inner ",
 					"join Group_ on Layout.groupId = Group_.groupId where ",
 					"Layout.type_ = '", LayoutConstants.TYPE_CONTROL_PANEL,
 					"'"));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				String groupKey = resultSet.getString("groupKey");
@@ -94,7 +96,8 @@ public class PortletPreferencesUpgradeProcess extends UpgradeProcess {
 
 		Map<Long, Long> portletPreferencesMap = new HashMap<>();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select PortletPreferences.portletPreferencesId, ",
 					"PortletPreferences.plid from PortletPreferences inner ",
@@ -124,7 +127,8 @@ public class PortletPreferencesUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradePortletPreferences() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select groupId, companyId, classPK, namespace from " +
 					"FragmentEntryLink");
 			PreparedStatement preparedStatement2 =

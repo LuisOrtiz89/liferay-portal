@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.model.UserGroupGroupRole;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,68 +32,70 @@ public class UpgradeUserGroupGroupRole extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		DatabaseMetaData databaseMetaData = connection.getMetaData();
+		try (Connection connection = getConnection()) {
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-		DBInspector dbInspector = new DBInspector(connection);
+			DBInspector dbInspector = new DBInspector(connection);
 
-		String normalizedTableName = dbInspector.normalizeName(
-			"UserGroupGroupRole", databaseMetaData);
+			String normalizedTableName = dbInspector.normalizeName(
+				"UserGroupGroupRole", databaseMetaData);
 
-		try (ResultSet resultSet = databaseMetaData.getColumns(
+			try (ResultSet resultSet = databaseMetaData.getColumns(
 				dbInspector.getCatalog(), dbInspector.getSchema(),
 				normalizedTableName,
 				dbInspector.normalizeName(
 					"userGroupGroupRoleId", databaseMetaData))) {
 
-			if (resultSet.next()) {
-				return;
+				if (resultSet.next()) {
+					return;
+				}
 			}
-		}
 
-		removePrimaryKey("UserGroupGroupRole");
+			removePrimaryKey("UserGroupGroupRole");
 
-		runSQL(
-			"alter table UserGroupGroupRole add userGroupGroupRoleId LONG " +
+			runSQL(
+				"alter table UserGroupGroupRole add userGroupGroupRoleId LONG " +
 				"default 0 not null");
 
-		long userGroupGroupRoleId = 0;
+			long userGroupGroupRoleId = 0;
 
-		try (PreparedStatement selectPreparedStatement =
-				connection.prepareStatement(
-					"select userGroupId, groupId, roleId from " +
-						"UserGroupGroupRole");
-			PreparedStatement updatePreparedStatement =
-				AutoBatchPreparedStatementUtil.autoBatch(
-					connection.prepareStatement(
-						"update UserGroupGroupRole set userGroupGroupRoleId " +
-							"= ? where userGroupId = ? and groupId = ? and " +
-								"roleId = ?"));
-			ResultSet resultSet = selectPreparedStatement.executeQuery()) {
+			try (PreparedStatement selectPreparedStatement =
+					 connection.prepareStatement(
+						 "select userGroupId, groupId, roleId from " +
+						 "UserGroupGroupRole");
+				 PreparedStatement updatePreparedStatement =
+					 AutoBatchPreparedStatementUtil.autoBatch(
+						 connection.prepareStatement(
+							 "update UserGroupGroupRole set userGroupGroupRoleId " +
+							 "= ? where userGroupId = ? and groupId = ? and " +
+							 "roleId = ?"));
+				 ResultSet resultSet = selectPreparedStatement.executeQuery()) {
 
-			while (resultSet.next()) {
-				updatePreparedStatement.setLong(1, ++userGroupGroupRoleId);
-				updatePreparedStatement.setLong(2, resultSet.getLong(1));
-				updatePreparedStatement.setLong(3, resultSet.getLong(2));
-				updatePreparedStatement.setLong(4, resultSet.getLong(3));
+				while (resultSet.next()) {
+					updatePreparedStatement.setLong(1, ++userGroupGroupRoleId);
+					updatePreparedStatement.setLong(2, resultSet.getLong(1));
+					updatePreparedStatement.setLong(3, resultSet.getLong(2));
+					updatePreparedStatement.setLong(4, resultSet.getLong(3));
 
-				updatePreparedStatement.addBatch();
+					updatePreparedStatement.addBatch();
+				}
+
+				updatePreparedStatement.executeBatch();
 			}
 
-			updatePreparedStatement.executeBatch();
-		}
+			if (userGroupGroupRoleId > 0) {
+				runSQL(
+					StringBundler.concat(
+						"insert into Counter (name, currentId) values ('",
+						UserGroupGroupRole.class.getName(), "', ",
+						userGroupGroupRoleId, ")"));
+			}
 
-		if (userGroupGroupRoleId > 0) {
 			runSQL(
 				StringBundler.concat(
-					"insert into Counter (name, currentId) values ('",
-					UserGroupGroupRole.class.getName(), "', ",
-					userGroupGroupRoleId, ")"));
+					"alter table ", normalizedTableName,
+					" add primary key (userGroupGroupRoleId)"));
 		}
-
-		runSQL(
-			StringBundler.concat(
-				"alter table ", normalizedTableName,
-				" add primary key (userGroupGroupRoleId)"));
 	}
 
 }

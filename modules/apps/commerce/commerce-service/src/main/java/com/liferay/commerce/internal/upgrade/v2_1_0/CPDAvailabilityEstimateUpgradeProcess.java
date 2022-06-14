@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -49,11 +50,12 @@ public class CPDAvailabilityEstimateUpgradeProcess
 
 		_addIndexes(CPDAvailabilityEstimateModelImpl.TABLE_NAME);
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update CPDAvailabilityEstimate set CProductId = ? where " +
 					"CPDefinitionId = ?");
-			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				"select distinct CPDefinitionId from " +
 					"CPDAvailabilityEstimate")) {
 
@@ -108,16 +110,18 @@ public class CPDAvailabilityEstimateUpgradeProcess
 	private boolean _tableHasIndex(String tableName, String indexName)
 		throws Exception {
 
-		DatabaseMetaData metadata = connection.getMetaData();
+		try (Connection connection = getConnection()) {
+			DatabaseMetaData metadata = connection.getMetaData();
 
-		try (ResultSet resultSet = metadata.getIndexInfo(
+			try (ResultSet resultSet = metadata.getIndexInfo(
 				null, null, tableName, false, false)) {
 
-			while (resultSet.next()) {
-				String curIndexName = resultSet.getString("index_name");
+				while (resultSet.next()) {
+					String curIndexName = resultSet.getString("index_name");
 
-				if (Objects.equals(indexName, curIndexName)) {
-					return true;
+					if (Objects.equals(indexName, curIndexName)) {
+						return true;
+					}
 				}
 			}
 		}

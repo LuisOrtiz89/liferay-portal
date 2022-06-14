@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -37,14 +38,15 @@ public class ResourcePermissionUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _insertResourcePermissions() {
-		try (Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				StringBundler.concat(
 					"select mvccVersion, resourcePermissionId, companyId, ",
 					"scope, primKey, primKeyId, roleId, ownerId, actionIds, ",
 					"viewActionId from ResourcePermission where name = '",
 					LayoutAdminPortletKeys.GROUP_PAGES, "'"));
-			PreparedStatement preparedStatement =
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						StringBundler.concat(

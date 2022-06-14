@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.util.PropsValues;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -37,15 +38,16 @@ public class UpgradeCountry extends UpgradeProcess {
 		runSQLTemplate("update-7.3.0-7.4.0-country.sql", false);
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						"select countryId from Country where uuid_ is null");
-				PreparedStatement preparedStatement2 =
+				 PreparedStatement preparedStatement2 =
 					AutoBatchPreparedStatementUtil.autoBatch(
 						connection.prepareStatement(
 							"update Country set uuid_ = ? where countryId = " +
 								"?"));
-				ResultSet resultSet = preparedStatement1.executeQuery()) {
+				 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 				while (resultSet.next()) {
 					preparedStatement2.setString(1, PortalUUIDUtil.generate());
@@ -68,7 +70,8 @@ public class UpgradeCountry extends UpgradeProcess {
 			"User_.defaultUser = [$TRUE$] and Company.webId = ",
 			StringUtil.quote(PropsValues.COMPANY_DEFAULT_WEB_ID));
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(sql));
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 

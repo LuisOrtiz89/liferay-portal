@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -47,11 +48,12 @@ public class CPAttachmentFileEntryUpgradeProcess extends UpgradeProcess {
 			"select CPDefinition.groupId, CPDefinitionId from CPDefinition " +
 				"inner join CPAttachmentFileEntry on CPDefinitionId = classPK";
 
-		try (PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateCPAttachmentFileEntrySQL);
-			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(selectCPDefinitionSQL)) {
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(selectCPDefinitionSQL)) {
 
 			while (resultSet.next()) {
 				preparedStatement.setLong(1, resultSet.getLong("groupId"));

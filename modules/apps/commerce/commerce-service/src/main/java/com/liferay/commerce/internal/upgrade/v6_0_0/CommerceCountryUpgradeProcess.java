@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeException;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -39,7 +40,8 @@ public class CommerceCountryUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (Statement selectStatement = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement selectStatement = connection.createStatement()) {
 			ResultSet resultSet = selectStatement.executeQuery(
 				"select * from CommerceCountry where twoLettersISOCode is " +
 					"null or threeLettersISOCode is null or numericISOCode = " +
@@ -52,7 +54,8 @@ public class CommerceCountryUpgradeProcess extends UpgradeProcess {
 			}
 		}
 
-		try (Statement selectStatement = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement selectStatement = connection.createStatement()) {
 			ResultSet resultSet = selectStatement.executeQuery(
 				"select * from CommerceCountry order by commerceCountryId asc");
 

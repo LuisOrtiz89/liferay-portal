@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -151,14 +152,15 @@ public abstract class BaseUpgradePortletPreferences
 			rightTableName, StringPool.PERIOD, rightColumnName, sb.toString());
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(sql);
-				PreparedStatement preparedStatement2 =
+				 PreparedStatement preparedStatement2 =
 					AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 						connection,
 						"update PortletPreferences set preferences = ? where " +
 							"portletPreferencesId = ?");
-				ResultSet resultSet = preparedStatement1.executeQuery()) {
+				 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 				while (resultSet.next()) {
 					long companyId = resultSet.getLong("companyId");

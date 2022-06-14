@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -110,13 +111,14 @@ public class LayoutUpgradeProcess extends UpgradeProcess {
 		ServiceContext serviceContext = new ServiceContext();
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+			 Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				StringBundler.concat(
 					"select layoutPageTemplateEntryId, groupId, companyId, ",
 					"userId, name, type_, layoutPrototypeId, companyId from ",
 					"LayoutPageTemplateEntry where plid is null or plid = 0"));
-			PreparedStatement preparedStatement =
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"update LayoutPageTemplateEntry set plid = ? where " +

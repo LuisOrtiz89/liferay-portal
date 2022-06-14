@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.model.Region;
 import com.liferay.portal.kernel.service.RegionLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -35,7 +36,8 @@ public class CommerceRegionUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (Statement selectStatement = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement selectStatement = connection.createStatement()) {
 			ResultSet resultSet = selectStatement.executeQuery(
 				"select * from CommerceRegion order by commerceRegionId asc");
 

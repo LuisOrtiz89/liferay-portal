@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -87,7 +88,8 @@ public abstract class BaseUpgradeResourceBlock extends UpgradeProcess {
 	}
 
 	private void _removeResourceBlocks(String className) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from ResourceTypePermission where name = ?")) {
 
 			preparedStatement.setString(1, className);
@@ -95,7 +97,8 @@ public abstract class BaseUpgradeResourceBlock extends UpgradeProcess {
 			preparedStatement.executeUpdate();
 		}
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					"select resourceBlockId from ResourceBlock where name = " +
 						"?")) {
@@ -121,7 +124,8 @@ public abstract class BaseUpgradeResourceBlock extends UpgradeProcess {
 			}
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from ResourceBlock where name = ?")) {
 
 			preparedStatement.setString(1, className);
@@ -133,7 +137,8 @@ public abstract class BaseUpgradeResourceBlock extends UpgradeProcess {
 	private void _upgradeCompanyScopePermissions(String className)
 		throws Exception {
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					SQLTransformer.transform(
 						StringBundler.concat(
@@ -172,7 +177,8 @@ public abstract class BaseUpgradeResourceBlock extends UpgradeProcess {
 	private void _upgradeGroupScopePermissions(String className)
 		throws Exception {
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					SQLTransformer.transform(
 						"select companyId, groupId, roleId, actionIds from " +
@@ -206,7 +212,8 @@ public abstract class BaseUpgradeResourceBlock extends UpgradeProcess {
 	private void _upgradeGroupTemplateScopePermissions(String className)
 		throws Exception {
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					SQLTransformer.transform(
 						StringBundler.concat(
@@ -276,7 +283,8 @@ public abstract class BaseUpgradeResourceBlock extends UpgradeProcess {
 		sb.append("(ResourceBlockPermission.resourceBlockId = ResourceBlock.");
 		sb.append("resourceBlockId) where ResourceBlock.name = ?");
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					SQLTransformer.transform(sb.toString()))) {
 

@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 
@@ -97,7 +98,8 @@ public class LayoutPrototypeUpgradeProcess extends UpgradeProcess {
 		Date date = new Date(System.currentTimeMillis());
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement =
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(

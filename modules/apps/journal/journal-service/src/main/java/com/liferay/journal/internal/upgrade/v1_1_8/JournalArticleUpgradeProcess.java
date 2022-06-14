@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -34,7 +35,9 @@ public class JournalArticleUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (
+			Connection connection = getConnection();
+			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select id_, content from JournalArticle where content like " +
 					"?")) {
 

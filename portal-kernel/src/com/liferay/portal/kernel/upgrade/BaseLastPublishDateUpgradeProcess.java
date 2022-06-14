@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -55,7 +56,8 @@ public abstract class BaseLastPublishDateUpgradeProcess extends UpgradeProcess {
 	}
 
 	protected Date getLayoutSetLastPublishDate(long groupId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select settings_ from LayoutSet where groupId = ?")) {
 
 			preparedStatement.setLong(1, groupId);
@@ -88,7 +90,8 @@ public abstract class BaseLastPublishDateUpgradeProcess extends UpgradeProcess {
 		throws Exception {
 
 		if (!hasColumn("PortletPreferences", "preferences")) {
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select PortletPreferenceValue.smallValue from ",
@@ -122,7 +125,8 @@ public abstract class BaseLastPublishDateUpgradeProcess extends UpgradeProcess {
 			return null;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select preferences from PortletPreferences where plid = ? " +
 					"and ownerType = ? and ownerId = ? and portletId = ?")) {
 
@@ -161,7 +165,8 @@ public abstract class BaseLastPublishDateUpgradeProcess extends UpgradeProcess {
 	}
 
 	protected List<Long> getStagedGroupIds() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId from Group_ where typeSettings like " +
 					"'%staged=true%'");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -207,7 +212,8 @@ public abstract class BaseLastPublishDateUpgradeProcess extends UpgradeProcess {
 			long groupId, String tableName, Date lastPublishDate)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"update ", tableName, " set lastPublishDate = ? where ",
 					"groupId = ?"))) {

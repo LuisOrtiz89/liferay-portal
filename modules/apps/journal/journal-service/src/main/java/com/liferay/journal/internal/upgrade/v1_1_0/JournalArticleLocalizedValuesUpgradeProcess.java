@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -167,7 +168,7 @@ public class JournalArticleLocalizedValuesUpgradeProcess
 							LocalizationUtil.getDefaultLanguageId(
 								columnValue, defaultSiteLocale);
 
-						try {
+						try (Connection connection = getConnection()) {
 							runSQL(
 								connection,
 								StringBundler.concat(
@@ -233,7 +234,8 @@ public class JournalArticleLocalizedValuesUpgradeProcess
 					locales.addAll(titleMap.keySet());
 					locales.addAll(descriptionMap.keySet());
 
-					try (PreparedStatement updatePreparedStatement =
+					try (Connection connection = getConnection();
+						 PreparedStatement updatePreparedStatement =
 							AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 								connection, sql)) {
 

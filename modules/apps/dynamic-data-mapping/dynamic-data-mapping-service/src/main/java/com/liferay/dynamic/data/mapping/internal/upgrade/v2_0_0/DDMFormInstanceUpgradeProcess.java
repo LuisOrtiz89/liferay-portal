@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -78,7 +79,8 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 			"com.liferay.dynamic.data.lists",
 			"com.liferay.dynamic.data.mapping");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDLRecordSet.*, TEMP_TABLE.structureVersionId ",
 					"from DDLRecordSet inner join (select structureId, ",
@@ -87,8 +89,8 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 					"DDMStructureVersion.structureId) TEMP_TABLE on ",
 					"DDLRecordSet.DDMStructureId = TEMP_TABLE.structureId ",
 					"where scope = 2"));
-			ResultSet resultSet = preparedStatement1.executeQuery();
-			PreparedStatement preparedStatement2 =
+			 ResultSet resultSet = preparedStatement1.executeQuery();
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(
@@ -209,7 +211,8 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 
 		_deleteStructureStructureLinks(ddmStructureId);
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from DDLRecordSet where recordSetId = ?")) {
 
 			preparedStatement.setLong(1, recordSetId);
@@ -221,7 +224,8 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 	private void _deleteStructureStructureLinks(long ddmStructureId)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from DDMStructureLink where structureId = ?")) {
 
 			preparedStatement.setLong(1, ddmStructureId);
@@ -280,7 +284,8 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateDDMStructure(long ddmStructureId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update DDMStructure set classNameId = ? where structureId = " +
 					"?")) {
 
@@ -295,7 +300,8 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateDDMStructureLink(long ddmStructureId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update DDMStructureLink set classNameId = ? where " +
 					"structureId = ?")) {
 
@@ -310,7 +316,8 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateWorkflowDefinitionLink() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update WorkflowDefinitionLink set classNameId = ? where " +
 					"classNameId = ?")) {
 
@@ -334,7 +341,8 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 			Timestamp statusDate)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement2 =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(

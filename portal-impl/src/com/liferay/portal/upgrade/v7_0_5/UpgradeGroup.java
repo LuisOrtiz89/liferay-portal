@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 
 import java.io.Serializable;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,7 +43,8 @@ public class UpgradeGroup extends UpgradeProcess {
 
 	protected void updateParentGroup() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select stagingGroup_.groupId, ",
@@ -52,15 +54,15 @@ public class UpgradeGroup extends UpgradeProcess {
 							"where (stagingGroup_.remoteStagingGroupCount = ",
 							"0) and (liveGroup_.parentGroupId != ",
 							"stagingGroup_.parentGroupId)"));
-				PreparedStatement preparedStatement2 =
+				 PreparedStatement preparedStatement2 =
 					connection.prepareStatement(
 						"select treePath from Group_ where groupId = ?");
-				PreparedStatement preparedStatement3 =
+				 PreparedStatement preparedStatement3 =
 					AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 						connection,
 						"update Group_ set parentGroupId = ?, treePath = ? " +
 							"where groupId = ?");
-				ResultSet resultSet1 = preparedStatement1.executeQuery()) {
+				 ResultSet resultSet1 = preparedStatement1.executeQuery()) {
 
 				while (resultSet1.next()) {
 					long groupId = resultSet1.getLong(1);

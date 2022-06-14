@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -34,11 +35,12 @@ public class CPDefinitionGroupedEntryUpgradeProcess extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		_addColumn("CPDefinitionGroupedEntry", "entryCProductId", "LONG");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update CPDefinitionGroupedEntry set entryCProductId = ? " +
 					"where entryCPDefinitionId = ?");
-			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				"select * from CPDefinitionGroupedEntry")) {
 
 			while (resultSet.next()) {
@@ -107,7 +109,8 @@ public class CPDefinitionGroupedEntryUpgradeProcess extends UpgradeProcess {
 	}
 
 	private long _getCProductId(long cpDefinitionId) throws Exception {
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(
 				"select CProductId from CPDefinition where CPDefinitionId = " +
 					cpDefinitionId)) {

@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -103,8 +104,9 @@ public class LayoutPageTemplateEntryUpgradeProcess extends UpgradeProcess {
 		Set<String> layoutPageTemplateEntryKeys = _columnUniqueValues.get(
 			"layoutPageTemplateEntryKey");
 
-		try (Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				"select distinct layoutPageTemplateEntryKey, name from " +
 					"LayoutPageTemplateEntry")) {
 
@@ -150,7 +152,8 @@ public class LayoutPageTemplateEntryUpgradeProcess extends UpgradeProcess {
 	private void _upgradeLayoutPageTemplateEntryNameAndKey() throws Exception {
 		_loadDistinctKeysAndNames();
 
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(
 				"select layoutPageTemplateEntryId, " +
 					"layoutPageTemplateEntryKey, layoutPrototypeId, name " +

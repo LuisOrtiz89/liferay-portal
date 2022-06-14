@@ -20,6 +20,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -55,9 +56,10 @@ public class ResourcePermissionUpgradeProcess extends UpgradeProcess {
 		String oldCompositeModelName = _getOldCompositeModelName(
 			ddmModelClassName);
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"update ResourcePermission set name = ? where name = ?");
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"update ResourcePermission set primKey = ? where primKey = " +
 					"?")) {
 

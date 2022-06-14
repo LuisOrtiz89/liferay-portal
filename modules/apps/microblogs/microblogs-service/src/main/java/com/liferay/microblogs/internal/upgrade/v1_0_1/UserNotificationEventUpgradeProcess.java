@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -38,7 +39,8 @@ public class UserNotificationEventUpgradeProcess extends UpgradeProcess {
 			long userNotificationEventId, JSONObject jsonObject)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update UserNotificationEvent set payload = ? where " +
 					"userNotificationEventId = ?")) {
 
@@ -51,6 +53,7 @@ public class UserNotificationEventUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeNotifications() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select userNotificationEventId, payload from " +
 					"UserNotificationEvent where type_ = ?")) {

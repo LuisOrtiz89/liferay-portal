@@ -31,6 +31,7 @@ import com.liferay.segments.criteria.Criteria;
 import com.liferay.segments.criteria.CriteriaSerializer;
 import com.liferay.segments.service.SegmentsEntryLocalService;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -110,7 +111,8 @@ public class ContentTargetingUpgradeProcess extends UpgradeProcess {
 	private String _getCriteria(long userSegmentId) throws Exception {
 		Criteria criteria = new Criteria();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId, ruleKey, typeSettings from " +
 					"CT_RuleInstance where userSegmentId = ?")) {
 
@@ -146,6 +148,7 @@ public class ContentTargetingUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeContentTargetingUserSegments() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select * from CT_UserSegment");
 			ResultSet resultSet = preparedStatement1.executeQuery()) {

@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -109,7 +110,8 @@ public class CalendarResourceUpgradeProcess extends UpgradeProcess {
 	private void _updateCalendarUserId(long calendarId, long userId)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Calendar set userId = ? where calendarId = ?")) {
 
 			preparedStatement.setLong(1, userId);
@@ -123,7 +125,8 @@ public class CalendarResourceUpgradeProcess extends UpgradeProcess {
 			long groupClassNameId, long defaultUserId, long adminUserId)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select Calendar.calendarId from Calendar join ",
 					"CalendarResource on Calendar.calendarResourceId = ",
@@ -148,7 +151,8 @@ public class CalendarResourceUpgradeProcess extends UpgradeProcess {
 			long groupClassNameId, long defaultUserId, long companyAdminUserId)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update CalendarResource set userId = ? where userId = ? and " +
 					"classNameId = ?")) {
 

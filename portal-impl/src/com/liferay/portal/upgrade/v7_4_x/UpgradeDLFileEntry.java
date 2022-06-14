@@ -17,6 +17,7 @@ package com.liferay.portal.upgrade.v7_4_x;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -45,12 +46,13 @@ public class UpgradeDLFileEntry extends UpgradeProcess {
 	}
 
 	private void _populateExternalReferenceCode() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select fileEntryId from DLFileEntry where " +
 					"externalReferenceCode is null or externalReferenceCode " +
 						"= ''");
-			ResultSet resultSet = preparedStatement1.executeQuery();
-			PreparedStatement preparedStatement2 =
+			 ResultSet resultSet = preparedStatement1.executeQuery();
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"update DLFileEntry set externalReferenceCode = ? " +

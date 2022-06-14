@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import java.io.File;
 import java.io.IOException;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -59,17 +60,18 @@ public class BlogsImagesUpgradeProcess extends UpgradeProcess {
 			alterColumnType("BlogsEntry", "smallImageId", "LONG null");
 		}
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				SQLTransformer.transform(
 					"select entryId, groupId, companyId, userId, " +
 						"smallImageId from BlogsEntry where smallImage = " +
 							"[$TRUE$] and smallImageId != 0"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"update BlogsEntry set smallImageFileEntryId = ?, " +
 							"smallImageId = 0 where entryId = ?"));
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				long smallImageId = resultSet.getLong("smallImageId");

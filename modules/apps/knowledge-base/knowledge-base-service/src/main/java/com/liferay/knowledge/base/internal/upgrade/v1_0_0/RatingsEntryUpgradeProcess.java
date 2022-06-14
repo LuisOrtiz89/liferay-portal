@@ -17,6 +17,7 @@ package com.liferay.knowledge.base.internal.upgrade.v1_0_0;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -31,7 +32,8 @@ public class RatingsEntryUpgradeProcess extends UpgradeProcess {
 	}
 
 	protected long getClassNameId(String className) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select classNameId from ClassName_ where value = ?")) {
 
 			preparedStatement.setString(1, className);
@@ -47,7 +49,8 @@ public class RatingsEntryUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateRatingsEntries() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select entryId, score from RatingsEntry where classNameId = " +
 					getClassNameId(_CLASS_NAME_ARTICLE));
 			ResultSet resultSet = preparedStatement.executeQuery()) {

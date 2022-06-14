@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -92,7 +93,8 @@ public abstract class BaseReplacePortletId extends BasePortletIdUpgradeProcess {
 	}
 
 	protected boolean hasRow(String sql, String value) throws SQLException {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement.setString(1, value);
@@ -126,7 +128,8 @@ public abstract class BaseReplacePortletId extends BasePortletIdUpgradeProcess {
 		throws Exception {
 
 		if (hasResourceAction(newName)) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select RA1.resourceActionId from ResourceAction ",
@@ -170,7 +173,8 @@ public abstract class BaseReplacePortletId extends BasePortletIdUpgradeProcess {
 		throws Exception {
 
 		if (hasResourcePermission(newRootPortletId)) {
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"delete from ResourcePermission where name = ?")) {
 
@@ -188,7 +192,8 @@ public abstract class BaseReplacePortletId extends BasePortletIdUpgradeProcess {
 	private void _deleteConflictingPreferences(String orClauses)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select PP1.portletPreferencesId from PortletPreferences ",
 					"PP1 inner join PortletPreferences PP2 on PP1.plid = ",

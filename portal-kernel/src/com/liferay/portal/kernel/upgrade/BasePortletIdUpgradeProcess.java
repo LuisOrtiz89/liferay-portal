@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -130,7 +131,7 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 		return typeSettingsUnicodeProperties.toString();
 	}
 
-	protected String[][] getRenamePortletIdsArray() {
+	protected String[][] getRenamePortletIdsArray() throws SQLException {
 		return new String[0][0];
 	}
 
@@ -162,12 +163,13 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 
 		String sql2 = "update Group_ set typeSettings = ? where groupId = ?";
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				sql1);
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, sql2);
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				String typeSettings = resultSet.getString("typeSettings");
@@ -291,7 +293,8 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 				"update PortletPreferenceValue set largeValue = ?, " +
 					"smallValue = ? where portletPreferenceValueId = ?";
 
-			try (PreparedStatement selectPreparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement selectPreparedStatement =
 					connection.prepareStatement(selectSQL);
 				PreparedStatement updatePreparedStatement =
 					AutoBatchPreparedStatementUtil.autoBatch(
@@ -347,7 +350,8 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 	protected void updateLayout(long plid, String typeSettings)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Layout set typeSettings = ? where plid = " + plid)) {
 
 			preparedStatement.setString(1, typeSettings);
@@ -365,7 +369,8 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 			long plid, String oldPortletId, String newPortletId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select typeSettings from Layout where plid = " + plid);
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -395,7 +400,8 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 			"update LayoutRevision set typeSettings = ? where " +
 				"layoutRevisionId = " + layoutRevisionId;
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement.setString(1, typeSettings);
@@ -421,7 +427,8 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 			"update LayoutRevision set typeSettings = ? where " +
 				"layoutRevisionId = ?";
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				sql1);
 			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
@@ -459,7 +466,8 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 				getTypeSettingsCriteria(oldRootPortletId);
 		String sql2 = "update Layout set typeSettings = ? where plid = ?";
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				sql1);
 			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
@@ -538,7 +546,8 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 
 		List<String> actionIds = new ArrayList<>();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select actionId from ResourceAction where name = '" + newName +
 					"'");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -710,7 +719,8 @@ public abstract class BasePortletIdUpgradeProcess extends UpgradeProcess {
 			return;
 		}
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select fragmentEntryLinkId, editableValues from ",
 					"FragmentEntryLink where editableValues like '%",

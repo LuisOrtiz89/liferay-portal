@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 
@@ -140,22 +141,24 @@ public abstract class BaseCommerceProductServiceUpgradeProcess
 	protected boolean tableHasIndex(String tableName, String indexName)
 		throws Exception {
 
-		DatabaseMetaData metadata = connection.getMetaData();
+		try (Connection connection = getConnection() ) {
+			DatabaseMetaData metadata = connection.getMetaData();
 
-		try (ResultSet resultSet = metadata.getIndexInfo(
+			try (ResultSet resultSet = metadata.getIndexInfo(
 				null, null, tableName, false, false)) {
 
-			while (resultSet.next()) {
-				String curIndexName = resultSet.getString("index_name");
+				while (resultSet.next()) {
+					String curIndexName = resultSet.getString("index_name");
 
-				if (Objects.equals(indexName, curIndexName)) {
-					return true;
+					if (Objects.equals(indexName, curIndexName)) {
+						return true;
+					}
 				}
 			}
-		}
-		catch (Exception exception) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(exception);
+			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(exception);
+				}
 			}
 		}
 

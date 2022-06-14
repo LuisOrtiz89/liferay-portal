@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 
@@ -120,7 +121,8 @@ public class DLFileEntryTypeDataDefinitionIdUpgradeProcess
 			String name)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMStructure (mvccVersion, ctCollectionId, ",
 					"uuid_, structureId, groupId, companyId, userId, ",
@@ -169,7 +171,8 @@ public class DLFileEntryTypeDataDefinitionIdUpgradeProcess
 			long ddmStructureId, String name, long ddmStructureVersionId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMStructureLayout (mvccVersion, ",
 					"ctCollectionId, uuid_, structureLayoutId, groupId, ",
@@ -209,7 +212,8 @@ public class DLFileEntryTypeDataDefinitionIdUpgradeProcess
 			long ddmStructureId, String name)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMStructureVersion (mvccVersion, ",
 					"ctCollectionId, structureVersionId, groupId, companyId, ",

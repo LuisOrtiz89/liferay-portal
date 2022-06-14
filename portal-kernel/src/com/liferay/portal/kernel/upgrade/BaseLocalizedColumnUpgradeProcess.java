@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.upgrade.util.UpgradeProcessUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -112,7 +113,8 @@ public abstract class BaseLocalizedColumnUpgradeProcess extends UpgradeProcess {
 			"update ", tableName, " set ", columnName, " = ? where ",
 			columnName, " like ? and companyId = ?");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement.setString(1, localizationXML);

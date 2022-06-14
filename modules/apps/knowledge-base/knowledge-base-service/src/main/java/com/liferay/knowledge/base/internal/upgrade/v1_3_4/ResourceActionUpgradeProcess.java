@@ -18,6 +18,7 @@ import com.liferay.knowledge.base.constants.KBActionKeys;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -42,7 +43,8 @@ public class ResourceActionUpgradeProcess extends UpgradeProcess {
 	}
 
 	private boolean _hasViewFeedbackResourceAction() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select count(*) from ResourceAction where actionId = ?")) {
 
 			preparedStatement.setString(1, _ACTION_ID_VIEW_KB_FEEDBACK);

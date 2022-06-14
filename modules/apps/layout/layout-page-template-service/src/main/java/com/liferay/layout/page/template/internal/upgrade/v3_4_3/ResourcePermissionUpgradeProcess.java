@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -104,7 +105,8 @@ public class ResourcePermissionUpgradeProcess extends UpgradeProcess {
 	}
 
 	private long _getLayoutPageTemplateEntryId(long layoutPrototypeId) {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select layoutPageTemplateEntryId from ",
 					"LayoutPageTemplateEntry where layoutPrototypeId = ? ",

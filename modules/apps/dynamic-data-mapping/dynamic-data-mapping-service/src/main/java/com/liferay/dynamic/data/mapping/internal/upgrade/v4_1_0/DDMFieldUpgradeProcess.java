@@ -47,6 +47,7 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -96,7 +97,8 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 				"smallAttributeValue VARCHAR(255) null, primary key ",
 				"(fieldAttributeId, ctCollectionId))"));
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select DDMContent.contentId, DDMContent.companyId, ",
@@ -113,7 +115,7 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 						"DDMStorageLink.ctCollectionId = 0 and ",
 						"DDMStructureVersion.ctCollectionId = 0 and ",
 						"DDMStructure.ctCollectionId = 0"));
-			PreparedStatement insertDDMFieldPreparedStatement =
+			 PreparedStatement insertDDMFieldPreparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						StringBundler.concat(
@@ -123,7 +125,7 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 							"fieldName, fieldType, instanceId, localizable, ",
 							"priority) values (0, 0, ?, ?, ?, ?, ?, ?, ?, ?, ",
 							"?, ?)")));
-			PreparedStatement insertDDMFieldAttributePreparedStatement =
+			 PreparedStatement insertDDMFieldAttributePreparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						StringBundler.concat(
@@ -132,12 +134,12 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 							"fieldId, storageId, attributeName, languageId, ",
 							"largeAttributeValue, smallAttributeValue) values ",
 							"(0, 0, ?, ?, ?, ?, ?, ?, ?, ?)")));
-			PreparedStatement deleteDDMContentPreparedStatement =
+			 PreparedStatement deleteDDMContentPreparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"delete from DDMContent where contentId = ? and " +
 							"ctCollectionId = 0"));
-			ResultSet resultSet = selectPreparedStatement.executeQuery()) {
+			 ResultSet resultSet = selectPreparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				_upgradeDDMContent(
@@ -170,7 +172,8 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 			"update DDMStructureVersion set storageType = 'default' where " +
 				"storageType = 'json'");
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					"select formInstanceId, settings_ from DDMFormInstance " +
 						"where ctCollectionId = 0");
@@ -316,7 +319,8 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 			return ddmForm;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select definition from DDMStructure where structureId = ? " +
 					"and ctCollectionId = 0")) {
 
@@ -349,7 +353,8 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 			return fullHierarchyDDMForm;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select parentStructureId from DDMStructure where " +
 					"structureId = ? and ctCollectionId = 0")) {
 

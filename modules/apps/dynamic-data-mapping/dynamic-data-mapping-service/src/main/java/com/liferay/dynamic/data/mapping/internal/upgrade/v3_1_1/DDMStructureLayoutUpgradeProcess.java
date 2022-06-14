@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -38,10 +39,11 @@ public class DDMStructureLayoutUpgradeProcess extends UpgradeProcess {
 	private void _populateFields() throws Exception {
 		long classNameId = PortalUtil.getClassNameId(DDMStructure.class);
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select structureLayoutId from DDMStructureLayout where " +
 					"structureLayoutKey is null or structureLayoutKey = ''");
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(

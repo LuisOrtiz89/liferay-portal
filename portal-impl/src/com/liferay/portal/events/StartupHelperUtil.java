@@ -166,8 +166,7 @@ public class StartupHelperUtil {
 			}
 
 			Version currentSchemaVersion =
-				PortalUpgradeProcess.getCurrentSchemaVersion(
-					DataAccess.getConnection());
+				PortalUpgradeProcess.getCurrentSchemaVersion();
 
 			Version requiredSchemaVersion =
 				PortalUpgradeProcess.getRequiredSchemaVersion();

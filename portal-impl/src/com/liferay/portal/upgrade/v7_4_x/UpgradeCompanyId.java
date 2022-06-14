@@ -144,7 +144,8 @@ public class UpgradeCompanyId extends BaseCompanyIdUpgradeProcess {
 
 			List<Long> companyIds = new ArrayList<>();
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"select distinct companyId from " + foreignTableName);
 				ResultSet resultSet = preparedStatement.executeQuery()) {

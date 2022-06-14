@@ -22,6 +22,7 @@ import com.liferay.portal.dao.orm.common.SQLTransformer;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeException;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -53,9 +54,11 @@ public class CommerceAddressUpgradeProcess
 		PreparedStatement preparedStatement = null;
 
 		if (hasColumn(CommerceAddressModelImpl.TABLE_NAME, "defaultBilling")) {
-			preparedStatement = connection.prepareStatement(
-				"update CommerceAccount set defaultBillingAddressId = ? " +
+			try (Connection connection = getConnection()) {
+				preparedStatement = connection.prepareStatement(
+					"update CommerceAccount set defaultBillingAddressId = ? " +
 					"where commerceAccountId = ?");
+			}
 
 			_updateCommerceAccountAndSetType(
 				preparedStatement,
@@ -63,9 +66,12 @@ public class CommerceAddressUpgradeProcess
 		}
 
 		if (hasColumn(CommerceAddressModelImpl.TABLE_NAME, "defaultShipping")) {
-			preparedStatement = connection.prepareStatement(
-				"update CommerceAccount set defaultShippingAddressId = ? " +
+			try (Connection connection = getConnection()) {
+				preparedStatement = connection.prepareStatement(
+					"update CommerceAccount set defaultShippingAddressId = ? " +
 					"where commerceAccountId = ?");
+
+			}
 
 			_updateCommerceAccountAndSetType(
 				preparedStatement,
@@ -82,18 +88,22 @@ public class CommerceAddressUpgradeProcess
 		PreparedStatement preparedStatement = null;
 
 		if (type.equals("defaultBilling")) {
-			preparedStatement = connection.prepareStatement(
-				SQLTransformer.transform(
-					"select commerceAddressId, classPK, defaultBilling, " +
+			try (Connection connection = getConnection()) {
+				preparedStatement = connection.prepareStatement(
+					SQLTransformer.transform(
+						"select commerceAddressId, classPK, defaultBilling, " +
 						"defaultShipping from CommerceAddress where " +
-							"classNameId = ? and defaultBilling = [$TRUE$]"));
+						"classNameId = ? and defaultBilling = [$TRUE$]"));
+			}
 		}
 		else {
-			preparedStatement = connection.prepareStatement(
-				SQLTransformer.transform(
-					"select commerceAddressId, classPK, defaultBilling, " +
+			try (Connection connection = getConnection()) {
+				preparedStatement = connection.prepareStatement(
+					SQLTransformer.transform(
+						"select commerceAddressId, classPK, defaultBilling, " +
 						"defaultShipping from CommerceAddress where " +
-							"classNameId = ? and defaultShipping = [$TRUE$]"));
+						"classNameId = ? and defaultShipping = [$TRUE$]"));
+			}
 		}
 
 		preparedStatement.setLong(1, commerceAccountClassNameId);
@@ -106,22 +116,24 @@ public class CommerceAddressUpgradeProcess
 			long commerceAddressId)
 		throws Exception {
 
-		PreparedStatement preparedStatement = connection.prepareStatement(
-			"update CommerceAddress set type_ = ? where commerceAddressId = ?");
+		try( Connection connection = getConnection()) {
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"update CommerceAddress set type_ = ? where commerceAddressId = ?");
 
-		int type = CommerceAddressConstants.ADDRESS_TYPE_SHIPPING;
+			int type = CommerceAddressConstants.ADDRESS_TYPE_SHIPPING;
 
-		if (defaultBilling && !defaultShipping) {
-			type = CommerceAddressConstants.ADDRESS_TYPE_BILLING;
+			if (defaultBilling && !defaultShipping) {
+				type = CommerceAddressConstants.ADDRESS_TYPE_BILLING;
+			}
+			else if (!defaultBilling && defaultShipping) {
+				type = CommerceAddressConstants.ADDRESS_TYPE_SHIPPING;
+			}
+
+			preparedStatement.setInt(1, type);
+			preparedStatement.setLong(2, commerceAddressId);
+
+			preparedStatement.addBatch();
 		}
-		else if (!defaultBilling && defaultShipping) {
-			type = CommerceAddressConstants.ADDRESS_TYPE_SHIPPING;
-		}
-
-		preparedStatement.setInt(1, type);
-		preparedStatement.setLong(2, commerceAddressId);
-
-		preparedStatement.addBatch();
 	}
 
 	private void _updateCommerceAccountAndSetType(

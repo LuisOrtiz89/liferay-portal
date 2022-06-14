@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -67,7 +68,8 @@ public class AssetDisplayLayoutFriendlyURLPrivateLayoutUpgradeProcess
 	}
 
 	private void _upgradeAssetDisplayLayoutFriendlyURLs() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select distinct LayoutFriendlyURL.plid, ",
 					"LayoutFriendlyURL.groupId, ",
@@ -76,14 +78,14 @@ public class AssetDisplayLayoutFriendlyURLPrivateLayoutUpgradeProcess
 					"inner join Layout on Layout.plid = ",
 					"LayoutFriendlyURL.plid where Layout.type_ = ? and ",
 					"LayoutFriendlyURL.privateLayout = ?"));
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				StringBundler.concat(
 					"select LayoutFriendlyURL.layoutFriendlyURLid from ",
 					"LayoutFriendlyURL where LayoutFriendlyURL.groupId = ? ",
 					"and LayoutFriendlyURL.privateLayout = ? and ",
 					"LayoutFriendlyURL.friendlyURL = ? and ",
 					"LayoutFriendlyURL.languageId = ?"));
-			PreparedStatement preparedStatement3 =
+			 PreparedStatement preparedStatement3 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update LayoutFriendlyURL set privateLayout = ?," +

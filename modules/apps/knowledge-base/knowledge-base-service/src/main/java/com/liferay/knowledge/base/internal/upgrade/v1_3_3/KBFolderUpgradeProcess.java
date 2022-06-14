@@ -34,18 +34,20 @@ public class KBFolderUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		Map<Long, String> urlTitles = _getInitialUrlTitles(connection);
+		try (Connection connection = getConnection()) {
+			Map<Long, String> urlTitles = _getInitialUrlTitles(connection);
 
-		for (Map.Entry<Long, String> entry : urlTitles.entrySet()) {
-			String uniqueUrlTitle = _findUniqueUrlTitle(
-				connection, entry.getValue());
+			for (Map.Entry<Long, String> entry : urlTitles.entrySet()) {
+				String uniqueUrlTitle = _findUniqueUrlTitle(
+					connection, entry.getValue());
 
-			for (int i = 1; uniqueUrlTitle == null; i++) {
-				uniqueUrlTitle = _findUniqueUrlTitle(
-					connection, entry.getValue() + StringPool.DASH + i);
+				for (int i = 1; uniqueUrlTitle == null; i++) {
+					uniqueUrlTitle = _findUniqueUrlTitle(
+						connection, entry.getValue() + StringPool.DASH + i);
+				}
+
+				_updateKBFolder(connection, entry.getKey(), uniqueUrlTitle);
 			}
-
-			_updateKBFolder(connection, entry.getKey(), uniqueUrlTitle);
 		}
 	}
 

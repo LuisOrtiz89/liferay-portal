@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 import java.util.List;
@@ -49,7 +50,8 @@ public class JournalArticleDataFileEntryIdUpgradeProcess
 				String sql =
 					"update JournalArticle set content = ? where id_ = ?";
 
-				try (PreparedStatement updatePreparedStatement =
+				try (Connection connection = getConnection();
+					 PreparedStatement updatePreparedStatement =
 						connection.prepareStatement(sql)) {
 
 					String upgradedContent = _upgradeContent(content);

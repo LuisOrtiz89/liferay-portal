@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.settings.GroupServiceSettingsLocator;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -44,7 +45,8 @@ public class CommerceChannelUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select CommerceChannel.siteGroupId, Group_.groupId from ",
 					"CommerceChannel inner join Group_ on ",
@@ -52,7 +54,7 @@ public class CommerceChannelUpgradeProcess extends UpgradeProcess {
 					"Group_.classNameId = ",
 					ClassNameLocalServiceUtil.getClassNameId(
 						CommerceChannel.class)));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long siteGroupId = resultSet.getLong(1);

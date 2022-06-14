@@ -211,7 +211,7 @@ public class DBUpgrader {
 		if (buildNumber == ReleaseInfo.RELEASE_7_0_10_BUILD_NUMBER) {
 			try (Connection connection = DataAccess.getConnection()) {
 				Version schemaVersion =
-					PortalUpgradeProcess.getCurrentSchemaVersion(connection);
+					PortalUpgradeProcess.getCurrentSchemaVersion();
 
 				if (!schemaVersion.equals(_VERSION_7010)) {
 					return ReleaseInfo.RELEASE_7_0_1_BUILD_NUMBER;

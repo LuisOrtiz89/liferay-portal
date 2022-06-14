@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -48,11 +49,12 @@ public class LayoutPageTemplateEntryUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeLayoutPageTemplateEntryKey() throws Exception {
-		try (Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				"select layoutPageTemplateEntryId, name from " +
 					"LayoutPageTemplateEntry");
-			PreparedStatement preparedStatement =
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"update LayoutPageTemplateEntry set " +

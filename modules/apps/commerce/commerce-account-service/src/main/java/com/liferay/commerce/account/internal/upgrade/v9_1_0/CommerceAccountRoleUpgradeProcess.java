@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -59,7 +60,8 @@ public class CommerceAccountRoleUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select distinct UserGroupRole.roleId from UserGroupRole ",
 					"inner join Role_ on Role_.roleId = UserGroupRole.roleId ",
@@ -67,7 +69,7 @@ public class CommerceAccountRoleUpgradeProcess extends UpgradeProcess {
 					_classNameLocalService.getClassNameId(AccountEntry.class),
 					"' and Group_.groupId = UserGroupRole.groupId where ",
 					"Role_.type_ =", RoleConstants.TYPE_SITE));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						StringBundler.concat(
@@ -181,7 +183,8 @@ public class CommerceAccountRoleUpgradeProcess extends UpgradeProcess {
 	}
 
 	private boolean _hasNonaccountEntryGroup(long roleId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select count(*) from (select distinct ",
 					"UserGroupRole.groupId from UserGroupRole inner join ",

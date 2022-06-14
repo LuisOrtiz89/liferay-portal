@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -51,7 +52,8 @@ public class ArticleExpirationDateUpgradeProcess extends UpgradeProcess {
 				return;
 			}
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select JournalArticle.* from JournalArticle left ",
@@ -70,7 +72,7 @@ public class ArticleExpirationDateUpgradeProcess extends UpgradeProcess {
 							"(JournalArticle.expirationDate is not null) and ",
 							"(JournalArticle.status = ",
 							WorkflowConstants.STATUS_APPROVED, ")"));
-				ResultSet resultSet = preparedStatement.executeQuery()) {
+				 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 				while (resultSet.next()) {
 					long groupId = resultSet.getLong("groupId");
@@ -91,7 +93,8 @@ public class ArticleExpirationDateUpgradeProcess extends UpgradeProcess {
 			int status)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update JournalArticle set expirationDate = ? where groupId " +
 					"= ? and articleId = ? and status = ?")) {
 

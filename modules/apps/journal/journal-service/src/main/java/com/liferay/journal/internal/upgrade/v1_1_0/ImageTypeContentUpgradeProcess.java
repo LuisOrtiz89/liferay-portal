@@ -30,6 +30,8 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
+
 /**
  * @author Eudaldo Alonso
  */
@@ -135,7 +137,9 @@ public class ImageTypeContentUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _dropJournalArticleImageTable() throws Exception {
-		runSQL(connection, "drop table JournalArticleImage");
+		try (Connection connection = getConnection()) {
+			runSQL(connection, "drop table JournalArticleImage");
+		}
 
 		if (_log.isInfoEnabled()) {
 			_log.info("Deleted table JournalArticleImage");

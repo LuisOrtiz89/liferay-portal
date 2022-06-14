@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -43,7 +44,8 @@ public class UpgradePortletDisplayTemplatePreferences
 			return companyGroupId;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId from Group_ where classNameId = ? and " +
 					"classPK = ?")) {
 
@@ -71,7 +73,8 @@ public class UpgradePortletDisplayTemplatePreferences
 
 		String uuid = displayStyle.substring(DISPLAY_STYLE_PREFIX_6_2.length());
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId, templateKey from DDMTemplate where (groupId " +
 					"= ? or groupId = ?) and uuid_ = ?")) {
 

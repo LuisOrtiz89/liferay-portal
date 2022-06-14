@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -38,11 +39,12 @@ public class CPDefinitionLinkUpgradeProcess
 		_renameColumn(
 			"CPDefinitionLink", "CPDefinitionId1", "CPDefinitionId LONG");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update CPDefinitionLink set CProductId = ? where " +
 					"CPDefinitionId2 = ?");
-			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				"select * from CPDefinitionLink")) {
 
 			while (resultSet.next()) {
@@ -60,7 +62,8 @@ public class CPDefinitionLinkUpgradeProcess
 	}
 
 	private long _getCProductId(long cpDefinitionId) throws Exception {
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(
 				"select CProductId from CPDefinition where CPDefinitionId = " +
 					cpDefinitionId)) {

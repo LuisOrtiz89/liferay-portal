@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -74,9 +75,10 @@ public class JSONStorageUpgradeStepFactoryImpl
 				sb.append(" where ctCollectionId = 0");
 			}
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(sb.toString());
-				ResultSet resultSet = preparedStatement.executeQuery()) {
+				 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 				while (resultSet.next()) {
 					String json = resultSet.getString(_jsonColumnName);

@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -86,18 +87,19 @@ public class AssetDisplayPrivateLayoutUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeAssetDisplayLayouts() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select ctCollectionId, groupId, friendlyURL, plid from " +
 					"Layout where privateLayout = ? and type_ = ?");
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"select plid from Layout where ctCollectionId = ? and " +
 					"groupId = ? and privateLayout = ? and friendlyURL = ?");
-			PreparedStatement preparedStatement3 =
+			 PreparedStatement preparedStatement3 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"update Layout set privateLayout = ?, layoutId = ?, " +
 							"friendlyURL = ? where plid = ?"));
-			PreparedStatement preparedStatement4 =
+			 PreparedStatement preparedStatement4 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"update LayoutFriendlyURL set privateLayout = ?, " +

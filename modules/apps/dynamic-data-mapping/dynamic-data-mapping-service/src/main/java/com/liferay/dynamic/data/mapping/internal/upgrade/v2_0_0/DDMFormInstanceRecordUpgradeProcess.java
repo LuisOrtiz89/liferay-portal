@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -48,7 +49,8 @@ public class DDMFormInstanceRecordUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDLRecord.*, DDMFormInstance.groupId as ",
 					"formInstanceGroupId, DDMFormInstance.version as ",
@@ -56,8 +58,8 @@ public class DDMFormInstanceRecordUpgradeProcess extends UpgradeProcess {
 					"formInstanceName from DDLRecord inner join ",
 					"DDMFormInstance on DDLRecord.recordSetId = ",
 					"DDMFormInstance.formInstanceId"));
-			ResultSet resultSet = preparedStatement1.executeQuery();
-			PreparedStatement preparedStatement2 =
+			 ResultSet resultSet = preparedStatement1.executeQuery();
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(
@@ -143,7 +145,8 @@ public class DDMFormInstanceRecordUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _deleteDDLRecord(long recordId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from DDLRecord where recordId = ?")) {
 
 			preparedStatement.setLong(1, recordId);

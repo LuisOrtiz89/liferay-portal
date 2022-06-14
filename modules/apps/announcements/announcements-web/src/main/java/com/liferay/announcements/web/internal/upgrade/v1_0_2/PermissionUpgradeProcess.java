@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -91,7 +92,8 @@ public class PermissionUpgradeProcess extends UpgradeProcess {
 			"primKeyId, roleId, ownerId, actionIds, viewActionId) values (?, ",
 			"?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement.setLong(1, 0);
@@ -118,7 +120,8 @@ public class PermissionUpgradeProcess extends UpgradeProcess {
 	private void _addResourceAction(String actionId, long bitwiseValue) {
 		long resourceActionId = increment(ResourceAction.class.getName());
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into ResourceAction (mvccVersion, ",
 					"resourceActionId, name, actionId, bitwiseValue) values ",
@@ -145,7 +148,8 @@ public class PermissionUpgradeProcess extends UpgradeProcess {
 	private void _deleteResourceAction(long resourceActionId)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from ResourceAction where resourceActionId = ?")) {
 
 			preparedStatement.setLong(1, resourceActionId);
@@ -166,7 +170,8 @@ public class PermissionUpgradeProcess extends UpgradeProcess {
 			long resourcePermissionId, long bitwiseValue)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update ResourcePermission set actionIds = ? where " +
 					"resourcePermissionId = ?")) {
 
@@ -188,7 +193,8 @@ public class PermissionUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeResourcePermission(String name) throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select resourceActionId, bitwiseValue from ",
 					"ResourceAction where actionId = 'ADD_ENTRY' and name = '",

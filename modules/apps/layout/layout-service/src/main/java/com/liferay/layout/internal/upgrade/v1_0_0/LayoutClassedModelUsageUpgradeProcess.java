@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -50,11 +51,12 @@ public class LayoutClassedModelUsageUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeLayoutClassedModelUsage() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(
+			 Connection connection = getConnection();
+			 Statement statement = connection.createStatement();
+			 ResultSet resultSet = statement.executeQuery(
 				"select groupId, assetEntryId, containerKey, containerType, " +
 					"plid, type_ from AssetEntryUsage");
-			PreparedStatement preparedStatement =
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(

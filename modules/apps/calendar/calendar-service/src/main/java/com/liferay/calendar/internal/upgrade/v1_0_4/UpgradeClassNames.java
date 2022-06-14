@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeKernelPackage;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -94,7 +95,8 @@ public class UpgradeClassNames extends UpgradeKernelPackage {
 
 	private void _deleteDuplicateResourcePermissions() throws UpgradeException {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select orp.resourcePermissionId from ",
@@ -125,6 +127,7 @@ public class UpgradeClassNames extends UpgradeKernelPackage {
 
 	private void _deleteRelatedAssetEntries() throws UpgradeException {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select entryId from AssetEntry where classNameId = ?");
 			PreparedStatement preparedStatement2 =
@@ -165,6 +168,7 @@ public class UpgradeClassNames extends UpgradeKernelPackage {
 
 	private void _updateCalEventClassName() throws UpgradeException {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select classNameId from ClassName_ where value like ?");
 			PreparedStatement preparedStatement2 = connection.prepareStatement(

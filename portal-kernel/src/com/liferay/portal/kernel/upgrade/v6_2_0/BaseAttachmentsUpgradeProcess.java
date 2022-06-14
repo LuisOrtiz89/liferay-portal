@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -57,7 +58,8 @@ public abstract class BaseAttachmentsUpgradeProcess extends UpgradeProcess {
 
 		long fileEntryId = increment();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DLFileEntry (uuid_, fileEntryId, groupId, ",
 					"companyId, userId, userName, createDate, modifiedDate, ",
@@ -130,7 +132,8 @@ public abstract class BaseAttachmentsUpgradeProcess extends UpgradeProcess {
 			String title, long size)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DLFileVersion (uuid_, fileVersionId, ",
 					"groupId, companyId, userId, userName, createDate, ",
@@ -184,7 +187,8 @@ public abstract class BaseAttachmentsUpgradeProcess extends UpgradeProcess {
 			boolean hidden)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DLFolder (uuid_, folderId, groupId, ",
 					"companyId, userId, userName, createDate, modifiedDate, ",
@@ -270,7 +274,8 @@ public abstract class BaseAttachmentsUpgradeProcess extends UpgradeProcess {
 			return -1;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into Repository (uuid_, repositoryId, groupId, ",
 					"companyId, userId, userName, createDate, modifiedDate, ",
@@ -316,7 +321,8 @@ public abstract class BaseAttachmentsUpgradeProcess extends UpgradeProcess {
 		long resourcePermissionId = increment(
 			ResourcePermission.class.getName());
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into ResourcePermission (resourcePermissionId, ",
 					"companyId, name, scope, primKey, roleId, ownerId, ",
@@ -381,7 +387,8 @@ public abstract class BaseAttachmentsUpgradeProcess extends UpgradeProcess {
 			return bitwiseValues;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select actionId, bitwiseValue from ResourceAction where " +
 					"name = ?")) {
 
@@ -432,7 +439,8 @@ public abstract class BaseAttachmentsUpgradeProcess extends UpgradeProcess {
 			return -1;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select folderId from DLFolder where repositoryId = ? and " +
 					"parentFolderId = ? and name = ?")) {
 
@@ -459,7 +467,8 @@ public abstract class BaseAttachmentsUpgradeProcess extends UpgradeProcess {
 			Timestamp createDate, long classNameId, String portletId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select repositoryId from Repository where groupId = ? and " +
 					"name = ? and portletId = ?")) {
 
@@ -488,7 +497,8 @@ public abstract class BaseAttachmentsUpgradeProcess extends UpgradeProcess {
 			return roleId;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select roleId from Role_ where companyId = ? and name = ?")) {
 
 			preparedStatement.setLong(1, companyId);

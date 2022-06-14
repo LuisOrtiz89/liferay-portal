@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.language.LanguageResources;
 import com.liferay.portal.util.PropsValues;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -59,7 +60,8 @@ public class UpgradeGroup extends UpgradeProcess {
 	protected void updateGlobalGroupName() throws Exception {
 		List<Long> companyIds = new ArrayList<>();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId from Company")) {
 
 			try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -86,7 +88,8 @@ public class UpgradeGroup extends UpgradeProcess {
 			String nameXML = LocalizationUtil.getXml(
 				localizedValuesMap, "global");
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"update Group_ set name = ? where companyId = ? and " +
 							"friendlyURL = '/global'")) {
@@ -100,7 +103,8 @@ public class UpgradeGroup extends UpgradeProcess {
 	}
 
 	protected void updateGroupsNames() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				SQLTransformer.transform(
 					"select groupId, name, typeSettings from Group_ where " +
 						"site = [$TRUE$] and friendlyURL != '/global'"));

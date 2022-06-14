@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -59,7 +60,8 @@ public class LayoutSetTypeSettingsUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateRobots() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId, typeSettings from Group_ where typeSettings " +
 					"like '%robots.txt%'")) {
 

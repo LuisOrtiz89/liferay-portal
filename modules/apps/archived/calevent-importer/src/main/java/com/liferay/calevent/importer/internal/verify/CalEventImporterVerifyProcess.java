@@ -97,6 +97,7 @@ import com.liferay.view.count.model.ViewCountEntry;
 import com.liferay.view.count.service.ViewCountEntryLocalService;
 import com.liferay.view.count.service.persistence.ViewCountEntryPK;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -892,7 +893,8 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 
 	private CalendarBooking _importCalEvent(long calEventId) throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement =
+			try (
+				Connection connection = getConnection(); PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select uuid_, eventId, groupId, companyId, ",
@@ -1030,7 +1032,8 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 		}
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select uuid_, eventId, groupId, companyId, ",
@@ -1315,7 +1318,8 @@ public class CalEventImporterVerifyProcess extends VerifyProcess {
 	private boolean _isAssetLinkImported(long entryId1, long entryId2, int type)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select count(*) from AssetLink where ((entryId1 = ? and ",
 					"entryId2 = ?) or (entryId2 = ? and entryId1 = ?)) and ",

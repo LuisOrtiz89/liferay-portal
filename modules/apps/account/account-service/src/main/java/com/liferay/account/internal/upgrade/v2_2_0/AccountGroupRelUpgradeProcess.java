@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 
@@ -67,7 +68,8 @@ public class AccountGroupRelUpgradeProcess extends UpgradeProcess {
 	private void _updateDefaultValues(Company company) throws Exception {
 		User defaultUser = company.getDefaultUser();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update AccountGroupRel set userId = ?, userName = ?, " +
 					"createDate = ?, modifiedDate = ? where companyId = ? " +
 						"and userId = 0")) {

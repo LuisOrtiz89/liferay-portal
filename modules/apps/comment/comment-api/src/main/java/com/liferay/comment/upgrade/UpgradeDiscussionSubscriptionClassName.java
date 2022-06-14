@@ -93,7 +93,9 @@ public class UpgradeDiscussionSubscriptionClassName extends UpgradeProcess {
 	@Override
 	protected void doUpgrade() throws Exception {
 		if (_unsafeBiFunction != null) {
-			_unsafeBiFunction.apply(_oldSubscriptionClassName, connection);
+			try (Connection connection = getConnection()) {
+				_unsafeBiFunction.apply(_oldSubscriptionClassName, connection);
+			}
 		}
 		else if (_deletionMode == DeletionMode.ADD_NEW) {
 			_addSubscriptions();

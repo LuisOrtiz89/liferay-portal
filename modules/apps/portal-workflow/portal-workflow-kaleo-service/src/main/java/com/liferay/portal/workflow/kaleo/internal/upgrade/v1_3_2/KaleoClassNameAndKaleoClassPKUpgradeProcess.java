@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.workflow.kaleo.model.KaleoNode;
 import com.liferay.portal.workflow.kaleo.model.KaleoTask;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -47,7 +48,8 @@ public class KaleoClassNameAndKaleoClassPKUpgradeProcess
 			return;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"update ", tableName,
 					" set kaleoClassName = ?, kaleoClassPK = ", columnName,

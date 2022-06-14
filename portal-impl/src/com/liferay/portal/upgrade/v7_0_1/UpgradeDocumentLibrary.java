@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -38,7 +39,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 			return classNameId;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"insert into ClassName_ (mvccVersion, classNameId, value) " +
 					"values (?, ?, ?)")) {
 
@@ -66,6 +68,7 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 		throws Exception {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select structureId from DDMStructure where structureKey = ? " +
 					"and classNameId = ?")) {
@@ -92,7 +95,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 			return;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update DDMStructure set classNameId = ? where structureKey " +
 					"= ?")) {
 
@@ -121,7 +125,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 				return;
 			}
 
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select fileVersionId, DDMStructureId from ",
@@ -152,7 +157,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 				preparedStatement2.executeBatch();
 			}
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"update DLFileEntryMetadata set DDMStructureId = ? " +
 							"where DDMStructureId = ?")) {

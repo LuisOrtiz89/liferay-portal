@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -128,13 +129,14 @@ public class AssetDisplayLayoutUpgradeProcess extends UpgradeProcess {
 		ServiceContext serviceContext = new ServiceContext();
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+			 Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				StringBundler.concat(
 					"select assetDisplayPageEntryId, userId, groupId, ",
 					"classNameId, classPK, layoutPageTemplateEntryId from ",
 					"AssetDisplayPageEntry where plid is null or plid = 0"));
-			PreparedStatement preparedStatement =
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"update AssetDisplayPageEntry set plid = ? where " +

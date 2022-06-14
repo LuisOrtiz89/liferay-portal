@@ -17,6 +17,7 @@ package com.liferay.portal.kernel.upgrade;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -40,7 +41,8 @@ public class ViewCountUpgradeProcess extends UpgradeProcess {
 			return;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into ViewCountEntry (companyId, classNameId, ",
 					"classPK, viewCount) select companyId, ",

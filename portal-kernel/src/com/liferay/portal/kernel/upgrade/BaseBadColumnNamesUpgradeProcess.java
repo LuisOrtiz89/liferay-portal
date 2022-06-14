@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.util.Validator;
 
 import java.lang.reflect.Field;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 
@@ -46,80 +47,85 @@ public abstract class BaseBadColumnNamesUpgradeProcess extends UpgradeProcess {
 			Class<?> tableClass, String... columnNames)
 		throws Exception {
 
-		DatabaseMetaData databaseMetaData = connection.getMetaData();
+		try (Connection connection = getConnection()) {
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-		DBInspector dbInspector = new DBInspector(connection);
+			DBInspector dbInspector = new DBInspector(connection);
 
-		String tableName = dbInspector.normalizeName(
-			getTableName(tableClass), databaseMetaData);
+			String tableName = dbInspector.normalizeName(
+				getTableName(tableClass), databaseMetaData);
 
-		Map<String, String> columnSQLs = _getTableColumnSQLs(tableClass);
+			Map<String, String> columnSQLs = _getTableColumnSQLs(tableClass);
 
-		List<String[]> alterColumnNames = new ArrayList<>(columnNames.length);
+			List<String[]> alterColumnNames =
+				new ArrayList<>(columnNames.length);
 
-		for (String columnName : columnNames) {
-			String newColumnName = columnName.concat(StringPool.UNDERLINE);
+			for (String columnName : columnNames) {
+				String newColumnName = columnName.concat(StringPool.UNDERLINE);
 
-			try (ResultSet columnResultSet = databaseMetaData.getColumns(
+				try (ResultSet columnResultSet = databaseMetaData.getColumns(
 					dbInspector.getCatalog(), dbInspector.getSchema(),
 					tableName,
 					dbInspector.normalizeName(
 						newColumnName, databaseMetaData))) {
 
-				if (columnResultSet.next()) {
-					continue;
+					if (columnResultSet.next()) {
+						continue;
+					}
 				}
-			}
 
-			try (ResultSet columnResultSet = databaseMetaData.getColumns(
+				try (ResultSet columnResultSet = databaseMetaData.getColumns(
 					dbInspector.getCatalog(), dbInspector.getSchema(),
 					tableName,
 					dbInspector.normalizeName(columnName, databaseMetaData))) {
 
-				if (!columnResultSet.next()) {
+					if (!columnResultSet.next()) {
+						if (_log.isWarnEnabled()) {
+							_log.warn(
+								StringBundler.concat(
+									"Unable to get bad column name ",
+									columnName,
+									" in table ", tableName));
+						}
+
+						continue;
+					}
+				}
+
+				String columnSQL = columnSQLs.get(newColumnName);
+
+				if (Validator.isNull(columnSQL)) {
 					if (_log.isWarnEnabled()) {
 						_log.warn(
 							StringBundler.concat(
-								"Unable to get bad column name ", columnName,
+								"Unable to get SQL for column ", columnName,
 								" in table ", tableName));
 					}
 
 					continue;
 				}
+
+				alterColumnNames.add(new String[]{columnName, columnSQL});
 			}
 
-			String columnSQL = columnSQLs.get(newColumnName);
+			DB db = DBManagerUtil.getDB();
 
-			if (Validator.isNull(columnSQL)) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(
+			for (String[] alterColumnName : alterColumnNames) {
+
+				// Special alter for reserved words like SYSTEM in MySQL
+
+				if (db.getDBType() == DBType.MYSQL) {
+					runSQL(
 						StringBundler.concat(
-							"Unable to get SQL for column ", columnName,
-							" in table ", tableName));
+							"alter table ", tableName, " change column `",
+							alterColumnName[0], "` ", alterColumnName[1]));
+
+					continue;
 				}
 
-				continue;
+				alterColumnName(
+					tableName, alterColumnName[0], alterColumnName[1]);
 			}
-
-			alterColumnNames.add(new String[] {columnName, columnSQL});
-		}
-
-		DB db = DBManagerUtil.getDB();
-
-		for (String[] alterColumnName : alterColumnNames) {
-
-			// Special alter for reserved words like SYSTEM in MySQL
-
-			if (db.getDBType() == DBType.MYSQL) {
-				runSQL(
-					StringBundler.concat(
-						"alter table ", tableName, " change column `",
-						alterColumnName[0], "` ", alterColumnName[1]));
-
-				continue;
-			}
-
-			alterColumnName(tableName, alterColumnName[0], alterColumnName[1]);
 		}
 	}
 

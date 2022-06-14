@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -47,7 +48,8 @@ public class CalendarUpgradeProcess extends UpgradeProcess {
 	public void updateCalendarTimeZoneId(long calendarId, String timeZoneId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Calendar set timeZoneId = ? where calendarId = ?")) {
 
 			preparedStatement.setString(1, timeZoneId);
@@ -59,7 +61,8 @@ public class CalendarUpgradeProcess extends UpgradeProcess {
 
 	public void updateCalendarTimeZoneIds() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select Calendar.calendarId, CalendarResource.",

@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.uuid.PortalUUID;
 
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -54,7 +55,8 @@ public class CPInstanceOptionValueRelUpgradeProcess
 		dropColumn(CPInstanceModelImpl.TABLE_NAME, "json");
 	}
 
-	private PreparedStatement _cpDefinitionOptionRelIdPreparedStatement()
+	private PreparedStatement _cpDefinitionOptionRelIdPreparedStatement(
+		Connection connection)
 		throws SQLException {
 
 		if (_cpDefinitionOptionRelIdPreparedStatement != null) {
@@ -67,7 +69,8 @@ public class CPInstanceOptionValueRelUpgradeProcess
 		return _cpDefinitionOptionRelIdPreparedStatement;
 	}
 
-	private PreparedStatement _cpDefinitionOptionValueRelIdPreparedStatement()
+	private PreparedStatement _cpDefinitionOptionValueRelIdPreparedStatement(
+		Connection connection)
 		throws SQLException {
 
 		if (_cpDefinitionOptionValueRelIdPreparedStatement != null) {
@@ -85,15 +88,17 @@ public class CPInstanceOptionValueRelUpgradeProcess
 			long cpDefinitionId, String cpDefinitionOptionRelKey)
 		throws SQLException {
 
-		PreparedStatement preparedStatement =
-			_cpDefinitionOptionRelIdPreparedStatement();
+		try (Connection connection = getConnection()) {
+			PreparedStatement preparedStatement =
+				_cpDefinitionOptionRelIdPreparedStatement(connection);
 
-		preparedStatement.setLong(1, cpDefinitionId);
-		preparedStatement.setString(2, cpDefinitionOptionRelKey);
+			preparedStatement.setLong(1, cpDefinitionId);
+			preparedStatement.setString(2, cpDefinitionOptionRelKey);
 
-		try (ResultSet resultSet = preparedStatement.executeQuery()) {
-			if (resultSet.next()) {
-				return resultSet.getLong("CPDefinitionOptionRelId");
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				if (resultSet.next()) {
+					return resultSet.getLong("CPDefinitionOptionRelId");
+				}
 			}
 		}
 
@@ -104,15 +109,17 @@ public class CPInstanceOptionValueRelUpgradeProcess
 			long cpDefinitionOptionRelId, String cpDefinitionOptionValueKey)
 		throws SQLException {
 
-		PreparedStatement preparedStatement =
-			_cpDefinitionOptionValueRelIdPreparedStatement();
+		try (Connection connection = getConnection()) {
+			PreparedStatement preparedStatement =
+				_cpDefinitionOptionValueRelIdPreparedStatement(connection);
 
-		preparedStatement.setLong(1, cpDefinitionOptionRelId);
-		preparedStatement.setString(2, cpDefinitionOptionValueKey);
+			preparedStatement.setLong(1, cpDefinitionOptionRelId);
+			preparedStatement.setString(2, cpDefinitionOptionValueKey);
 
-		try (ResultSet resultSet = preparedStatement.executeQuery()) {
-			if (resultSet.next()) {
-				return resultSet.getLong("CPDefinitionOptionValueRelId");
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				if (resultSet.next()) {
+					return resultSet.getLong("CPDefinitionOptionValueRelId");
+				}
 			}
 		}
 
@@ -127,7 +134,8 @@ public class CPInstanceOptionValueRelUpgradeProcess
 			"CPDefinitionOptionValueRelId, CPInstanceId) values (?, ?, ?, ?, ",
 			"?, ?, ?, ?, ?, ?, ?)");
 
-		try (PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, insertCPInstanceOptionValueRelSQL);
 			Statement s = connection.createStatement(

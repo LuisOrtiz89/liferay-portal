@@ -17,6 +17,7 @@ package com.liferay.account.internal.upgrade.v1_0_2;
 import com.liferay.account.constants.AccountRoleConstants;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -43,7 +44,8 @@ public class RoleUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateRole(String oldName, String newName) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Role_ set name = ?, title = NULL where name = ?")) {
 
 			preparedStatement.setString(1, newName);

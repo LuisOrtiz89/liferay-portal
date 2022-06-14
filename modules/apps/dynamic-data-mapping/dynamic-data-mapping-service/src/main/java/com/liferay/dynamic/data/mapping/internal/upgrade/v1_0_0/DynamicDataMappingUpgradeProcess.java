@@ -117,6 +117,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -419,7 +420,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 			return ddmForm;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select parentStructureId, definition, storageType from " +
 					"DDMStructure where structureId = ?")) {
 
@@ -497,7 +499,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 	private Map<String, String> _getDDMTemplateScriptMap(long structureId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from DDMTemplate where classPK = ? and type_ = ?")) {
 
 			preparedStatement.setLong(1, structureId);
@@ -562,7 +565,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 			return fullHierarchyDDMForm;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select parentStructureId from DDMStructure where " +
 					"structureId = ?")) {
 
@@ -653,7 +657,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 	private boolean _hasStructureVersion(long structureId, String version)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from DDMStructureVersion where structureId = ? and " +
 					"version = ?")) {
 
@@ -669,7 +674,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 	private boolean _hasTemplateVersion(long templateId, String version)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from DDMTemplateVersion where templateId = ? and " +
 					"version = ?")) {
 
@@ -819,7 +825,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 	private void _updateTemplateScript(long templateId, String script)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update DDMTemplate set script = ? where templateId = ?")) {
 
 			preparedStatement.setString(1, script);
@@ -1019,7 +1026,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDLFieldTypeReferences() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDLRecordVersion.*, DDMContent.data_, ",
 					"DDMStructure.structureId from DDLRecordVersion inner ",
@@ -1069,7 +1077,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDLFieldTypeReferences() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DLFileVersion.*, DDMContent.contentId, ",
 					"DDMContent.data_, DDMStructure.structureId from ",
@@ -1123,7 +1132,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeExpandoStorageAdapter() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select DDMStructure.*, DDMStorageLink.* from ",
@@ -1236,6 +1246,7 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 		throws Exception {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select * from DDMStructure");
 			PreparedStatement preparedStatement2 =
@@ -1362,6 +1373,7 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeStructuresPermissions() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from DDMStructure");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -1402,6 +1414,7 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeTemplatesAndAddTemplateVersions() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select * from DDMTemplate");
 			PreparedStatement preparedStatement2 =
@@ -1525,6 +1538,7 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeTemplatesPermissions() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from DDMTemplate");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -1540,7 +1554,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeXMLStorageAdapter() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select DDMStorageLink.classPK, DDMStorageLink.",

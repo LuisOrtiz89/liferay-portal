@@ -25,6 +25,7 @@ import com.liferay.portal.model.impl.PortalPreferenceValueImpl;
 import com.liferay.portlet.PortletPreferencesFactoryImpl;
 import com.liferay.portlet.Preference;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 import java.util.Map;
@@ -81,7 +82,8 @@ public class UpgradePortalPreferences extends UpgradeProcess {
 			return;
 		}
 
-		try (PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						StringBundler.concat(

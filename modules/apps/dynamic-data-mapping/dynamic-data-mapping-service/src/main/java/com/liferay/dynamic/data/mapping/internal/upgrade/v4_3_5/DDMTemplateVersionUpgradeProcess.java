@@ -17,6 +17,7 @@ package com.liferay.dynamic.data.mapping.internal.upgrade.v4_3_5;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -35,9 +36,10 @@ public class DDMTemplateVersionUpgradeProcess extends UpgradeProcess {
 		String deleteOrphanTemplateVersion =
 			"delete from DDMTemplateVersion where templateVersionId = ?";
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(selectOrphanTemplateVersions);
-			PreparedStatement deletePreparedStatement =
+			 PreparedStatement deletePreparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, deleteOrphanTemplateVersion)) {
 

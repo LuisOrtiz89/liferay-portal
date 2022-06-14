@@ -16,6 +16,7 @@ package com.liferay.knowledge.base.internal.upgrade.v1_1_0;
 
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -38,7 +39,8 @@ public class ResourcePermissionUpgradeProcess extends UpgradeProcess {
 	}
 
 	private boolean _hasResourcePermission(String name) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select count(*) from ResourcePermission where name = ?")) {
 
 			preparedStatement.setString(1, name);

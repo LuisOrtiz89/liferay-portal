@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -35,7 +36,8 @@ public abstract class BaseAdminPortletsUpgradeProcess extends UpgradeProcess {
 			String primKey, long roleId, long actionIds)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into ResourcePermission (resourcePermissionId, ",
 					"companyId, name, scope, primKey, primKeyId, roleId, ",
@@ -65,7 +67,8 @@ public abstract class BaseAdminPortletsUpgradeProcess extends UpgradeProcess {
 	protected long getBitwiseValue(String name, String actionId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select bitwiseValue from ResourceAction where name = ? and " +
 					"actionId = ?")) {
 
@@ -83,7 +86,8 @@ public abstract class BaseAdminPortletsUpgradeProcess extends UpgradeProcess {
 	}
 
 	protected long getControlPanelGroupId() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId from Group_ where name = '" +
 					GroupConstants.CONTROL_PANEL + "'");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -104,7 +108,8 @@ public abstract class BaseAdminPortletsUpgradeProcess extends UpgradeProcess {
 			long bitwiseValue = getBitwiseValue(
 				portletFrom, ActionKeys.ACCESS_IN_CONTROL_PANEL);
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"select * from ResourcePermission where name = ?")) {
 

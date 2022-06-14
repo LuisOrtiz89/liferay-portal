@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.kernel.verify.model.VerifiableUUIDModel;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -74,7 +75,8 @@ public class VerifyUUID extends VerifyProcess {
 		if (db.isSupportsNewUuidFunction()) {
 			try (LoggingTimer loggingTimer = new LoggingTimer(
 					verifiableUUIDModel.getTableName());
-				PreparedStatement preparedStatement =
+				 Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"update ", verifiableUUIDModel.getTableName(),
@@ -89,6 +91,7 @@ public class VerifyUUID extends VerifyProcess {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(
 				verifiableUUIDModel.getTableName());
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select ", verifiableUUIDModel.getPrimaryKeyColumnName(),

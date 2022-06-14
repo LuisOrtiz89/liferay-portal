@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -36,20 +37,21 @@ public class UpgradeDLFileEntryType extends UpgradeProcess {
 	}
 
 	private void _populateFields() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select uuid_, fileEntryTypeId, groupId, fileEntryTypeKey " +
 					"from DLFileEntryType where (dataDefinitionId IS NULL OR " +
 						"dataDefinitionId = 0)");
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"select structureId FROM DDMStructure where groupId = ? AND " +
 					"classNameId = ? AND (structureKey = ? OR structureKey = " +
 						"? OR structureKey = ? ) ");
-			PreparedStatement preparedStatement3 =
+			 PreparedStatement preparedStatement3 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"update DLFileEntryType set dataDefinitionId = ? " +
 							"where fileEntryTypeId = ? "));
-			ResultSet resultSet1 = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet1 = preparedStatement1.executeQuery()) {
 
 			long classNameId = PortalUtil.getClassNameId(
 				DLFileEntryMetadata.class);

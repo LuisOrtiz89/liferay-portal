@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portlet.asset.util.AssetVocabularySettingsHelper;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -76,7 +77,8 @@ public class UpgradeAsset extends UpgradeProcess {
 	}
 
 	protected long getDDMStructureId(String structureKey) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select structureId from DDMStructure where structureKey = " +
 					"?")) {
 
@@ -97,6 +99,7 @@ public class UpgradeAsset extends UpgradeProcess {
 			"com.liferay.journal.model.JournalArticle");
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"update AssetEntry set listable = ? where classNameId = ? ",
@@ -121,6 +124,7 @@ public class UpgradeAsset extends UpgradeProcess {
 
 	protected void updateAssetVocabularies() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select vocabularyId, settings_ from AssetVocabulary");
 			PreparedStatement preparedStatement2 =

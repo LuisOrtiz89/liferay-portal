@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -57,7 +58,8 @@ public class LayoutPageTemplateStructureUpgradeProcess extends UpgradeProcess {
 			"layoutPageTemplateStructureId, segmentsExperienceId, data_) ",
 			"values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement.setString(1, PortalUUIDUtil.generate());
@@ -82,7 +84,8 @@ public class LayoutPageTemplateStructureUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeLayoutPageTemplatesStructures() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select layoutPageTemplateStructureId, groupId, ",
 					"companyId, userId, userName, createDate, data_ from ",

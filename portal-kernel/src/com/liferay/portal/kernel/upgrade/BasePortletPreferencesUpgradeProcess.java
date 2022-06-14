@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.simple.Element;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -56,7 +57,8 @@ public abstract class BasePortletPreferencesUpgradeProcess
 	protected long getCompanyId(String sql, long primaryKey) throws Exception {
 		long companyId = 0;
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement.setLong(1, primaryKey);
@@ -74,7 +76,8 @@ public abstract class BasePortletPreferencesUpgradeProcess
 	protected Object[] getGroup(long groupId) throws Exception {
 		Object[] group = null;
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId from Group_ where groupId = ?")) {
 
 			preparedStatement.setLong(1, groupId);
@@ -94,7 +97,8 @@ public abstract class BasePortletPreferencesUpgradeProcess
 	protected Object[] getLayout(long plid) throws Exception {
 		Object[] layout = null;
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId, companyId, privateLayout, layoutId from " +
 					"Layout where plid = ?")) {
 
@@ -127,7 +131,8 @@ public abstract class BasePortletPreferencesUpgradeProcess
 
 		Object[] layoutRevision = null;
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId, companyId, privateLayout, layoutRevisionId " +
 					"from LayoutRevision where layoutRevisionId = ?")) {
 
@@ -160,7 +165,8 @@ public abstract class BasePortletPreferencesUpgradeProcess
 
 		String uuid = null;
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select uuid_ from Layout where groupId = ? and " +
 					"privateLayout = ? and layoutId = ?")) {
 
@@ -325,7 +331,8 @@ public abstract class BasePortletPreferencesUpgradeProcess
 			sb.append(whereClause);
 		}
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				sb.toString());
 			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
@@ -390,7 +397,8 @@ public abstract class BasePortletPreferencesUpgradeProcess
 			sb.append(whereClause);
 		}
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				sb.toString());
 			PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"select portletPreferenceValueId, largeValue, name, " +

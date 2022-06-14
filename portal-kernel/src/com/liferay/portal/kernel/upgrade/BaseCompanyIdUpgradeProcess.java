@@ -155,7 +155,8 @@ public abstract class BaseCompanyIdUpgradeProcess extends UpgradeProcess {
 
 		String tableName = tableUpdater.getTableName();
 
-		try (LoggingTimer loggingTimer = new LoggingTimer(tableName)) {
+		try (LoggingTimer loggingTimer = new LoggingTimer(tableName);
+			 Connection connection = getConnection();) {
 			if (!hasColumn(tableName, "companyId")) {
 				if (_log.isInfoEnabled()) {
 					_log.info("Adding column companyId to table " + tableName);

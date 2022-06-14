@@ -16,6 +16,7 @@ package com.liferay.object.internal.upgrade.v3_8_0;
 
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -37,7 +38,8 @@ public class ObjectEntryExternalReferenceCodeUpgradeProcess
 					"update ObjectEntry set externalReferenceCode = ? where " +
 						"objectEntryId = ?";
 
-				try (PreparedStatement updatePreparedStatement =
+				try (Connection connection = getConnection();
+					 PreparedStatement updatePreparedStatement =
 						connection.prepareStatement(sql)) {
 
 					updatePreparedStatement.setString(

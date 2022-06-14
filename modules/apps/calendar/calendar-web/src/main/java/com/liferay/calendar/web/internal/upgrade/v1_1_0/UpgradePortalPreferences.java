@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -87,12 +88,13 @@ public class UpgradePortalPreferences extends PortalPreferencesUpgradeProcess {
 
 	private void _populatePreferenceNamesMap() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select key_ from PortalPreferenceValue where namespace = ",
 					"'com.liferay.portal.util.SessionClicks' and key_ like ",
 					"'calendar-%'"));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				String preferenceName =

@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -36,7 +37,8 @@ public class StorageLinksUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select DDMStructureVersion.structureVersionId, ",
@@ -50,12 +52,12 @@ public class StorageLinksUpgradeProcess extends UpgradeProcess {
 						"where DDMStorageLink.classNameId = ",
 						_classNameLocalService.getClassNameId(
 							JournalArticle.class)));
-			PreparedStatement updatePreparedStatement =
+			 PreparedStatement updatePreparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"update DDMStorageLink set structureVersionId = ? " +
 							"where storageLinkId = ?"));
-			ResultSet resultSet = selectPreparedStatement.executeQuery()) {
+			 ResultSet resultSet = selectPreparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				updatePreparedStatement.setLong(1, resultSet.getLong(1));
@@ -67,7 +69,8 @@ public class StorageLinksUpgradeProcess extends UpgradeProcess {
 			updatePreparedStatement.executeBatch();
 		}
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select DDMStructureVersion.structureId, ",

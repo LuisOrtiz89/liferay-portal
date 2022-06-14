@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 import java.util.Map;
@@ -54,7 +55,8 @@ public class UpgradePostgreSQL extends UpgradeProcess {
 				String tableName = entry.getKey();
 				String columnName = entry.getValue();
 
-				try (PreparedStatement preparedStatement =
+				try (Connection connection = getConnection();
+					 PreparedStatement preparedStatement =
 						connection.prepareStatement(
 							PostgreSQLDB.getCreateRulesSQL(
 								tableName, columnName))) {

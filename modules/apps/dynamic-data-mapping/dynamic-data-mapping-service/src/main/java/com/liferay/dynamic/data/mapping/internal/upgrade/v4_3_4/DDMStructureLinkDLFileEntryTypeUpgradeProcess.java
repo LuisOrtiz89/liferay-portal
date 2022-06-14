@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -53,23 +54,24 @@ public class DDMStructureLinkDLFileEntryTypeUpgradeProcess
 		sb.append("inner join DDMStructure ON dataDefinitionId = structureId ");
 		sb.append("where type_ = 0");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				sb.toString());
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"select structureId FROM DDMStructure where groupId = ? AND " +
 					"classNameId = ? AND (structureKey = ? OR structureKey = " +
 						"? OR structureKey = ? ) ");
-			PreparedStatement preparedStatement3 = connection.prepareStatement(
+			 PreparedStatement preparedStatement3 = connection.prepareStatement(
 				"select structureLinkId from DDMStructureLink where " +
 					"companyId = ? and classNameId = ? and classPK = ? and " +
 						"structureId = ?");
-			PreparedStatement preparedStatement4 =
+			 PreparedStatement preparedStatement4 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"insert into DDMStructureLink (structureLinkId, " +
 							"companyId, classNameId, classPK, structureId) " +
 								"values (?, ?, ?, ?, ?)"));
-			ResultSet resultSet1 = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet1 = preparedStatement1.executeQuery()) {
 
 			while (resultSet1.next()) {
 				long fileEntryTypeId = resultSet1.getLong(2);

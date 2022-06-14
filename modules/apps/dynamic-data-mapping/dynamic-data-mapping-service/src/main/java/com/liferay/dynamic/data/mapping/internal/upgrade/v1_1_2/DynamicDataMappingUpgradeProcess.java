@@ -43,6 +43,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeException;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -182,7 +183,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 			return ddmForm;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select definition from DDMStructure where structureId = ?")) {
 
 			preparedStatement.setLong(1, structureId);
@@ -214,7 +216,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 			return fullHierarchyDDMForm;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select parentStructureId from DDMStructure where " +
 					"structureId = ?")) {
 
@@ -319,7 +322,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMContentReferences(String query) throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				query);
 			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
@@ -357,7 +361,8 @@ public class DynamicDataMappingUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMStructureReferences() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select DDMStructure.structureId from DDMStructure");
 			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(

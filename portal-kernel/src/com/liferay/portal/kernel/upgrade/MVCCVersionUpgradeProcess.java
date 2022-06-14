@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.xml.Element;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 
@@ -39,26 +40,29 @@ public class MVCCVersionUpgradeProcess extends UpgradeProcess {
 			}
 		}
 
-		DBInspector dbInspector = new DBInspector(connection);
+		try (Connection connection = getConnection()) {
+			DBInspector dbInspector = new DBInspector(connection);
 
-		tableName = dbInspector.normalizeName(tableName, databaseMetaData);
+			tableName = dbInspector.normalizeName(tableName, databaseMetaData);
 
-		ensureTableExists(databaseMetaData, dbInspector, tableName);
+			ensureTableExists(databaseMetaData, dbInspector, tableName);
 
-		try (ResultSet columnResultSet = databaseMetaData.getColumns(
+			try (ResultSet columnResultSet = databaseMetaData.getColumns(
 				dbInspector.getCatalog(), dbInspector.getSchema(), tableName,
 				dbInspector.normalizeName("mvccVersion", databaseMetaData))) {
 
-			if (columnResultSet.next()) {
-				return;
-			}
+				if (columnResultSet.next()) {
+					return;
+				}
 
-			runSQL(
-				"alter table " + tableName +
+				runSQL(
+					"alter table " + tableName +
 					" add mvccVersion LONG default 0 not null");
 
-			if (_log.isDebugEnabled()) {
-				_log.debug("Added column mvccVersion to table " + tableName);
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						"Added column mvccVersion to table " + tableName);
+				}
 			}
 		}
 	}
@@ -78,6 +82,7 @@ public class MVCCVersionUpgradeProcess extends UpgradeProcess {
 
 	protected void upgradeModuleTableMVCCVersions() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
+			Connection connection = getConnection();
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
 
 			String[] moduleTableNames = getModuleTableNames();

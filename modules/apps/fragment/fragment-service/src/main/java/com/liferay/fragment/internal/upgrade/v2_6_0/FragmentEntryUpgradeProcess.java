@@ -20,6 +20,7 @@ import com.liferay.portal.dao.orm.common.SQLTransformer;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.Statement;
 
 /**
@@ -47,7 +48,8 @@ public class FragmentEntryUpgradeProcess extends UpgradeProcess {
 	private void _upgradeFragmentEntryHeadIdAndHeadStatusApproved()
 		throws Exception {
 
-		try (Statement s = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement()) {
 			s.execute(
 				SQLTransformer.transform(
 					StringBundler.concat(
@@ -60,7 +62,8 @@ public class FragmentEntryUpgradeProcess extends UpgradeProcess {
 	private void _upgradeFragmentEntryHeadIdAndHeadStatusDraft()
 		throws Exception {
 
-		try (Statement s = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement()) {
 			s.execute(
 				SQLTransformer.transform(
 					StringBundler.concat(

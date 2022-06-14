@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -30,15 +31,16 @@ public class SiteNavigationMenuItemUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					"select siteNavigationMenuItemId, typeSettings from " +
 						"SiteNavigationMenuItem where type_ = 'display_page'");
-			PreparedStatement updatePreparedStatement =
+			 PreparedStatement updatePreparedStatement =
 				connection.prepareStatement(
 					"update SiteNavigationMenuItem set type_ = ? where " +
 						"siteNavigationMenuItemId = ?");
-			ResultSet resultSet = selectPreparedStatement.executeQuery()) {
+			 ResultSet resultSet = selectPreparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long siteNavigationMenuItemId = resultSet.getLong(

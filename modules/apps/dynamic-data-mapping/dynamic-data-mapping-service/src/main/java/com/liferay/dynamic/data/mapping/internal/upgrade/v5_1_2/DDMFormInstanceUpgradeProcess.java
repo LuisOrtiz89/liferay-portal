@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -55,18 +56,19 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 
 		sb.append("settings_ from DDMFormInstance");
 
-		try (PreparedStatement selectPreparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement1 =
 				connection.prepareStatement(sb.toString());
-			PreparedStatement selectPreparedStatement2 =
+			 PreparedStatement selectPreparedStatement2 =
 				connection.prepareStatement(
 					"select formInstanceVersionId, settings_ from " +
 						"DDMFormInstanceVersion where formInstanceId = ?");
-			PreparedStatement updatePreparedStatement1 =
+			 PreparedStatement updatePreparedStatement1 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMFormInstance set settings_ = ? where " +
 						"formInstanceId = ?");
-			PreparedStatement updatePreparedStatement2 =
+			 PreparedStatement updatePreparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMFormInstanceVersion set settings_ = ? where " +

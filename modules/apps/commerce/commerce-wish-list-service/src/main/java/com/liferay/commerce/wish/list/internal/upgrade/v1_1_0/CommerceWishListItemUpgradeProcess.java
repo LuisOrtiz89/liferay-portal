@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -47,11 +48,12 @@ public class CommerceWishListItemUpgradeProcess extends UpgradeProcess {
 		_addColumn("CommerceWishListItem", "CPInstanceUuid", "VARCHAR(75)");
 		_addColumn("CommerceWishListItem", "CProductId", "LONG");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update CommerceWishListItem set CProductId = ?," +
 					"CPInstanceUuid = ? where CPInstanceId = ?");
-			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				"select distinct CPInstanceId from CommerceWishListItem")) {
 
 			while (resultSet.next()) {

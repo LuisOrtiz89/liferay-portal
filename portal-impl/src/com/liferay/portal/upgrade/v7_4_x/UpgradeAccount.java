@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -52,7 +53,8 @@ public class UpgradeAccount extends UpgradeProcess {
 			alterTableDropColumn("Contact", "accountId");
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update ListType set type_ = ? where type_ = ?")) {
 
 			for (String typeName :
@@ -81,7 +83,8 @@ public class UpgradeAccount extends UpgradeProcess {
 			"legalType = ?, sicCode = ?, tickerSymbol = ?, industry = ?, ",
 			"type_ = ?, size_ = ? where companyId = ?");
 
-		try (Statement selectAccountsStatement = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement selectAccountsStatement = connection.createStatement();
 			PreparedStatement updateCompanyPreparedStatement =
 				connection.prepareStatement(updateCompanySQL);
 			PreparedStatement updateAddressPreparedStatement =

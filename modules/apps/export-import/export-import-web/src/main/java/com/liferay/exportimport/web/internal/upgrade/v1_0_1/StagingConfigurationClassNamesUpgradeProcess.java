@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -55,7 +56,8 @@ public class StagingConfigurationClassNamesUpgradeProcess
 
 		Map<String, String> adminPortletIdsMap = new HashMap<>();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(
 					"select portletId from Portlet where companyId = ? and " +
 						"active_ = [$TRUE$]"))) {
@@ -90,7 +92,8 @@ public class StagingConfigurationClassNamesUpgradeProcess
 	}
 
 	private void _updateStagingConfiguration() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(
 					"select groupId, companyId, typeSettings from Group_ " +
 						"where liveGroupId = 0 and site = [$TRUE$] and " +

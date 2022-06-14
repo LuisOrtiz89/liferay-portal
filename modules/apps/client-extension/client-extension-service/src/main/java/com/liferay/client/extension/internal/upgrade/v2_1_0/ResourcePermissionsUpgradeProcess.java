@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -40,7 +41,8 @@ public class ResourcePermissionsUpgradeProcess extends UpgradeProcess {
 	}
 
 	private boolean _hasResourcePermissions() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select count(*) from ResourcePermission where name = ?")) {
 
 			preparedStatement.setString(
@@ -61,7 +63,8 @@ public class ResourcePermissionsUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _insertResourcePermissions() {
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(
 				"select mvccVersion, remoteAppEntryId, companyId, userId " +
 					"from RemoteAppEntry");

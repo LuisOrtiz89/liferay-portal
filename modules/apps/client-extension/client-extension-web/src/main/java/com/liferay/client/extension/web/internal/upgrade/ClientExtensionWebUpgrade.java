@@ -24,6 +24,7 @@ import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.ArrayList;
@@ -46,11 +47,14 @@ public class ClientExtensionWebUpgrade implements UpgradeStepRegistrator {
 			new BasePortletIdUpgradeProcess() {
 
 				@Override
-				protected String[][] getRenamePortletIdsArray() {
-					return _getRenamePortletIdsArray(
-						connection, "remote_app_",
-						"com_liferay_remote_app_web_internal_portlet_" +
+				protected String[][] getRenamePortletIdsArray()
+					throws SQLException {
+					try (Connection connection = getConnection()) {
+						return _getRenamePortletIdsArray(
+							connection, "remote_app_",
+							"com_liferay_remote_app_web_internal_portlet_" +
 							"RemoteAppEntryPortlet_");
+					}
 				}
 
 			});
@@ -70,22 +74,25 @@ public class ClientExtensionWebUpgrade implements UpgradeStepRegistrator {
 			new BasePortletIdUpgradeProcess() {
 
 				@Override
-				protected String[][] getRenamePortletIdsArray() {
-					return ArrayUtil.append(
-						new String[][] {
-							{
-								"com_liferay_remote_app_admin_web_portlet_" +
+				protected String[][] getRenamePortletIdsArray()
+					throws SQLException {
+					try (Connection connection = getConnection()) {
+						return ArrayUtil.append(
+							new String[][]{
+								{
+									"com_liferay_remote_app_admin_web_portlet_" +
 									"RemoteAppAdminPortlet",
-								"com_liferay_client_extension_web_internal_" +
+									"com_liferay_client_extension_web_internal_" +
 									"portlet_ClientExtensionAdminPortlet"
-							}
-						},
-						_getRenamePortletIdsArray(
-							connection,
-							"com_liferay_remote_app_web_internal_portlet_" +
+								}
+							},
+							_getRenamePortletIdsArray(
+								connection,
+								"com_liferay_remote_app_web_internal_portlet_" +
 								"RemoteAppEntryPortlet_",
-							"com_liferay_client_extension_web_internal_" +
+								"com_liferay_client_extension_web_internal_" +
 								"portlet_ClientExtensionEntryPortlet_"));
+					}
 				}
 
 			});

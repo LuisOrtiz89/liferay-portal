@@ -20,6 +20,7 @@ import com.liferay.account.service.AccountGroupRelLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -41,7 +42,8 @@ public class CommerceAccountGroupCommerceAccountRelUpgradeProcess
 			"select * from CAccountGroupCAccountRel order by " +
 				"CAccountGroupCAccountRelId asc";
 
-		try (Statement selectStatement = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement selectStatement = connection.createStatement()) {
 			ResultSet resultSet = selectStatement.executeQuery(
 				selectCommerceAccountGroupRelSQL);
 

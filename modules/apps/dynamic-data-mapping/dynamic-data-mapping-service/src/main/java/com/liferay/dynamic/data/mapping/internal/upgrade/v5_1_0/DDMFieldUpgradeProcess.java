@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -34,14 +35,15 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMFields() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDMStorageLink.classPK, ",
 					"DDMStorageLink.structureVersionId from DDMStorageLink ",
 					"inner join DDMStructure on DDMStorageLink.structureId = ",
 					"DDMStructure.structureId where DDMStructure.structureKey ",
 					"like ? "));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(
@@ -93,7 +95,8 @@ public class DDMFieldUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMStorageLinks() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDMStructureVersion.structureId, ",
 					"DDMStorageLink.storageLinkId from DDMStorageLink inner ",

@@ -17,6 +17,7 @@ package com.liferay.object.internal.upgrade.v3_6_0;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -33,14 +34,15 @@ public class ObjectFieldUpgradeProcess extends UpgradeProcess {
 
 		alterTableAddColumn("ObjectField", "system_", "BOOLEAN");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select objectDefinitionId, system_ from ObjectDefinition");
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update ObjectField set system_ = ? where " +
 						"objectDefinitionId = ?");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				preparedStatement2.setBoolean(

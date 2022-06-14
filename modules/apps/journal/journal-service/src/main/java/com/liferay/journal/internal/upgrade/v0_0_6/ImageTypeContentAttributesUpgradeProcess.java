@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -77,7 +78,8 @@ public class ImageTypeContentAttributesUpgradeProcess extends UpgradeProcess {
 	}
 
 	private String _getImageInstanceId(String articleImageId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select elInstanceId from JournalArticleImage where " +
 					"articleImageId = ?")) {
 
@@ -95,6 +97,7 @@ public class ImageTypeContentAttributesUpgradeProcess extends UpgradeProcess {
 
 	private void _updateContentImages() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select content, id_ from JournalArticle where content like " +
 					"?")) {

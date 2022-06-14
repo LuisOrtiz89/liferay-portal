@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -37,16 +38,17 @@ public class LayoutPageTemplateEntryUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement countPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement countPreparedStatement =
 				connection.prepareStatement(
 					"select count(*) from LayoutPageTemplateEntry where " +
 						"groupId = ? and name = ?");
-			PreparedStatement deletePreparedStatement =
+			 PreparedStatement deletePreparedStatement =
 				connection.prepareStatement(
 					"delete from LayoutPageTemplateEntry where groupId <> ? " +
 						"and layoutPageTemplateCollectionId <> 0 and type_ = " +
 							"? and layoutPrototypeId = ?");
-			PreparedStatement selectPreparedStatement =
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					SQLTransformer.transform(
 						StringBundler.concat(
@@ -57,12 +59,12 @@ public class LayoutPageTemplateEntryUpgradeProcess extends UpgradeProcess {
 								TYPE_WIDGET_PAGE,
 							" and groupId in (select groupId from Group_ ",
 							"where site = [$FALSE$])")));
-			PreparedStatement updatePreparedStatement =
+			 PreparedStatement updatePreparedStatement =
 				connection.prepareStatement(
 					"update LayoutPageTemplateEntry set groupId = ? , " +
 						"layoutPageTemplateCollectionId = 0, name = ? where " +
 							"layoutPageTemplateEntryId = ?");
-			ResultSet resultSet = selectPreparedStatement.executeQuery()) {
+			 ResultSet resultSet = selectPreparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long layoutPageTemplateEntryId = resultSet.getLong(

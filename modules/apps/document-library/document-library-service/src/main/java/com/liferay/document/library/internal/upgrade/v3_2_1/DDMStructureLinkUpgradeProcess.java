@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -28,7 +29,8 @@ public class DDMStructureLinkUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DLFileEntryType.fileEntryTypeId, ",
 					"DLFileEntryType.dataDefinitionId from DLFileEntryType ",
@@ -37,12 +39,12 @@ public class DDMStructureLinkUpgradeProcess extends UpgradeProcess {
 					"DLFileEntryType.dataDefinitionId and ",
 					"DDMStructureLink.classPK = ",
 					"DLFileEntryType.fileEntryTypeId"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						"delete from DDMStructureLink where classPK = ? and " +
 							"structureId = ?"));
-			ResultSet resultSet1 = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet1 = preparedStatement1.executeQuery()) {
 
 			while (resultSet1.next()) {
 				preparedStatement2.setLong(1, resultSet1.getLong(1));

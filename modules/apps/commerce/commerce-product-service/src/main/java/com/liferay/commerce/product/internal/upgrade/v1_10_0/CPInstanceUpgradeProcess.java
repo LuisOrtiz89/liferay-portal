@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -40,16 +41,17 @@ public class CPInstanceUpgradeProcess extends UpgradeProcess {
 		String updateCPInstanceSQL =
 			"update CPInstance set json = ? WHERE CPInstanceId = ?";
 
-		try (PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateCPInstanceSQL);
-			Statement s1 = connection.createStatement(
+			 Statement s1 = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			Statement s2 = connection.createStatement(
+			 Statement s2 = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			Statement s3 = connection.createStatement(
+			 Statement s3 = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet resultSet1 = s1.executeQuery(selectCPInstanceSQL)) {
+			 ResultSet resultSet1 = s1.executeQuery(selectCPInstanceSQL)) {
 
 			while (resultSet1.next()) {
 				JSONArray outputJSONArray = _jsonFactory.createJSONArray();

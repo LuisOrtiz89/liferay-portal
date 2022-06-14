@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -57,20 +58,21 @@ public class PollsPortletIdToDDMPortletIdUpgradeProcess
 	}
 
 	private void _upgradePortletPreferenceValue() throws Exception {
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select portletPreferencesId from PortletPreferences ",
 						"where portletId like '%",
 						DDMPortletKeys.DYNAMIC_DATA_MAPPING_FORM, "%'"));
-			PreparedStatement updatePreparedStatement =
+			 PreparedStatement updatePreparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(
 						StringBundler.concat(
 							"update PortletPreferenceValue set name = ",
 							"'formInstanceId' where name = 'questionId' AND ",
 							"portletPreferencesId = ?")));
-			ResultSet resultSet = selectPreparedStatement.executeQuery()) {
+			 ResultSet resultSet = selectPreparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				updatePreparedStatement.setLong(1, resultSet.getLong(1));

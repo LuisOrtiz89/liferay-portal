@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -145,7 +146,8 @@ public class SchemaUpgradeProcess extends UpgradeProcess {
 		List<PreparedStatement> preparedStatements = new ArrayList<>(18);
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select KaleoDefinition.kaleoDefinitionId, ",
 					"KaleoDefinitionVersion.kaleoDefinitionVersionId from ",
@@ -153,7 +155,7 @@ public class SchemaUpgradeProcess extends UpgradeProcess {
 					"KaleoDefinition.companyId = ",
 					"KaleoDefinitionVersion.companyId and ",
 					"KaleoDefinition.name = KaleoDefinitionVersion.name"));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			for (String tableName : _TABLE_NAMES) {
 				preparedStatements.add(

@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.service.ImageLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -41,8 +42,9 @@ public class JournalArticleImageUpgradeProcess extends UpgradeProcess {
 		}
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			Statement statement = connection.createStatement();
-			ResultSet resultSet1 = statement.executeQuery(
+			 Connection connection = getConnection();
+			 Statement statement = connection.createStatement();
+			 ResultSet resultSet1 = statement.executeQuery(
 				"select articleImageId from JournalArticleImage")) {
 
 			while (resultSet1.next()) {
@@ -50,9 +52,9 @@ public class JournalArticleImageUpgradeProcess extends UpgradeProcess {
 
 				_imageLocalService.deleteImage(articleImageId);
 			}
-		}
 
-		runSQL(connection, "drop table JournalArticleImage");
+			runSQL(connection, "drop table JournalArticleImage");
+		}
 
 		if (_log.isInfoEnabled()) {
 			_log.info("Deleted table JournalArticleImage");

@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -57,7 +58,7 @@ public class OAuth2ApplicationScopeAliasesUpgradeProcess
 			companyId -> _upgradeCompany(companyId));
 	}
 
-	private ResultSet _getApplicationScopeAliasesResultSet(long companyId)
+	private ResultSet _getApplicationScopeAliasesResultSet(Connection connection, long companyId)
 		throws SQLException {
 
 		String sql = StringBundler.concat(
@@ -74,7 +75,7 @@ public class OAuth2ApplicationScopeAliasesUpgradeProcess
 	}
 
 	private ResultSet _getOAuth2ScopeGrantResultSet(
-			long oAuth2ApplicationScopeAliasesId)
+			Connection connection, long oAuth2ApplicationScopeAliasesId)
 		throws SQLException {
 
 		String sql =
@@ -95,7 +96,8 @@ public class OAuth2ApplicationScopeAliasesUpgradeProcess
 			"update OAuth2ScopeGrant set scopeAliases = ? where " +
 				"oAuth2ScopeGrantId = ?";
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement.setString(
@@ -130,8 +132,9 @@ public class OAuth2ApplicationScopeAliasesUpgradeProcess
 		}
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			ResultSet applicationScopeAliasesResultSet =
-				_getApplicationScopeAliasesResultSet(companyId)) {
+				_getApplicationScopeAliasesResultSet(connection, companyId)) {
 
 			while (applicationScopeAliasesResultSet.next()) {
 				String scopeAliasesString =
@@ -162,8 +165,9 @@ public class OAuth2ApplicationScopeAliasesUpgradeProcess
 			Set<String> assignedScopeAliases)
 		throws SQLException {
 
-		try (ResultSet resultSet = _getOAuth2ScopeGrantResultSet(
-				oAuth2ApplicationScopeAliasesId)) {
+		try (Connection connection = getConnection();
+			 ResultSet resultSet = _getOAuth2ScopeGrantResultSet(
+				connection, oAuth2ApplicationScopeAliasesId)) {
 
 			while (resultSet.next()) {
 				long oAuth2ScopeGrantId = resultSet.getLong(

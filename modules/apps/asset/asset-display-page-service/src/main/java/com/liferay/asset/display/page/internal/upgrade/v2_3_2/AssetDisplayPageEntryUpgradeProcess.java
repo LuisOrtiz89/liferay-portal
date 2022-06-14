@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -41,7 +42,8 @@ public class AssetDisplayPageEntryUpgradeProcess extends UpgradeProcess {
 		long fileEntryClassNameId = PortalUtil.getClassNameId(
 			FileEntry.class.getName());
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select assetDisplayPageEntry1.assetDisplayPageEntryId ",
 					"from AssetDisplayPageEntry assetDisplayPageEntry1 inner ",
@@ -54,7 +56,7 @@ public class AssetDisplayPageEntryUpgradeProcess extends UpgradeProcess {
 					"assetDisplayPageEntry2.classPK where ",
 					"assetDisplayPageEntry1.classNameId = ",
 					dlFileEntryClassNameId));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"delete from AssetDisplayPageEntry where " +
@@ -79,7 +81,8 @@ public class AssetDisplayPageEntryUpgradeProcess extends UpgradeProcess {
 		long fileEntryClassNameId = PortalUtil.getClassNameId(
 			FileEntry.class.getName());
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update AssetDisplayPageEntry set classNameId = ? where " +
 					"classNameId = ?")) {
 

@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -34,7 +35,8 @@ public class RoleUpgradeProcess extends UpgradeProcess {
 	@Override
 	protected void doUpgrade() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select distinct Role_.roleId from Role_ inner ",
@@ -45,7 +47,7 @@ public class RoleUpgradeProcess extends UpgradeProcess {
 							PortalUtil.getClassNameId(AccountRole.class),
 							" and Role_.type_ = ",
 							RoleConstants.TYPE_PROVIDER));
-				PreparedStatement preparedStatement2 =
+				 PreparedStatement preparedStatement2 =
 					AutoBatchPreparedStatementUtil.autoBatch(
 						connection.prepareStatement(
 							"update Role_ set type_ = " +

@@ -17,6 +17,7 @@ package com.liferay.portal.upgrade.v7_0_0;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -42,7 +43,8 @@ public class UpgradeRepository extends UpgradeProcess {
 				String oldPortletName = renamePortletNames[0];
 				String newPortletName = renamePortletNames[1];
 
-				try (PreparedStatement preparedStatement =
+				try (Connection connection = getConnection();
+					 PreparedStatement preparedStatement =
 						connection.prepareStatement(
 							"update Repository set portletId = ?, name = ? " +
 								"where portletId = ?")) {

@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -40,9 +41,10 @@ public class UpgradePortalPreferences extends UpgradeProcess {
 	@Override
 	protected void doUpgrade() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId from Company");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			upgradePortalPreferences(PortletKeys.PREFS_OWNER_ID_DEFAULT);
 
@@ -58,7 +60,8 @@ public class UpgradePortalPreferences extends UpgradeProcess {
 			"where ownerId = ", companyId, " and ownerType = ",
 			PortletKeys.PREFS_OWNER_TYPE_COMPANY);
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				sql);
 			ResultSet resultSet = preparedStatement1.executeQuery()) {
 

@@ -43,6 +43,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.workflow.kaleo.forms.model.KaleoProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -241,7 +242,8 @@ public class KaleoProcessUpgradeProcess extends UpgradeProcess {
 
 	private void _updateKaleoProcess() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select KaleoProcess.kaleoProcessId, ",
 					"KaleoProcess.DDLRecordSetId, KaleoProcess.DDMTemplateId, ",
@@ -251,8 +253,8 @@ public class KaleoProcessUpgradeProcess extends UpgradeProcess {
 					"DDMStructure.structureId = DDLRecordSet.DDMStructureId ",
 					"where DDMStructure.classNameId <> ",
 					_KALEO_PROCESS_CLASS_NAME_ID));
-			ResultSet resultSet = preparedStatement1.executeQuery();
-			PreparedStatement preparedStatement2 =
+			 ResultSet resultSet = preparedStatement1.executeQuery();
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update KaleoProcess set DDMTemplateId = ? where " +
@@ -282,6 +284,7 @@ public class KaleoProcessUpgradeProcess extends UpgradeProcess {
 
 	private void _updateKaleoProcessLink() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select KaleoProcessLink.kaleoProcessLinkId, ",

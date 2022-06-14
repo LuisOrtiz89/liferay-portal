@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -36,13 +37,14 @@ public abstract class BaseUpgradeAssetDisplayPageEntry extends UpgradeProcess {
 
 		long modelClassNameId = PortalUtil.getClassNameId(modelClassName);
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select distinct groupId, companyId, ", pkColumnName,
 					" from ", tableName, " where ", pkColumnName,
 					" not in (select classPK from AssetDisplayPageEntry where ",
 					"classNameId in (", modelClassNameId, "))"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(
@@ -80,7 +82,8 @@ public abstract class BaseUpgradeAssetDisplayPageEntry extends UpgradeProcess {
 			}
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from AssetDisplayPageEntry where classNameId = ? and " +
 					"type_ = ?")) {
 

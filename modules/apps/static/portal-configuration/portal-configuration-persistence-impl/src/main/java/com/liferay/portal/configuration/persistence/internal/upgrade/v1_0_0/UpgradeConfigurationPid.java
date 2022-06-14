@@ -27,6 +27,7 @@ import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -45,14 +46,15 @@ public class UpgradeConfigurationPid extends UpgradeProcess {
 			return;
 		}
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select * from Configuration_");
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update Configuration_ set configurationId = ?, " +
 						"dictionary = ? where configurationId = ?");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				String dictionaryString = resultSet.getString("dictionary");

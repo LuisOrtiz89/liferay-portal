@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 
@@ -36,15 +37,17 @@ public class CTModelUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		DatabaseMetaData databaseMetaData = connection.getMetaData();
+		try (Connection connection = getConnection()) {
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-		DBInspector dbInspector = new DBInspector(connection);
+			DBInspector dbInspector = new DBInspector(connection);
 
-		for (String tableName : _tableNames) {
-			try (LoggingTimer loggingTimer = new LoggingTimer(
+			for (String tableName : _tableNames) {
+				try (LoggingTimer loggingTimer = new LoggingTimer(
 					CTModelUpgradeProcess.class, tableName)) {
 
-				_upgradeCTModel(databaseMetaData, dbInspector, tableName);
+					_upgradeCTModel(databaseMetaData, dbInspector, tableName);
+				}
 			}
 		}
 	}
@@ -70,58 +73,60 @@ public class CTModelUpgradeProcess extends UpgradeProcess {
 			}
 		}
 
-		String[] primaryKeyColumnNames = getPrimaryKeyColumnNames(
-			connection, tableName);
+		try (Connection connection = getConnection()) {
+			String[] primaryKeyColumnNames = getPrimaryKeyColumnNames(
+				connection, tableName);
 
-		if (primaryKeyColumnNames.length == 0) {
-			throw new UpgradeException(
-				"No primary key column found for " + normalizedTableName);
-		}
-		else if (primaryKeyColumnNames.length > 2) {
-			throw new UpgradeException(
-				"Too many primary key columns to upgrade " +
+			if (primaryKeyColumnNames.length == 0) {
+				throw new UpgradeException(
+					"No primary key column found for " + normalizedTableName);
+			}
+			else if (primaryKeyColumnNames.length > 2) {
+				throw new UpgradeException(
+					"Too many primary key columns to upgrade " +
 					normalizedTableName);
-		}
+			}
 
-		String primaryKeyColumnName1 = primaryKeyColumnNames[0];
+			String primaryKeyColumnName1 = primaryKeyColumnNames[0];
 
-		String primaryKeyColumnName2 = null;
+			String primaryKeyColumnName2 = null;
 
-		if (primaryKeyColumnNames.length == 2) {
-			primaryKeyColumnName2 = primaryKeyColumnNames[1];
-		}
+			if (primaryKeyColumnNames.length == 2) {
+				primaryKeyColumnName2 = primaryKeyColumnNames[1];
+			}
 
-		runSQL(
-			StringBundler.concat(
-				"alter table ", normalizedTableName,
-				" add ctCollectionId LONG default 0 not null"));
-
-		// Assume table is a mapping table
-
-		if (primaryKeyColumnName2 != null) {
 			runSQL(
 				StringBundler.concat(
 					"alter table ", normalizedTableName,
-					" add ctChangeType BOOLEAN default null"));
+					" add ctCollectionId LONG default 0 not null"));
+
+			// Assume table is a mapping table
+
+			if (primaryKeyColumnName2 != null) {
+				runSQL(
+					StringBundler.concat(
+						"alter table ", normalizedTableName,
+						" add ctChangeType BOOLEAN default null"));
+			}
+
+			removePrimaryKey(tableName);
+
+			StringBundler sb = new StringBundler(7);
+
+			sb.append("alter table ");
+			sb.append(normalizedTableName);
+			sb.append(" add primary key (");
+			sb.append(primaryKeyColumnName1);
+
+			if (primaryKeyColumnName2 != null) {
+				sb.append(", ");
+				sb.append(primaryKeyColumnName2);
+			}
+
+			sb.append(", ctCollectionId)");
+
+			runSQL(sb.toString());
 		}
-
-		removePrimaryKey(tableName);
-
-		StringBundler sb = new StringBundler(7);
-
-		sb.append("alter table ");
-		sb.append(normalizedTableName);
-		sb.append(" add primary key (");
-		sb.append(primaryKeyColumnName1);
-
-		if (primaryKeyColumnName2 != null) {
-			sb.append(", ");
-			sb.append(primaryKeyColumnName2);
-		}
-
-		sb.append(", ctCollectionId)");
-
-		runSQL(sb.toString());
 	}
 
 	private final String[] _tableNames;

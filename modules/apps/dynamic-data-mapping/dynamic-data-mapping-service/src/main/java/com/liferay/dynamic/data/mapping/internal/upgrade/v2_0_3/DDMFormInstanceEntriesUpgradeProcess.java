@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -36,7 +37,8 @@ public class DDMFormInstanceEntriesUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDMContent.contentId, DDMContent.data_ from ",
 					"DDMFormInstanceRecordVersion inner join DDMFormInstance ",
@@ -44,11 +46,11 @@ public class DDMFormInstanceEntriesUpgradeProcess extends UpgradeProcess {
 					"DDMFormInstance.formInstanceId inner join DDMContent on ",
 					"DDMFormInstanceRecordVersion.storageId = DDMContent.",
 					"contentId"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMContent set data_ = ? where contentId = ?");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				String data = resultSet.getString("data_");

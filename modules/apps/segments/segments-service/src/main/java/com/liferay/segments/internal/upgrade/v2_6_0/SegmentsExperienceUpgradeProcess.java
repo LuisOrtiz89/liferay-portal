@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -35,7 +36,8 @@ public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
 	private void _updateSegmentsExperience(
 		long segmentsExperienceId, int priority) {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update SegmentsExperience set priority = ? where " +
 					"segmentsExperienceId = ?")) {
 
@@ -52,7 +54,8 @@ public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateSegmentsExperiencePriorities() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select segmentsExperienceId, priority from " +
 					"SegmentsExperience where priority >= 0 and " +
 						"segmentsExperienceKey != ? order by priority desc")) {

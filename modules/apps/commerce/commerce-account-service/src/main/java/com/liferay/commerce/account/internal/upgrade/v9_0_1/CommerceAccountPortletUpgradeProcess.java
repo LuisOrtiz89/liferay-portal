@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -38,11 +39,12 @@ public class CommerceAccountPortletUpgradeProcess extends UpgradeProcess {
 			"select layoutId, typeSettings from Layout where typeSettings ",
 			"like '%", _PORTLET_ID, "%'");
 
-		try (PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateLayout);
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(selectLayout)) {
+			 Statement statement = connection.createStatement();
+			 ResultSet resultSet = statement.executeQuery(selectLayout)) {
 
 			while (resultSet.next()) {
 				long layoutId = resultSet.getLong("layoutId");

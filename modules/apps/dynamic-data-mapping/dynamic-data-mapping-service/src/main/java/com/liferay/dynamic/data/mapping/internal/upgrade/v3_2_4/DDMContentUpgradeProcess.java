@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -46,7 +47,8 @@ public class DDMContentUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select contentId, data_, DDMStructureVersion.definition ",
 					"from DDMContent join DDMFormInstanceRecordVersion on  ",
@@ -58,7 +60,7 @@ public class DDMContentUpgradeProcess extends UpgradeProcess {
 					"DDMStructureVersion on DDMStructureVersion.",
 					"structureVersionId = DDMFormInstanceVersion.",
 					"structureVersionId"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMContent set data_ = ? where contentId = ?")) {

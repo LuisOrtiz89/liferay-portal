@@ -46,6 +46,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -71,7 +72,8 @@ public class DDMFormInstanceReportUpgradeProcess extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		runSQL("delete from DDMFormInstanceReport;");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select formInstanceId, groupId, companyId, createDate from " +
 					"DDMFormInstance")) {
 

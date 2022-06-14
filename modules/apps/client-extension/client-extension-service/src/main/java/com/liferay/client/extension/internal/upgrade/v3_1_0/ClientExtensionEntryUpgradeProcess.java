@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -52,9 +53,10 @@ public class ClientExtensionEntryUpgradeProcess extends UpgradeProcess {
 			"update ClientExtensionEntry set typeSettings = ? where " +
 				"clientExtensionEntryId = ?";
 
-		try (Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(selectSQL);
-			PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 Statement statement = connection.createStatement();
+			 ResultSet resultSet = statement.executeQuery(selectSQL);
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection.prepareStatement(updateSQL))) {
 

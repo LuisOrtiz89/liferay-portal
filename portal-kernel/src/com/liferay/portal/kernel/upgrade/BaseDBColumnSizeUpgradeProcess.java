@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -57,6 +58,7 @@ public abstract class BaseDBColumnSizeUpgradeProcess extends UpgradeProcess {
 		throws Exception;
 
 	private void _upgradeTables() throws Exception {
+		try (Connection connection = getConnection()) {
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
 		DBInspector dbInspector = new DBInspector(connection);
@@ -75,8 +77,8 @@ public abstract class BaseDBColumnSizeUpgradeProcess extends UpgradeProcess {
 				Set<String> invalidColumnNames = new HashSet<>();
 
 				try (ResultSet primaryKeyResultSet =
-						databaseMetaData.getPrimaryKeys(
-							catalog, schema, tableName)) {
+						 databaseMetaData.getPrimaryKeys(
+							 catalog, schema, tableName)) {
 
 					while (primaryKeyResultSet.next()) {
 						String primaryKeyName = StringUtil.toUpperCase(
@@ -89,7 +91,7 @@ public abstract class BaseDBColumnSizeUpgradeProcess extends UpgradeProcess {
 				DB db = DBManagerUtil.getDB();
 
 				try (ResultSet indexResultSet = db.getIndexResultSet(
-						connection, tableName)) {
+					connection, tableName)) {
 
 					while (indexResultSet.next()) {
 						invalidColumnNames.add(
@@ -99,7 +101,7 @@ public abstract class BaseDBColumnSizeUpgradeProcess extends UpgradeProcess {
 				}
 
 				try (ResultSet columnResultSet = databaseMetaData.getColumns(
-						catalog, schema, tableName, null)) {
+					catalog, schema, tableName, null)) {
 
 					while (columnResultSet.next()) {
 						int size = columnResultSet.getInt("COLUMN_SIZE");
@@ -113,7 +115,7 @@ public abstract class BaseDBColumnSizeUpgradeProcess extends UpgradeProcess {
 								"COLUMN_NAME");
 
 							if (invalidColumnNames.contains(
-									StringUtil.toUpperCase(columnName))) {
+								StringUtil.toUpperCase(columnName))) {
 
 								continue;
 							}
@@ -134,6 +136,7 @@ public abstract class BaseDBColumnSizeUpgradeProcess extends UpgradeProcess {
 						}
 					}
 				}
+			}
 			}
 		}
 	}

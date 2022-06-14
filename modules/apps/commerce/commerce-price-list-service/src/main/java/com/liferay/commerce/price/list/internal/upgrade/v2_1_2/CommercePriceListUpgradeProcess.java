@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.service.permission.ModelPermissions;
 import com.liferay.portal.kernel.service.permission.ModelPermissionsFactory;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -57,8 +58,9 @@ public class CommercePriceListUpgradeProcess
 			"select companyId, groupId, userId, commercePriceListId from " +
 				"CommercePriceList";
 
-		try (Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(selectCommercePriceListSQL)) {
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(selectCommercePriceListSQL)) {
 
 			while (resultSet.next()) {
 				long companyId = resultSet.getLong("companyId");

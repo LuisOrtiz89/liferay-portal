@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -47,7 +48,9 @@ public class MFAFIDO2CredentialUpgradeProcess extends UpgradeProcess {
 			String credentialKey, int credentialKeyHash)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (
+			Connection connection = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"update MFAFIDO2CredentialEntry set credentialKeyHash = ? " +
 					"where credentialKey = ?")) {
 
@@ -60,6 +63,7 @@ public class MFAFIDO2CredentialUpgradeProcess extends UpgradeProcess {
 
 	private void _updateCredentialKeys() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select MFAFIDO2CredentialEntry.credentialKey from " +
 					"MFAFIDO2CredentialEntry");

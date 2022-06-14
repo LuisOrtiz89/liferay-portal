@@ -74,6 +74,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -261,7 +262,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			boolean localizable, int priority)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMField (mvccVersion, ctCollectionId, ",
 					"fieldId, companyId, parentFieldId, storageId, ",
@@ -295,7 +297,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			String languageId, String attributeValue)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMFieldAttribute (mvccVersion, ",
 					"ctCollectionId, fieldAttributeId, companyId, fieldId, ",
@@ -335,7 +338,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			Timestamp expirationDate, Timestamp lastPublishDate)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMFormInstance (mvccVersion, ",
 					"ctCollectionId, uuid_, formInstanceId, groupId, ",
@@ -374,7 +378,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			long storageId, Timestamp lastPublishDate)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMFormInstanceRecord (mvccVersion, ",
 					"ctCollectionId, uuid_, formInstanceRecordId, groupId, ",
@@ -418,7 +423,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			long formInstanceRecordId, long storageId, Timestamp statusDate)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMFormInstanceRecordVersion (mvccVersion, ",
 					"ctCollectionId, formInstanceRecordVersionId, groupId, ",
@@ -456,7 +462,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			JSONObject dataJSONObject)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMFormInstanceReport (formInstanceReportId, ",
 					"groupId, companyId, createDate, modifiedDate, ",
@@ -480,7 +487,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			String name, String settings, Timestamp statusDate)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMFormInstanceVersion (mvccVersion, ",
 					"ctCollectionId, formInstanceVersionId, groupId, ",
@@ -516,7 +524,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			long companyId, long structureId, long structureVersionId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMStorageLink (mvccVersion, ctCollectionId, ",
 					"uuid_, storageLinkId, companyId, classNameId, classPK, ",
@@ -548,7 +557,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			String definition, Timestamp lastPublishDate)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMStructure (mvccVersion, ctCollectionId, ",
 					"uuid_, structureId, groupId, companyId, userId, ",
@@ -598,7 +608,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			long structureVersionId, String name, String definition)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMStructureLayout (mvccVersion, ",
 					"ctCollectionId, uuid_, structureLayoutId, groupId, ",
@@ -633,7 +644,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			String definition, Timestamp statusDate)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"insert into DDMStructureVersion (mvccVersion, ",
 					"ctCollectionId, structureVersionId, groupId, companyId, ",
@@ -744,7 +756,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 
 		Map<Long, String> ddmFormFieldOptionsValues = new LinkedHashMap<>();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select choiceId, description, name from PollsChoice where " +
 					"questionId = ? order by name")) {
 
@@ -925,7 +938,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradePollsQuestions() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from PollsQuestion");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -998,7 +1012,8 @@ public class PollsToDDMUpgradeProcess extends UpgradeProcess {
 			long structureVersionId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from PollsVote where questionId = ?")) {
 
 			preparedStatement.setLong(1, questionId);

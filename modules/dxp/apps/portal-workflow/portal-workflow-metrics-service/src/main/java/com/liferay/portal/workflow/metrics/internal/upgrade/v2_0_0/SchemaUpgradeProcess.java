@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -47,12 +48,13 @@ public class SchemaUpgradeProcess extends UpgradeProcess {
 				return;
 			}
 
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						"select WorkflowMetricsSLADefinition.* from " +
 							"WorkflowMetricsSLADefinition");
-				ResultSet resultSet = preparedStatement1.executeQuery();
-				PreparedStatement preparedStatement2 =
+				 ResultSet resultSet = preparedStatement1.executeQuery();
+				 PreparedStatement preparedStatement2 =
 					AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 						connection,
 						StringBundler.concat(
@@ -65,7 +67,7 @@ public class SchemaUpgradeProcess extends UpgradeProcess {
 							"statusByUserId, statusByUserName, statusDate) ",
 							"values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ",
 							"?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
-				PreparedStatement preparedStatement3 =
+				 PreparedStatement preparedStatement3 =
 					AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 						connection,
 						StringBundler.concat(

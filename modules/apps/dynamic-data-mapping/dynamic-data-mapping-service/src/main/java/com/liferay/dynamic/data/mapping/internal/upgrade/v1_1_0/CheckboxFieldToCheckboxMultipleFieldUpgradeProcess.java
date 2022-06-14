@@ -38,6 +38,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -65,7 +66,8 @@ public class CheckboxFieldToCheckboxMultipleFieldUpgradeProcess
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDMStructure.definition, DDMStructure.version, ",
 					"DDMStructure.structureId, DDLRecordSet.recordSetId from ",
@@ -73,12 +75,12 @@ public class CheckboxFieldToCheckboxMultipleFieldUpgradeProcess
 					"DDLRecordSet.DDMStructureId = DDMStructure.structureId ",
 					"where DDLRecordSet.scope = ? and DDMStructure.definition ",
 					"like ?"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMStructure set definition = ? where " +
 						"structureId = ?");
-			PreparedStatement preparedStatement3 =
+			 PreparedStatement preparedStatement3 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMStructureVersion set definition = ? where " +
@@ -192,7 +194,8 @@ public class CheckboxFieldToCheckboxMultipleFieldUpgradeProcess
 	private void _updateRecords(DDMForm ddmForm, long recordSetId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDLRecordVersion.DDMStorageId, DDMContent.data_ ",
 					"from DDLRecordVersion inner join DDLRecordSet on ",

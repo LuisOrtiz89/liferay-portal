@@ -47,7 +47,9 @@ public abstract class BaseUpgradeWebModuleRelease extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		ReleaseDAO releaseDAO = new ReleaseDAO();
 
-		releaseDAO.addRelease(connection, getBundleSymbolicName());
+		try (Connection connection = getConnection()) {
+			releaseDAO.addRelease(connection, getBundleSymbolicName());
+		}
 	}
 
 	protected abstract String getBundleSymbolicName();

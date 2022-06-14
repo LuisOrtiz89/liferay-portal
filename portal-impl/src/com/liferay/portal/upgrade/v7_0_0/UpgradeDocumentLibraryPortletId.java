@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,10 +31,11 @@ public class UpgradeDocumentLibraryPortletId
 	extends BasePortletIdUpgradeProcess {
 
 	protected void deleteDuplicateResourceActions() throws SQLException {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select actionId from ResourceAction where name = '" +
 					_PORTLET_ID_DOCUMENT_LIBRARY + "'");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				try (PreparedStatement preparedStatement2 =
@@ -52,7 +54,8 @@ public class UpgradeDocumentLibraryPortletId
 	}
 
 	protected void deleteDuplicateResourcePermissions() throws SQLException {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select companyId, scope, primKey from ResourcePermission ",
 					"where name = '", _PORTLET_ID_DOCUMENT_LIBRARY, "'"));

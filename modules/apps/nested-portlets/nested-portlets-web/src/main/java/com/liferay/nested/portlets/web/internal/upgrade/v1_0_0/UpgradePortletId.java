@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -46,10 +47,11 @@ public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 	private void _updateNestedPortletLayoutRevisionTypeSettings()
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select layoutRevisionId, typeSettings from LayoutRevision " +
 					"where typeSettings LIKE '%nested-column-ids%'");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long layoutRevisionId = resultSet.getLong("layoutRevisionId");
@@ -74,7 +76,8 @@ public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 	}
 
 	private void _updateNestedPortletLayoutTypeSettings() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select plid, typeSettings from Layout where typeSettings " +
 					"LIKE '%nested-column-ids%'");
 

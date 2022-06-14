@@ -60,9 +60,7 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	public void verify() throws VerifyException {
 		long start = System.currentTimeMillis();
 
-		try (Connection connection = getConnection()) {
-			this.connection = connection;
-
+		try {
 			process(
 				companyId -> {
 					if (_log.isInfoEnabled()) {
@@ -83,7 +81,6 @@ public abstract class VerifyProcess extends BaseDBProcess {
 			throw new VerifyException(exception);
 		}
 		finally {
-			this.connection = null;
 
 			if (_log.isInfoEnabled()) {
 				_log.info(
@@ -135,7 +132,8 @@ public abstract class VerifyProcess extends BaseDBProcess {
 	 *         com.liferay.portal.kernel.util.ReleaseInfo#getBuildNumber}
 	 */
 	protected int getBuildNumber() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select buildNumber from Release_ where servletContextName = " +
 					"?")) {
 

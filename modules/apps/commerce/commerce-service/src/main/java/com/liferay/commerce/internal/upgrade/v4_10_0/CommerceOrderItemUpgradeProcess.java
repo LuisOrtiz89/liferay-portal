@@ -18,6 +18,7 @@ import com.liferay.commerce.internal.upgrade.base.BaseCommerceServiceUpgradeProc
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -88,12 +89,13 @@ public class CommerceOrderItemUpgradeProcess
 			"CommerceOrderItem.commerceOrderId and CommerceOrder.orderStatus ",
 			"= 2");
 
-		try (PreparedStatement preparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateCommerceOrderItemSQL);
-			Statement s = connection.createStatement(
+			 Statement s = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet resultSet = s.executeQuery(getCPInstanceSQL)) {
+			 ResultSet resultSet = s.executeQuery(getCPInstanceSQL)) {
 
 			while (resultSet.next()) {
 				long cpInstanceId = resultSet.getLong(1);

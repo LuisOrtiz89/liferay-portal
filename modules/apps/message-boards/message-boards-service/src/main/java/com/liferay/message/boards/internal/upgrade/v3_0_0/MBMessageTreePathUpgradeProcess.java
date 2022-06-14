@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -71,17 +72,19 @@ public class MBMessageTreePathUpgradeProcess extends UpgradeProcess {
 
 		Map<Long, Long> relations = new HashMap<>();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select messageId, parentMessageId from MBMessage where " +
 					"parentMessageId != 0 order by createDate desc");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				relations.put(resultSet.getLong(1), resultSet.getLong(2));
 			}
 		}
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select messageId from MBMessage where treePath is null or " +
 					"treePath = ''");
 			PreparedStatement preparedStatement2 =

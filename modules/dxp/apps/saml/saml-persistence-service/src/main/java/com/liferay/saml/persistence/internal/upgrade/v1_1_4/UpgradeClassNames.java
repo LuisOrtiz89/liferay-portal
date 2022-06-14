@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeException;
 import com.liferay.portal.upgrade.v7_0_0.UpgradeKernelPackage;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -47,11 +48,12 @@ public class UpgradeClassNames extends UpgradeKernelPackage {
 
 	private void _updateCounterClassNames() throws UpgradeException {
 		for (String modelName : _MODEL_NAMES) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						"select count(*) from Counter where name like '%." +
 							modelName + "'");
-				ResultSet resultSet1 = preparedStatement1.executeQuery()) {
+				 ResultSet resultSet1 = preparedStatement1.executeQuery()) {
 
 				if (resultSet1.next()) {
 					int count = resultSet1.getInt(1);

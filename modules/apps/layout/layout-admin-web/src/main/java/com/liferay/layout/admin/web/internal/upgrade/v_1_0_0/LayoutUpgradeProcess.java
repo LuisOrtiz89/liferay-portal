@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -55,7 +56,8 @@ public class LayoutUpgradeProcess extends UpgradeProcess {
 
 	private void _updateLayouts() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select plid, typeSettings from Layout where type_ = ?")) {
 
 			preparedStatement.setString(1, "embedded");
@@ -74,7 +76,8 @@ public class LayoutUpgradeProcess extends UpgradeProcess {
 	private void _updateTypeSettings(long plid, String typeSettings)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Layout set typeSettings = ? where plid = ?")) {
 
 			preparedStatement.setString(1, typeSettings);

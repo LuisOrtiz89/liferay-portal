@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.Statement;
 
 /**
@@ -34,7 +35,8 @@ public class FragmentEntryVersionUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _insertIntoFragmentEntryVersion() throws Exception {
-		try (Statement s = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement()) {
 			s.execute(
 				StringBundler.concat(
 					"insert into FragmentEntryVersion(",

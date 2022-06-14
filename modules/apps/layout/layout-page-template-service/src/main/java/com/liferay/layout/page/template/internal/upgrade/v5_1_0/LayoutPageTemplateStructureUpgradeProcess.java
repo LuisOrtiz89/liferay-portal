@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.segments.model.SegmentsExperience;
 import com.liferay.segments.service.SegmentsExperienceLocalService;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -46,7 +47,8 @@ public class LayoutPageTemplateStructureUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select layoutPageTemplateStructureId, companyId, userId," +
 					"classPK from LayoutPageTemplateStructure")) {
 
@@ -136,7 +138,8 @@ public class LayoutPageTemplateStructureUpgradeProcess extends UpgradeProcess {
 			long publishedPlid)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update FragmentEntryLink set segmentsExperienceId = ? where " +
 					"segmentsExperienceId = 0 and (plid = ? or plid = ?)")) {
 
@@ -153,7 +156,8 @@ public class LayoutPageTemplateStructureUpgradeProcess extends UpgradeProcess {
 			long layoutPageTemplateStructureId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update LayoutPageTemplateStructureRel set " +
 					"segmentsExperienceId = ? where segmentsExperienceId = 0 " +
 						"and layoutPageTemplateStructureId = ?")) {
@@ -170,7 +174,8 @@ public class LayoutPageTemplateStructureUpgradeProcess extends UpgradeProcess {
 			long publishedPlid)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"update SegmentsExperimentRel set segmentsExperienceId = ",
 					"? where segmentsExperienceId = 0 and ",
@@ -191,7 +196,8 @@ public class LayoutPageTemplateStructureUpgradeProcess extends UpgradeProcess {
 			long publishedPlid)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update SegmentsExperiment set segmentsExperienceId = ? " +
 					"where segmentsExperienceId = 0 and (classPK = ? or " +
 						"classPK = ?)")) {

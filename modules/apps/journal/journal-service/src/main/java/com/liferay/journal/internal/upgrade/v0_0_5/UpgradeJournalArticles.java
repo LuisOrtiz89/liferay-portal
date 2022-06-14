@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portlet.PortletPreferencesImpl;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -102,7 +103,8 @@ public class UpgradeJournalArticles extends BasePortletIdUpgradeProcess {
 			String oldRootPortletId, String newRootPortletId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select distinct PortletPreferences.portletPreferencesId ",
 					"from PortletPreferences inner join ",
@@ -112,7 +114,7 @@ public class UpgradeJournalArticles extends BasePortletIdUpgradeProcess {
 					"= '", oldRootPortletId, "' OR portletId like '",
 					oldRootPortletId, "_INSTANCE_%' OR portletId like '",
 					oldRootPortletId, "_USER_%_INSTANCE_%'"));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long portletPreferencesId = resultSet.getLong(

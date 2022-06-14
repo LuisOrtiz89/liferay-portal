@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -32,19 +33,20 @@ public class JournalContentSearchUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradePortletId() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select * from JournalContentSearch where portletId like " +
 					"'56%'");
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"select contentSearchId from JournalContentSearch where " +
 					"groupId = ? AND privateLayout = ? AND layoutId = ? AND " +
 						"portletId = ? AND articleId = ?");
-			PreparedStatement preparedStatement3 =
+			 PreparedStatement preparedStatement3 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update JournalContentSearch set portletId = ? where " +
 						"contentSearchId = ?");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				long contentSearchId = resultSet.getLong("contentSearchId");
