@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -92,10 +93,11 @@ public class KBAttachmentsUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateAttachments() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select kbArticleId, resourcePrimKey, groupId, companyId, " +
 					"userId, status from KBArticle");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long groupId = resultSet.getLong("groupId");

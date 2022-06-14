@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortletKeys;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -31,18 +32,19 @@ public class UpgradeAnnouncementsPortletPreferences extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 LoggingTimer loggingTimer = new LoggingTimer();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select companyId, preferences from PortletPreferences ",
 					"where portletId = '", _PORTLET_ID, "' AND ownerType = ",
 					PortletKeys.PREFS_OWNER_TYPE_COMPANY));
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				StringBundler.concat(
 					"select portletPreferencesId, preferences from ",
 					"PortletPreferences where companyId = ? AND portletId = ? ",
 					"AND ownerType = ?"));
-			PreparedStatement preparedStatement3 =
+			 PreparedStatement preparedStatement3 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection,
 					"update PortletPreferences set preferences = ? where " +

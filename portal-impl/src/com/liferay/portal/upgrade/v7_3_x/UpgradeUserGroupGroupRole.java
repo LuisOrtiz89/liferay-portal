@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.model.UserGroupGroupRole;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,25 +32,26 @@ public class UpgradeUserGroupGroupRole extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		DatabaseMetaData databaseMetaData = connection.getMetaData();
+		try (Connection connection = getConnection()) {
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-		DBInspector dbInspector = new DBInspector(connection);
+			DBInspector dbInspector = new DBInspector(connection);
 
-		String normalizedTableName = dbInspector.normalizeName(
-			"UserGroupGroupRole", databaseMetaData);
+			String normalizedTableName = dbInspector.normalizeName(
+				"UserGroupGroupRole", databaseMetaData);
 
-		try (ResultSet resultSet = databaseMetaData.getColumns(
+			try (ResultSet resultSet = databaseMetaData.getColumns(
 				dbInspector.getCatalog(), dbInspector.getSchema(),
 				normalizedTableName,
 				dbInspector.normalizeName(
 					"userGroupGroupRoleId", databaseMetaData))) {
 
-			if (resultSet.next()) {
-				return;
+				if (resultSet.next()) {
+					return;
+				}
 			}
-		}
 
-		removePrimaryKey("UserGroupGroupRole");
+			removePrimaryKey("UserGroupGroupRole");
 
 		alterTableAddColumn(
 			"UserGroupGroupRole", "userGroupGroupRoleId",
@@ -75,23 +77,24 @@ public class UpgradeUserGroupGroupRole extends UpgradeProcess {
 				updatePreparedStatement.setLong(4, resultSet.getLong(3));
 
 				updatePreparedStatement.addBatch();
+				}
+
+				updatePreparedStatement.executeBatch();
 			}
 
-			updatePreparedStatement.executeBatch();
-		}
+			if (userGroupGroupRoleId > 0) {
+				runSQL(
+					StringBundler.concat(
+						"insert into Counter (name, currentId) values ('",
+						UserGroupGroupRole.class.getName(), "', ",
+						userGroupGroupRoleId, ")"));
+			}
 
-		if (userGroupGroupRoleId > 0) {
 			runSQL(
 				StringBundler.concat(
-					"insert into Counter (name, currentId) values ('",
-					UserGroupGroupRole.class.getName(), "', ",
-					userGroupGroupRoleId, ")"));
+					"alter table ", normalizedTableName,
+					" add primary key (userGroupGroupRoleId)"));
 		}
-
-		runSQL(
-			StringBundler.concat(
-				"alter table ", normalizedTableName,
-				" add primary key (userGroupGroupRoleId)"));
 	}
 
 }

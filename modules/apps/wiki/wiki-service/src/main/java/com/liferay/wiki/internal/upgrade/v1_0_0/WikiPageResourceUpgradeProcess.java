@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -34,7 +35,8 @@ public class WikiPageResourceUpgradeProcess extends UpgradeProcess {
 	private long _getGroupId(long resourcePrimKey) throws Exception {
 		long groupId = 0;
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId from WikiPage where resourcePrimKey = ?")) {
 
 			preparedStatement.setLong(1, resourcePrimKey);
@@ -51,6 +53,7 @@ public class WikiPageResourceUpgradeProcess extends UpgradeProcess {
 
 	private void _updateWikiPageResources() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select resourcePrimKey from WikiPageResource");
 			ResultSet resultSet = preparedStatement.executeQuery()) {

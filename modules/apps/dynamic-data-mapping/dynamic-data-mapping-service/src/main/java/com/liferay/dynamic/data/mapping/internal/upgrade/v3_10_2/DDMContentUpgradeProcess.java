@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -61,7 +62,8 @@ public class DDMContentUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select DDMContent.contentId, DDMContent.data_, ",
@@ -77,7 +79,7 @@ public class DDMContentUpgradeProcess extends UpgradeProcess {
 						"DDMStructureVersion on ",
 						"DDMFormInstanceVersion.structureVersionId = ",
 						"DDMStructureVersion.structureVersionId"));
-			PreparedStatement updatePreparedStatement =
+			 PreparedStatement updatePreparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMContent set data_ = ? where contentId = ?")) {

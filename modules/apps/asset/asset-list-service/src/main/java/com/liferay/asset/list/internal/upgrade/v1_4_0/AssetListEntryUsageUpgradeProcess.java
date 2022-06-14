@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -44,7 +45,8 @@ public class AssetListEntryUsageUpgradeProcess extends UpgradeProcess {
 		alterTableAddColumn("AssetListEntryUsage", "type_", "INTEGER");
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				SQLTransformer.transform(
 					StringBundler.concat(
 						"update AssetListEntryUsage set classNameId = ?, ",

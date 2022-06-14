@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.workflow.kaleo.forms.model.KaleoProcess;
 import com.liferay.portal.workflow.kaleo.forms.model.KaleoProcessLink;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -47,7 +48,8 @@ public class KaleoProcessTemplateLinkUpgradeProcess extends UpgradeProcess {
 		long kaleoProcessClassNameId = _classNameLocalService.getClassNameId(
 			KaleoProcess.class.getName());
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select KaleoProcess.kaleoProcessId, KaleoProcess.",
 					"DDMTemplateId from KaleoProcess where (KaleoProcess.",
@@ -55,7 +57,7 @@ public class KaleoProcessTemplateLinkUpgradeProcess extends UpgradeProcess {
 					"DDMTemplateLink where (DDMTemplateLink.classPK = ",
 					"KaleoProcess.kaleoProcessId) and (DDMTemplateLink.",
 					"classNameId = ", kaleoProcessClassNameId, "))"));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long kaleoProcessLinkId = resultSet.getLong("kaleoProcessId");
@@ -72,7 +74,8 @@ public class KaleoProcessTemplateLinkUpgradeProcess extends UpgradeProcess {
 			_classNameLocalService.getClassNameId(
 				KaleoProcessLink.class.getName());
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select KaleoProcessLink.kaleoProcessLinkId, ",
 					"KaleoProcessLink.DDMTemplateId from KaleoProcessLink ",

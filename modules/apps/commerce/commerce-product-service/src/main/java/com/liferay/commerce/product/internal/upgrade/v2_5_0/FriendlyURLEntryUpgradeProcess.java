@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -62,16 +63,17 @@ public class FriendlyURLEntryUpgradeProcess extends UpgradeProcess {
 		String selectCPFriendlyURLEntrySQL =
 			"select * from CPFriendlyURLEntry order by main desc";
 
-		try (PreparedStatement preparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, insertFriendlyUREntrySQL);
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, insertFriendlyUREntryMappingSQL);
-			PreparedStatement preparedStatement3 = connection.prepareStatement(
+			 PreparedStatement preparedStatement3 = connection.prepareStatement(
 				insertFriendlyUREntryLocalizationSQL);
-			Statement s1 = connection.createStatement();
-			ResultSet resultSet = s1.executeQuery(
+			 Statement s1 = connection.createStatement();
+			 ResultSet resultSet = s1.executeQuery(
 				selectCPFriendlyURLEntrySQL)) {
 
 			while (resultSet.next()) {
@@ -156,7 +158,8 @@ public class FriendlyURLEntryUpgradeProcess extends UpgradeProcess {
 	private long _getFriendlyURLEntryId(long classNameId, long classPK)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from FriendlyURLEntry where classNameId = ? and " +
 					"classPK = ?")) {
 
@@ -177,7 +180,8 @@ public class FriendlyURLEntryUpgradeProcess extends UpgradeProcess {
 			String languageId, long classNameId, long classPK)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from FriendlyURLEntryLocalization where languageId " +
 					"= ? and classNameId = ? and classPK = ?")) {
 
@@ -198,7 +202,8 @@ public class FriendlyURLEntryUpgradeProcess extends UpgradeProcess {
 	private long _getFriendlyURLEntryMappingId(long classNameId, long classPK)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from FriendlyURLEntryMapping where classNameId = ? " +
 					"and classPK = ?")) {
 
@@ -219,7 +224,8 @@ public class FriendlyURLEntryUpgradeProcess extends UpgradeProcess {
 			long groupId, long classNameId, String urlTitle)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from FriendlyURLEntryLocalization where groupId = " +
 					"? and classNameId = ? and urlTitle = ?")) {
 

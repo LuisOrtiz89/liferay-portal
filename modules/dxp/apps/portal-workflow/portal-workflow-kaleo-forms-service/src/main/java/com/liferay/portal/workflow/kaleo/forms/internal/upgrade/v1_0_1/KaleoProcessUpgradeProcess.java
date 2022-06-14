@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.workflow.kaleo.forms.model.KaleoProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -36,7 +37,8 @@ public class KaleoProcessUpgradeProcess extends UpgradeProcess {
 			int workflowDefinitionVersion)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update KaleoProcess set workflowDefinitionName = ?, " +
 					"workflowDefinitionVersion = ? where kaleoProcessId = ?")) {
 
@@ -49,7 +51,8 @@ public class KaleoProcessUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateWorkflowDefinition() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select classPK, workflowDefinitionName, " +
 					"workflowDefinitionVersion from WorkflowDefinitionLink " +
 						"where classNameId = ?")) {

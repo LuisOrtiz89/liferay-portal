@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.exception.NoSuchGroupException;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -41,8 +42,9 @@ public class CPAttachmentFileEntryGroupUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				"select classNameId, classPK from CPAttachmentFileEntry")) {
 
 			long cpDefinitionClassNameId = _getCPDefinitionClassNameId();
@@ -90,7 +92,8 @@ public class CPAttachmentFileEntryGroupUpgradeProcess extends UpgradeProcess {
 	}
 
 	private long _getCPDefinitionClassNameId() throws Exception {
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(
 				"select classNameId from ClassName_ where value = " +
 					"'com.liferay.commerce.product.model.CPDefinition'")) {
@@ -106,7 +109,8 @@ public class CPAttachmentFileEntryGroupUpgradeProcess extends UpgradeProcess {
 	private long _getGroupIdFromCPDefinition(long cpDefinitionId)
 		throws Exception {
 
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(
 				"select groupId from CPDefinition where cpDefinitionId = " +
 					cpDefinitionId)) {

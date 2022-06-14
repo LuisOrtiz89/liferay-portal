@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -93,7 +94,8 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMStructure() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDMStructure.structureId, ",
 					"DDMStructureVersion.definition from DDMStructure inner ",
@@ -129,7 +131,8 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMStructureVersion() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDMStructureVersion.structureVersionId, ",
 					"DDMStructureVersion.definition from DDMStructure inner ",

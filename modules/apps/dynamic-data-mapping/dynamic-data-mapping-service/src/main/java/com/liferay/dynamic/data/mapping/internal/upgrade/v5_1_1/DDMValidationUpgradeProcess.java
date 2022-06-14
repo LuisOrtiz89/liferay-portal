@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -40,20 +41,21 @@ public class DDMValidationUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement selectPreparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement1 =
 				connection.prepareStatement(
 					"select structureId, definition from DDMStructure where " +
 						"classNameId = ? ");
-			PreparedStatement selectPreparedStatement2 =
+			 PreparedStatement selectPreparedStatement2 =
 				connection.prepareStatement(
 					"select structureVersionId, definition from " +
 						"DDMStructureVersion where structureId = ?");
-			PreparedStatement updatePreparedStatement1 =
+			 PreparedStatement updatePreparedStatement1 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMStructure set definition = ? where " +
 						"structureId = ?");
-			PreparedStatement updatePreparedStatement2 =
+			 PreparedStatement updatePreparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMStructureVersion set definition = ? where " +

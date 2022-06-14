@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -64,16 +65,17 @@ public class UserNotificationEventUpgradeProcess extends UpgradeProcess {
 
 	private void _updateUserNotificationEvents() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select userNotificationEventId, payload, actionRequired " +
 					"from UserNotificationEvent where payload like " +
 						"'%actionRequired%'");
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update UserNotificationEvent set payload = ?, " +
 						"actionRequired = ? where userNotificationEventId = ?");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			runSQL("update UserNotificationEvent set delivered = TRUE");
 

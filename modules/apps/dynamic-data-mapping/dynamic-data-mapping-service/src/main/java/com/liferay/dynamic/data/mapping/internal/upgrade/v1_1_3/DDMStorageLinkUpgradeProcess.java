@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -30,7 +31,8 @@ public class DDMStorageLinkUpgradeProcess extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		alterTableAddColumn("DDMStorageLink", "structureVersionId", "LONG");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select distinct DDMStorageLink.structureId, ",
 					"TEMP_TABLE.structureVersionId from DDMStorageLink inner ",
@@ -38,12 +40,12 @@ public class DDMStorageLinkUpgradeProcess extends UpgradeProcess {
 					"structureVersionId from DDMStructureVersion group by ",
 					"DDMStructureVersion.structureId) TEMP_TABLE on ",
 					"DDMStorageLink.structureId = TEMP_TABLE.structureId"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMStorageLink set structureVersionId = ? where " +
 						"structureId = ?");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				long ddmStructureVersionId = resultSet.getLong(

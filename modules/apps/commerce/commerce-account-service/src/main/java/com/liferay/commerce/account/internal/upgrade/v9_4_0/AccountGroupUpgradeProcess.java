@@ -18,6 +18,7 @@ import com.liferay.account.model.AccountGroup;
 import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -34,7 +35,8 @@ public class AccountGroupUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (Statement statement = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement statement = connection.createStatement()) {
 			ResultSet resultSet = statement.executeQuery(
 				"select * from AccountGroup order by accountGroupId asc");
 

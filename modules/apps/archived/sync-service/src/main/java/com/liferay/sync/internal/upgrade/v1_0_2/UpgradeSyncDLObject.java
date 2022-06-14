@@ -41,6 +41,7 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.sync.constants.SyncDLObjectConstants;
 import com.liferay.sync.internal.configuration.SyncServiceConfigurationValues;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -102,7 +103,8 @@ public class UpgradeSyncDLObject extends UpgradeProcess {
 	}
 
 	private void _verifyDLFileEntriesAndFolders(long groupId) throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DLFolder.companyId, DLFolder.userId, ",
 					"DLFolder.userName, DLFolder.createDate, ",
@@ -150,7 +152,7 @@ public class UpgradeSyncDLObject extends UpgradeProcess {
 					" and DLFileEntry.fileEntryId = DLFileVersion.fileEntryId ",
 					"and DLFileVersion.version = '",
 					DLFileEntryConstants.PRIVATE_WORKING_COPY_VERSION, "'"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(
@@ -161,7 +163,7 @@ public class UpgradeSyncDLObject extends UpgradeProcess {
 						"version, versionId, size_, event, type_, typePK, ",
 						"typeUuid) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ",
 						"?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				Timestamp createDate = resultSet.getTimestamp("createDate");
@@ -216,7 +218,8 @@ public class UpgradeSyncDLObject extends UpgradeProcess {
 	}
 
 	private void _verifyLocks(long groupId) throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				SQLTransformer.transform(
 					StringBundler.concat(
 						"select Lock_.expirationDate, Lock_.userId, ",
@@ -273,7 +276,8 @@ public class UpgradeSyncDLObject extends UpgradeProcess {
 
 		sb.append(")");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				sb.toString());
 			PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(

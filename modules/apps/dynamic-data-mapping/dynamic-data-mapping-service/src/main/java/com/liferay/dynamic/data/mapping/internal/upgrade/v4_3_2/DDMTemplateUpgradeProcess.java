@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -35,10 +36,11 @@ public class DDMTemplateUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMTemplate() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select templateId, script FROM DDMTemplate where " +
 					"classNameId = ?");
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMTemplate set script = ? where templateId = ?")) {
@@ -65,7 +67,8 @@ public class DDMTemplateUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMTemplateVersion() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select templateVersionId, script FROM DDMTemplateVersion " +
 					"where classNameId = ?");
 			PreparedStatement preparedStatement2 =

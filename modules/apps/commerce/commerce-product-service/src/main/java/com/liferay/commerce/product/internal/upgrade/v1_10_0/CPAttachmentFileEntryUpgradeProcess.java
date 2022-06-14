@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -42,16 +43,17 @@ public class CPAttachmentFileEntryUpgradeProcess extends UpgradeProcess {
 			"update CPAttachmentFileEntry set json = ? where " +
 				"CPAttachmentFileEntryId = ?";
 
-		try (PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateCPAttachmentFileEntrySQL);
-			Statement s1 = connection.createStatement(
+			 Statement s1 = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			Statement s2 = connection.createStatement(
+			 Statement s2 = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			Statement s3 = connection.createStatement(
+			 Statement s3 = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet resultSet1 = s1.executeQuery(
+			 ResultSet resultSet1 = s1.executeQuery(
 				selectCPAttachmentFileEntrySQL)) {
 
 			while (resultSet1.next()) {

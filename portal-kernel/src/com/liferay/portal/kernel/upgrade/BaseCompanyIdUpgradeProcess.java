@@ -153,11 +153,13 @@ public abstract class BaseCompanyIdUpgradeProcess extends UpgradeProcess {
 
 		String tableName = tableUpdater.getTableName();
 
-		try (LoggingTimer loggingTimer = new LoggingTimer(tableName)) {
+		try (LoggingTimer loggingTimer = new LoggingTimer(tableName);
+			 Connection connection = getConnection()) {
 			alterTableAddColumn(tableName, "companyId", "LONG");
 
 			tableUpdater.update(connection);
 		}
 	}
+
 
 }

@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -58,11 +59,12 @@ public class CPFriendlyURLEntryUpgradeProcess extends UpgradeProcess {
 			"CPFriendlyURLEntry.classPK where classNameId = ",
 			cpDefinitionClassNameId);
 
-		try (PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateCPFriendlyURLSQL);
-			Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(selectCPFriendlyURLEntrySQL)) {
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(selectCPFriendlyURLEntrySQL)) {
 
 			while (resultSet.next()) {
 				long classPK = resultSet.getLong("classPK");

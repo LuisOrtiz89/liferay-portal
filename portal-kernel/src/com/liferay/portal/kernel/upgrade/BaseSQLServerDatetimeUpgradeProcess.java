@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.Types;
@@ -51,74 +52,77 @@ public class BaseSQLServerDatetimeUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeTable(Class<?> tableClass) throws Exception {
-		DBInspector dbInspector = new DBInspector(connection);
+		try (Connection connection = getConnection()) {
+			DBInspector dbInspector = new DBInspector(connection);
 
-		String catalog = dbInspector.getCatalog();
-		String schema = dbInspector.getSchema();
+			String catalog = dbInspector.getCatalog();
+			String schema = dbInspector.getSchema();
 
-		DatabaseMetaData databaseMetaData = connection.getMetaData();
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-		String tableName = dbInspector.normalizeName(
-			getTableName(tableClass), databaseMetaData);
+			String tableName = dbInspector.normalizeName(
+				getTableName(tableClass), databaseMetaData);
 
-		try (ResultSet tableResultSet = databaseMetaData.getTables(
+			try (ResultSet tableResultSet = databaseMetaData.getTables(
 				catalog, schema, tableName, null)) {
 
-			if (!tableResultSet.next()) {
-				_log.error(
-					StringBundler.concat(
-						"Table ", tableName, " does not exist"));
+				if (!tableResultSet.next()) {
+					_log.error(
+						StringBundler.concat(
+							"Table ", tableName, " does not exist"));
 
-				return;
-			}
-
-			String newTypeName = dbInspector.normalizeName(_NEW_TYPE);
-
-			String newTypeDefinition = StringBundler.concat(
-				newTypeName, "(", _NEW_SIZE, ")");
-
-			Map<String, Integer> tableColumnsMap = getTableColumnsMap(
-				tableClass);
-
-			for (Map.Entry<String, Integer> entry :
-					tableColumnsMap.entrySet()) {
-
-				if (entry.getValue() != Types.TIMESTAMP) {
-					continue;
+					return;
 				}
 
-				String columnName = dbInspector.normalizeName(
-					entry.getKey(), databaseMetaData);
+				String newTypeName = dbInspector.normalizeName(_NEW_TYPE);
 
-				try (ResultSet columnResultSet = databaseMetaData.getColumns(
+				String newTypeDefinition = StringBundler.concat(
+					newTypeName, "(", _NEW_SIZE, ")");
+
+				Map<String, Integer> tableColumnsMap = getTableColumnsMap(
+					tableClass);
+
+				for (Map.Entry<String, Integer> entry :
+					tableColumnsMap.entrySet()) {
+
+					if (entry.getValue() != Types.TIMESTAMP) {
+						continue;
+					}
+
+					String columnName = dbInspector.normalizeName(
+						entry.getKey(), databaseMetaData);
+
+					try (ResultSet columnResultSet = databaseMetaData.getColumns(
 						null, null, tableName, columnName)) {
 
-					if (!columnResultSet.next()) {
-						_log.error(
-							StringBundler.concat(
-								"Column ", columnName,
-								" does not exist in table ", tableName));
-
-						continue;
-					}
-
-					if (newTypeName.equals(
-							columnResultSet.getString("TYPE_NAME")) &&
-						(_NEW_SIZE == columnResultSet.getInt(
-							"DECIMAL_DIGITS"))) {
-
-						if (_log.isWarnEnabled()) {
-							_log.warn(
+						if (!columnResultSet.next()) {
+							_log.error(
 								StringBundler.concat(
-									"Column ", columnName, " in table ",
-									tableName, " already is ",
-									newTypeDefinition));
+									"Column ", columnName,
+									" does not exist in table ", tableName));
+
+							continue;
 						}
 
-						continue;
-					}
+						if (newTypeName.equals(
+							columnResultSet.getString("TYPE_NAME")) &&
+							(_NEW_SIZE == columnResultSet.getInt(
+								"DECIMAL_DIGITS"))) {
 
-					alterColumnType(tableName, columnName, newTypeDefinition);
+							if (_log.isWarnEnabled()) {
+								_log.warn(
+									StringBundler.concat(
+										"Column ", columnName, " in table ",
+										tableName, " already is ",
+										newTypeDefinition));
+							}
+
+							continue;
+						}
+
+						alterColumnType(
+							tableName, columnName, newTypeDefinition);
+					}
 				}
 			}
 		}

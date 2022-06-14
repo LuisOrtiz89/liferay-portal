@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.security.permission.ResourceActionsImpl;
 import com.liferay.portal.util.PropsValues;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -105,9 +106,10 @@ public class ResourcePermissionUpgradeProcess extends UpgradeProcess {
 			return;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select calendarResourceId, companyId from CalendarResource");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long calendarResourceId = resultSet.getLong(1);

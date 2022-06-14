@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.workflow.kaleo.definition.NodeType;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -67,7 +68,8 @@ public class KaleoTaskInstanceTokenUpgradeProcess extends UpgradeProcess {
 	private long _getKaleoInstanceTokenId(long kaleoInstanceTokenId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select KaleoNode.type_, ",
 					"KaleoInstanceToken.kaleoInstanceTokenId from KaleoNode ",
@@ -102,6 +104,7 @@ public class KaleoTaskInstanceTokenUpgradeProcess extends UpgradeProcess {
 
 	private void _updateKaleoTaskInstanceTokens() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select kaleoTaskInstanceTokenId, kaleoInstanceTokenId from " +
 					"KaleoTaskInstanceToken");

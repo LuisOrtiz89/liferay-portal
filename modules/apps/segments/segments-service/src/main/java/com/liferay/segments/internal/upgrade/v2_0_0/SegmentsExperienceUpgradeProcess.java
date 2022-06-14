@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -41,7 +42,8 @@ public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
 	private void _updateSegmentsExperience(
 		long segmentsExperienceId, String segmentsExperienceKey) {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update SegmentsExperience set segmentsExperienceKey = ? " +
 					"where segmentsExperienceId = ?")) {
 
@@ -58,7 +60,8 @@ public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateSegmentsExperiences() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select segmentsExperienceId from SegmentsExperience")) {
 
 			try (ResultSet resultSet = preparedStatement.executeQuery()) {

@@ -19,6 +19,7 @@ import com.liferay.portal.dao.orm.common.SQLTransformer;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -33,7 +34,8 @@ public class UpgradeAssetCategory extends UpgradeProcess {
 		alterTableDropColumn("AssetCategory", "rightCategoryId");
 		alterTableAddColumn("AssetCategory", "treePath", "STRING null");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(
 					StringBundler.concat(
 						"update AssetCategory set treePath = CONCAT('/', ",
@@ -45,7 +47,8 @@ public class UpgradeAssetCategory extends UpgradeProcess {
 			}
 		}
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select AssetCategory.treePath, ",

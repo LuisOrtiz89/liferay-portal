@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -90,7 +91,8 @@ public class ArticleSystemEventsUpgradeProcess extends UpgradeProcess {
 
 				String articleId = null;
 
-				try (PreparedStatement preparedStatement =
+				try (Connection connection = getConnection();
+					 PreparedStatement preparedStatement =
 						connection.prepareStatement(
 							StringBundler.concat(
 								"select articleId from JournalArticleResource ",
@@ -113,7 +115,8 @@ public class ArticleSystemEventsUpgradeProcess extends UpgradeProcess {
 					continue;
 				}
 
-				try (PreparedStatement preparedStatement =
+				try (Connection connection = getConnection();
+					 PreparedStatement preparedStatement =
 						connection.prepareStatement(
 							StringBundler.concat(
 								"select 1 from JournalArticle where groupId = ",

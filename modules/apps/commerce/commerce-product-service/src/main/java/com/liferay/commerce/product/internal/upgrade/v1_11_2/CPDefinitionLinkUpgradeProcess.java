@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -29,11 +30,12 @@ public class CPDefinitionLinkUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select CProductId from CProduct where CProductId = ?");
-			Statement s = connection.createStatement(
+			 Statement s = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet resultSet1 = s.executeQuery(
+			 ResultSet resultSet1 = s.executeQuery(
 				"select distinct CProductId from CPDefinitionLink")) {
 
 			while (resultSet1.next()) {

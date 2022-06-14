@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -41,7 +42,8 @@ public class JournalArticleImageUpgradeProcess extends UpgradeProcess {
 
 	private void _deleteOrphanJournalArticleImages() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"delete from JournalArticleImage where not exists",
 					"(select 1 from Image where",
@@ -53,6 +55,7 @@ public class JournalArticleImageUpgradeProcess extends UpgradeProcess {
 
 	private void _updateJournalArticleImagesInstanceId() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select articleId, elName from JournalArticleImage where " +
 					"(elInstanceId = '' or elInstanceId is null) group by " +
@@ -83,6 +86,7 @@ public class JournalArticleImageUpgradeProcess extends UpgradeProcess {
 
 	private void _updateJournalArticleImagesName() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select articleImageId, elName from JournalArticleImage");
 			ResultSet resultSet = preparedStatement1.executeQuery()) {

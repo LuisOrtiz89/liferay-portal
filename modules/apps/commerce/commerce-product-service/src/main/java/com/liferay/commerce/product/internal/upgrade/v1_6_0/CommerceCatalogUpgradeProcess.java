@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -61,18 +62,19 @@ public class CommerceCatalogUpgradeProcess extends UpgradeProcess {
 			"userId, userName, createDate, modifiedDate, classNameId, ",
 			"classPK, commerceChannelId) values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-		try (PreparedStatement preparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, insertCommerceCatalogSQL);
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, insertCommerceChannelSQL);
-			PreparedStatement preparedStatement3 =
+			 PreparedStatement preparedStatement3 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, insertCommerceChannelRelSQL);
-			Statement s1 = connection.createStatement(
+			 Statement s1 = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet resultSet = s1.executeQuery(
+			 ResultSet resultSet = s1.executeQuery(
 				"select distinct groupId, companyId, userId, userName, " +
 					"defaultLanguageId from CPDefinition")) {
 

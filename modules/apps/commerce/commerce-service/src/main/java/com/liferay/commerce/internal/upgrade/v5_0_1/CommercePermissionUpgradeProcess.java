@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -49,9 +50,10 @@ public class CommercePermissionUpgradeProcess
 	protected void doUpgrade() throws Exception {
 		Map<String, String> resourceActionNames = _getResourceActionNames();
 
-		try (Statement statement = connection.createStatement(
+		try (Connection connection = getConnection();
+			 Statement statement = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet resultSet = statement.executeQuery(
+			 ResultSet resultSet = statement.executeQuery(
 				StringBundler.concat(
 					"select ResourcePermissionId from ResourcePermission ",
 					"where name in ('90', '", _PORTLET_NAME_COMMERCE_DISCOUNT,
@@ -162,7 +164,8 @@ public class CommercePermissionUpgradeProcess
 
 		sb.append(")");
 
-		try (Statement statement = connection.createStatement(
+		try (Connection connection = getConnection();
+			 Statement statement = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 			ResultSet resultSet = statement.executeQuery(sb.toString())) {
 

@@ -17,6 +17,7 @@ package com.liferay.portal.workflow.kaleo.internal.upgrade.v3_1_0;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.workflow.constants.WorkflowDefinitionConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -29,7 +30,8 @@ public class KaleoDefinitionUpgradeProcess extends UpgradeProcess {
 		if (!hasColumn("KaleoDefinition", "scope")) {
 			alterTableAddColumn("KaleoDefinition", "scope", "VARCHAR(75) null");
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"update KaleoDefinition set scope = ?")) {
 

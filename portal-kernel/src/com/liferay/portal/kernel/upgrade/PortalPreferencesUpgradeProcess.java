@@ -17,6 +17,7 @@ package com.liferay.portal.kernel.upgrade;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 import java.util.Map;
@@ -67,7 +68,8 @@ public abstract class PortalPreferencesUpgradeProcess extends UpgradeProcess {
 				sb.append("namespace = ?");
 			}
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(sb.toString())) {
 
 				preparedStatement.setString(1, newNamespace);

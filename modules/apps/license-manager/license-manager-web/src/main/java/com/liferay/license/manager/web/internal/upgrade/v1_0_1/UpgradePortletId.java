@@ -18,6 +18,7 @@ import com.liferay.license.manager.web.internal.constants.LicenseManagerPortletK
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.BasePortletIdUpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,9 +31,10 @@ public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select id_ from Portlet where portletId = '176'");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			if (resultSet.next()) {
 				_removeDuplicatePortletPreferences();
@@ -55,7 +57,8 @@ public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 	}
 
 	private void _removeDuplicatePortletPreferences() throws SQLException {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select ownerId, ownerType, plid from PortletPreferences " +
 					"where portletId = '176'");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -85,7 +88,8 @@ public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 	}
 
 	private void _removeDuplicateResourcePermissions() throws SQLException {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId, scope, primKey, roleId from " +
 					"ResourcePermission where name = '176'");
 			ResultSet resultSet = preparedStatement.executeQuery()) {

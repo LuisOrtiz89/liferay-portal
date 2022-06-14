@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -76,17 +77,18 @@ public class UpgradeEmailNotificationPreferences extends UpgradeProcess {
 					_log.debug(exception);
 				}
 
-				try (PreparedStatement preparedStatement1 =
+				try (Connection connection = getConnection();
+					 PreparedStatement preparedStatement1 =
 						connection.prepareStatement(
 							StringBundler.concat(
 								"select portalPreferencesId, preferences from ",
 								"PortalPreferences where preferences like '%",
 								oldValue, "%'"));
-					PreparedStatement preparedStatement2 =
+					 PreparedStatement preparedStatement2 =
 						connection.prepareStatement(
 							"update PortalPreferences set preferences = ? " +
 								"where portalPreferencesId = ?");
-					ResultSet resultSet = preparedStatement1.executeQuery()) {
+					 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 					while (resultSet.next()) {
 						preparedStatement2.setString(

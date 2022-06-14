@@ -18,6 +18,7 @@ import com.liferay.account.model.AccountGroupRel;
 import com.liferay.account.service.AccountGroupRelLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -38,7 +39,8 @@ public class CommerceAccountGroupRelUpgradeProcess extends UpgradeProcess {
 			"select * from CommerceAccountGroupRel order by " +
 				"commerceAccountGroupRelId asc";
 
-		try (Statement selectStatement = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement selectStatement = connection.createStatement()) {
 			ResultSet resultSet = selectStatement.executeQuery(
 				selectCommerceAccountGroupRelSQL);
 

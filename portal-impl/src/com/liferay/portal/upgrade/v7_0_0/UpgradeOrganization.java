@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -52,12 +53,13 @@ public class UpgradeOrganization extends UpgradeProcess {
 	}
 
 	protected void upgradeOrganizationLogoId() throws SQLException {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select groupId, logoId from LayoutSet where logoId > 0 and " +
 					"privateLayout = ?");
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"select classPK from Group_ where groupId = ?");
-			PreparedStatement preparedStatement3 = connection.prepareStatement(
+			 PreparedStatement preparedStatement3 = connection.prepareStatement(
 				"update Organization_ set logoId = ? where organizationId = " +
 					"?")) {
 
@@ -87,6 +89,7 @@ public class UpgradeOrganization extends UpgradeProcess {
 
 	protected void upgradeOrganizationSiteHierarchy() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select groupId, organizationId, parentOrganizationId, ",

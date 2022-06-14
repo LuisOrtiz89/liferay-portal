@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.model.ListTypeConstants;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -36,7 +37,8 @@ public class UpgradeListType extends UpgradeProcess {
 	}
 
 	private void _addListType(String name, String type) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select * from ListType where name = ",
 					StringUtil.quote(name), "and type_ = ",
@@ -49,7 +51,8 @@ public class UpgradeListType extends UpgradeProcess {
 			}
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"insert into ListType (listTypeId, name, type_) values (?, " +
 					"?, ?)")) {
 

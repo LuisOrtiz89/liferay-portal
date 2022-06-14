@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -77,7 +78,8 @@ public class UpgradePortalPreferences extends UpgradeProcess {
 	}
 
 	protected void upgradeOrganizationReminderQueries() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select PortalPreferences.portalPreferencesId, ",
 					"PortalPreferences.preferences, Organization_.companyId ",
@@ -86,8 +88,8 @@ public class UpgradePortalPreferences extends UpgradeProcess {
 					"where PortalPreferences.ownerType = ",
 					PortletKeys.PREFS_OWNER_TYPE_ORGANIZATION,
 					" and preferences like '%reminderQueries%'"));
-			ResultSet resultSet = preparedStatement1.executeQuery();
-			PreparedStatement preparedStatement2 =
+			 ResultSet resultSet = preparedStatement1.executeQuery();
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update PortalPreferences set preferences = ? where " +

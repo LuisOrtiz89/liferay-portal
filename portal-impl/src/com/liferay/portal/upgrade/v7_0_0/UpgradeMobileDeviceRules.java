@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -40,7 +41,8 @@ public class UpgradeMobileDeviceRules extends UpgradeProcess {
 	public long getActionIds(String className) throws Exception {
 		long actionIds = 0;
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select bitwiseValue from ResourceAction where name = ?")) {
 
 			preparedStatement.setString(1, className);
@@ -63,7 +65,8 @@ public class UpgradeMobileDeviceRules extends UpgradeProcess {
 		String roleName = RoleConstants.OWNER;
 		int roleType = RoleConstants.TYPE_REGULAR;
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId, roleId from Role_ where name = ? and " +
 					"type_ = ?")) {
 
@@ -84,7 +87,8 @@ public class UpgradeMobileDeviceRules extends UpgradeProcess {
 	}
 
 	public void populateCompanyIds() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select MDRRuleGroup.companyId, ",
 					"MDRRuleGroupInstance.ruleGroupInstanceId from ",
@@ -118,7 +122,8 @@ public class UpgradeMobileDeviceRules extends UpgradeProcess {
 
 		long actionIds = getActionIds(_CLASS_NAME);
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select MDRRuleGroupInstance.companyId, ",
 					"MDRRuleGroupInstance.ruleGroupInstanceId, ",

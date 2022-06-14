@@ -17,6 +17,7 @@ package com.liferay.commerce.product.internal.upgrade.v2_2_1;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -35,12 +36,13 @@ public class CPDefinitionOptionValueRelUpgradeProcess extends UpgradeProcess {
 			"update CPDefinitionOptionValueRel set groupId = ? WHERE " +
 				"CPDefinitionOptionRelId = ?";
 
-		try (PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateCPDefinitionOptionValueRelSQL);
-			Statement s1 = connection.createStatement(
+			 Statement s1 = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet resultSet1 = s1.executeQuery(
+			 ResultSet resultSet1 = s1.executeQuery(
 				selectCPDefinitionOptionRelSQL)) {
 
 			while (resultSet1.next()) {

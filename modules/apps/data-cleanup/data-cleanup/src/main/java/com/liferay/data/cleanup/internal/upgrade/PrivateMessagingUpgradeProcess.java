@@ -17,6 +17,7 @@ package com.liferay.data.cleanup.internal.upgrade;
 import com.liferay.message.boards.service.MBThreadLocalService;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -51,10 +52,11 @@ public class PrivateMessagingUpgradeProcess extends BaseUpgradeProcess {
 	}
 
 	private void _deleteMBThreads() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(
 					"select mbThreadId from PM_UserThread"));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				_mbThreadLocalService.deleteMBThread(resultSet.getLong(1));

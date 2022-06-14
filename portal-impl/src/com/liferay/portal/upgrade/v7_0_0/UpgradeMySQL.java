@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.util.PropsValues;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -72,6 +73,7 @@ public class UpgradeMySQL extends UpgradeProcess {
 	}
 
 	protected void upgradeDatetimePrecision() throws Exception {
+		try (Connection connection = getConnection()) {
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
 		DBInspector dbInspector = new DBInspector(connection);
@@ -94,6 +96,7 @@ public class UpgradeMySQL extends UpgradeProcess {
 					resultSet.getString("TABLE_CAT"),
 					resultSet.getString("TABLE_SCHEM"), tableName);
 			}
+		}
 		}
 	}
 
@@ -147,6 +150,7 @@ public class UpgradeMySQL extends UpgradeProcess {
 
 	protected void upgradeTableEngine() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			Statement statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery("show table status")) {
 

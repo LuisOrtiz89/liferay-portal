@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.xml.UnsecureSAXReaderUtil;
 
 import java.io.InputStream;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 
 import java.util.List;
@@ -54,7 +55,8 @@ public class PortalMVCCVersionUpgradeProcess extends MVCCVersionUpgradeProcess {
 	}
 
 	protected void upgradeClassElementMVCCVersions() throws Exception {
-		try (LoggingTimer loggingTimer = new LoggingTimer()) {
+		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection()) {
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
 
 			List<Element> classElements = getClassElements();

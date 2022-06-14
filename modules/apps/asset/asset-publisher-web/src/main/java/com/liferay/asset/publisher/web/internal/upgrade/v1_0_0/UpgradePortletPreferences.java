@@ -36,6 +36,7 @@ import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReader;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -157,7 +158,8 @@ public class UpgradePortletPreferences
 	private String _getJournalArticleResourceUuid(String journalArticleUuid)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select JournalArticleResource.uuid_ from ",
 					"JournalArticleResource inner join JournalArticle on ",

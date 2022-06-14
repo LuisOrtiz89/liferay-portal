@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.util.Validator;
 
 import java.io.StringWriter;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -34,8 +35,9 @@ public class SamlSpIdpConnectionDataUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(
+		try (Connection connection = getConnection();
+			 Statement statement = connection.createStatement();
+			 ResultSet resultSet = statement.executeQuery(
 				"select samlSpIdpConnectionId, userAttributeMappings from " +
 					"SamlSpIdpConnection")) {
 

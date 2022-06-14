@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -52,7 +53,8 @@ public class ResourcePermissionsUpgradeProcess extends UpgradeProcess {
 	private void _updateResourcePermissions(
 		String oldClassName, String newClassName) {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update ResourcePermission set name = ? where name = ?")) {
 
 			preparedStatement.setString(1, newClassName);

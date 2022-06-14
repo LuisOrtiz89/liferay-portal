@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -47,7 +48,8 @@ public class UpgradeSubscription extends UpgradeProcess {
 	protected void addClassName(long classNameId, String className)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"insert into ClassName_ (mvccVersion, classNameId, value) " +
 					"values (?, ?, ?)")) {
 
@@ -117,7 +119,8 @@ public class UpgradeSubscription extends UpgradeProcess {
 			"select ", groupIdSQLParts[1], " from ", tableName, " where ",
 			groupIdSQLParts[2], " = ?");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement1.setLong(1, classPK);
@@ -154,7 +157,8 @@ public class UpgradeSubscription extends UpgradeProcess {
 	}
 
 	protected boolean hasGroup(long groupId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select count(*) from Group_ where groupId = ?")) {
 
 			preparedStatement.setLong(1, groupId);
@@ -188,6 +192,7 @@ public class UpgradeSubscription extends UpgradeProcess {
 
 	protected void updateSubscriptionGroupIds() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select subscriptionId, classNameId, classPK from " +
 					"Subscription");

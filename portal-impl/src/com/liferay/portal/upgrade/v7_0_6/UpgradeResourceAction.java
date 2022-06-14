@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -29,15 +30,16 @@ import java.sql.ResultSet;
 public class UpgradeResourceAction extends UpgradeProcess {
 
 	protected void deleteDuplicateBitwiseValuesOnResource() throws Exception {
-		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 LoggingTimer loggingTimer = new LoggingTimer();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select name, bitwiseValue, min(resourceActionId) as " +
 					"minResourceActionId from ResourceAction group by name, " +
 						"bitwiseValue having count(resourceActionId) > 1");
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"select resourceActionId, actionId from ResourceAction where " +
 					"name = ? and bitwiseValue = ? and resourceActionId != ?");
-			ResultSet resultSet1 = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet1 = preparedStatement1.executeQuery()) {
 
 			while (resultSet1.next()) {
 				String name = resultSet1.getString("name");

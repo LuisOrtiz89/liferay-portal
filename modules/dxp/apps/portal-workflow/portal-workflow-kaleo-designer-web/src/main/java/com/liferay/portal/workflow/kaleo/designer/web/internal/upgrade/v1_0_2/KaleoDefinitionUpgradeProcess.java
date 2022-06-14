@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.workflow.kaleo.model.KaleoDefinition;
 import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionLocalService;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -90,7 +91,8 @@ public class KaleoDefinitionUpgradeProcess extends UpgradeProcess {
 		throws Exception {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select KaleoDefinitionVersion.* from ",
 					"KaleoDefinitionVersion join (select name,  ",
@@ -102,7 +104,7 @@ public class KaleoDefinitionUpgradeProcess extends UpgradeProcess {
 					"join KaleoDefinition on KaleoDefinitionVersion.name = ",
 					"KaleoDefinition.name where KaleoDefinition.",
 					"kaleoDefinitionId is null"));
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				long groupId = resultSet.getLong("groupId");

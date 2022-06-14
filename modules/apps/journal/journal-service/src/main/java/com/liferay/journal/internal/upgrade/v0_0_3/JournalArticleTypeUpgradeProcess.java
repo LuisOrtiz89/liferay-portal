@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portlet.asset.util.AssetVocabularySettingsHelper;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -125,9 +126,10 @@ public class JournalArticleTypeUpgradeProcess extends UpgradeProcess {
 	}
 
 	private Set<String> _getArticleTypes() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select distinct type_ from JournalArticle");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			Set<String> types = new HashSet<>();
 
@@ -140,7 +142,8 @@ public class JournalArticleTypeUpgradeProcess extends UpgradeProcess {
 	}
 
 	private boolean _hasSelectedArticleTypes() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select count(*) from JournalArticle where type_ != 'general'");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -161,7 +164,8 @@ public class JournalArticleTypeUpgradeProcess extends UpgradeProcess {
 			Map<String, Long> journalArticleTypesToAssetCategoryIds)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select JournalArticle.resourcePrimKey, ",
 					"JournalArticle.type_ from JournalArticle left join ",

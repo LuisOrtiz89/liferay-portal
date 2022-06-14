@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.GetterUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -85,12 +86,13 @@ public class KBArticleUpgradeProcess extends UpgradeProcess {
 			String selectSQL, String updateSQL)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateSQL);
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				selectSQL);
-			ResultSet resultSet = preparedStatement2.executeQuery()) {
+			 ResultSet resultSet = preparedStatement2.executeQuery()) {
 
 			int count = 0;
 

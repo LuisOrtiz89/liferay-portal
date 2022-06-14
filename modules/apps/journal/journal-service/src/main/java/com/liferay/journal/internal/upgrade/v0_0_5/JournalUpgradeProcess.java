@@ -52,6 +52,7 @@ import com.liferay.portal.kernel.xml.SAXReaderUtil;
 
 import java.io.IOException;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -170,7 +171,8 @@ public class JournalUpgradeProcess extends UpgradeProcess {
 
 	private void _addDDMStorageLinks() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select DDMStructure.structureId, ",
@@ -222,7 +224,8 @@ public class JournalUpgradeProcess extends UpgradeProcess {
 			long journalArticleClassNameId = PortalUtil.getClassNameId(
 				JournalArticle.class.getName());
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select DDMTemplate.templateId, ",
@@ -348,7 +351,8 @@ public class JournalUpgradeProcess extends UpgradeProcess {
 				"select JournalArticle.content from JournalArticle where " +
 					"JournalArticle.id_ = ?";
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(sql)) {
 
 				preparedStatement.setLong(1, articleId);
@@ -540,7 +544,8 @@ public class JournalUpgradeProcess extends UpgradeProcess {
 			String content)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update JournalArticle set DDMStructureKey = ?, " +
 					"DDMTemplateKey = ?, content = ? where id_ = ?")) {
 
@@ -556,7 +561,8 @@ public class JournalUpgradeProcess extends UpgradeProcess {
 	private void _updateJournalArticleContent(long id, String content)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update JournalArticle set content = ? where id_ = ?")) {
 
 			preparedStatement.setString(1, content);
@@ -574,7 +580,8 @@ public class JournalUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateJournalArticles(long companyId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select id_, groupId, content, DDMStructureKey from " +
 					"JournalArticle where companyId = " + companyId);
 			ResultSet resultSet = preparedStatement.executeQuery()) {

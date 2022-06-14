@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.workflow.kaleo.forms.constants.KaleoFormsPortletKeys;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -116,9 +117,10 @@ public class UpgradePortletId extends BasePortletIdUpgradeProcess {
 			"select plid, typeSettings from Layout where " +
 				getTypeSettingsCriteria(oldRootPortletId);
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql);
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				updateLayout(

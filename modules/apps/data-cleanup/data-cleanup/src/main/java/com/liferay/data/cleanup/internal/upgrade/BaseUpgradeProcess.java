@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -33,7 +34,8 @@ public abstract class BaseUpgradeProcess extends UpgradeProcess {
 		throws Exception {
 
 		if (ArrayUtil.getLength(oldPortletIds) > 0) {
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"select portletId from Portlet where portletId = ?")) {
 
@@ -47,7 +49,9 @@ public abstract class BaseUpgradeProcess extends UpgradeProcess {
 			}
 		}
 
-		LayoutTypeSettingsUtil.removePortletIds(connection, portletIds);
+		try (Connection connection = getConnection()) {
+			LayoutTypeSettingsUtil.removePortletIds(connection, portletIds);
+		}
 
 		_deleteFromPortlet(portletIds);
 

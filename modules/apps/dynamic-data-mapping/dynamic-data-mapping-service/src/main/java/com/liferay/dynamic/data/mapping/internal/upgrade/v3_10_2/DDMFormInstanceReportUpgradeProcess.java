@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -37,13 +38,14 @@ public class DDMFormInstanceReportUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select DDMFormInstanceReport.data_, ",
 						"DDMFormInstanceReport.formInstanceReportId from ",
 						"DDMFormInstanceReport"));
-			PreparedStatement updatePreparedStatement =
+			 PreparedStatement updatePreparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMFormInstanceReport set data_ = ? where " +

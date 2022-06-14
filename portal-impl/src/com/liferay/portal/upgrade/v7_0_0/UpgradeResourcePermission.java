@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -55,11 +56,12 @@ public class UpgradeResourcePermission extends UpgradeProcess {
 				"update ResourcePermission set viewActionId = [$TRUE$] where " +
 					"MOD(actionIds, 2) = 1");
 
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						"select distinct name from ResourcePermission");
-				ResultSet resultSet1 = preparedStatement1.executeQuery();
-				PreparedStatement preparedStatement2 =
+				 ResultSet resultSet1 = preparedStatement1.executeQuery();
+				 PreparedStatement preparedStatement2 =
 					connection.prepareStatement(
 						"select distinct primKey from ResourcePermission " +
 							"where name = ?")) {
@@ -127,7 +129,8 @@ public class UpgradeResourcePermission extends UpgradeProcess {
 	private void _updatePrimKeyIds(String sql, String name, String[] primKeys)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(sql))) {
 
 			preparedStatement.setString(1, name);

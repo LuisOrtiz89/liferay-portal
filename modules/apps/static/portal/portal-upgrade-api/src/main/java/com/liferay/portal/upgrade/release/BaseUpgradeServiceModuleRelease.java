@@ -35,8 +35,7 @@ public abstract class BaseUpgradeServiceModuleRelease extends UpgradeProcess {
 	@Override
 	public void upgrade() throws UpgradeException {
 		try (Connection connection = DataAccess.getConnection()) {
-			if (_getBuildNumber(connection, getNewBundleSymbolicName()) ==
-					null) {
+			if (_getBuildNumber(getNewBundleSymbolicName()) == null) {
 
 				super.upgrade();
 			}
@@ -48,8 +47,7 @@ public abstract class BaseUpgradeServiceModuleRelease extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		String buildNumber = _getBuildNumber(
-			connection, getOldBundleSymbolicName());
+		String buildNumber = _getBuildNumber(getOldBundleSymbolicName());
 
 		if (buildNumber != null) {
 			_updateRelease(_toSchemaVersion(buildNumber));
@@ -70,14 +68,16 @@ public abstract class BaseUpgradeServiceModuleRelease extends UpgradeProcess {
 	private void _createRelease() throws Exception {
 		ReleaseDAO releaseDAO = new ReleaseDAO();
 
-		releaseDAO.addRelease(connection, getNewBundleSymbolicName());
+		try (Connection connection = getConnection()) {
+			releaseDAO.addRelease(connection, getNewBundleSymbolicName());
+		}
 	}
 
-	private String _getBuildNumber(
-			Connection connection, String servletContextName)
+	private String _getBuildNumber(String servletContextName)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select buildNumber from Release_ where servletContextName = " +
 					"?")) {
 
@@ -98,7 +98,8 @@ public abstract class BaseUpgradeServiceModuleRelease extends UpgradeProcess {
 			return false;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select serviceComponentId from ServiceComponent where " +
 					"buildNamespace = ?")) {
 
@@ -130,7 +131,8 @@ public abstract class BaseUpgradeServiceModuleRelease extends UpgradeProcess {
 	}
 
 	private void _updateRelease(String schemaVersion) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Release_ set servletContextName = ?, schemaVersion = " +
 					"? where servletContextName = ?")) {
 

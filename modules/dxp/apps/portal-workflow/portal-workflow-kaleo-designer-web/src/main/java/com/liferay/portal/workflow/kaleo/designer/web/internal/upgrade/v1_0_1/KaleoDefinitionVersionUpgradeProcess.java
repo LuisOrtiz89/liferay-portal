@@ -31,6 +31,7 @@ import com.liferay.portal.workflow.kaleo.model.KaleoDefinitionVersion;
 import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionLocalService;
 import com.liferay.portal.workflow.kaleo.service.KaleoDefinitionVersionLocalService;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -190,10 +191,11 @@ public class KaleoDefinitionVersionUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeKaleoDefinitionVersion() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select * from KaleoDraftDefinition order by version, " +
 					"draftVersion");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				long companyId = resultSet.getLong("companyId");

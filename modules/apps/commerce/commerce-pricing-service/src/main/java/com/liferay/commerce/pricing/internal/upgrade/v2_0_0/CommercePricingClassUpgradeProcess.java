@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.service.permission.ModelPermissions;
 import com.liferay.portal.kernel.service.permission.ModelPermissionsFactory;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -56,8 +57,9 @@ public class CommercePricingClassUpgradeProcess extends UpgradeProcess {
 			"select companyId, groupId, userId, commercePricingClassId from " +
 				"CommercePricingClass";
 
-		try (Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				selectCommercePricingClassSQL)) {
 
 			while (resultSet.next()) {

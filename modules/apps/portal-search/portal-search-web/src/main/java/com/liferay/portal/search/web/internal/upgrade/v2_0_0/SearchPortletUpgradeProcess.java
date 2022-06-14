@@ -17,6 +17,7 @@ package com.liferay.portal.search.web.internal.upgrade.v2_0_0;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.search.web.constants.SearchPortletKeys;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -30,7 +31,8 @@ public class SearchPortletUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradePortletPreferencesPortletId() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update PortletPreferences set portletId = ? where " +
 					"portletId= ? and plid = ?")) {
 

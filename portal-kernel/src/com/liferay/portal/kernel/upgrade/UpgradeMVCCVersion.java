@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.xml.UnsecureSAXReaderUtil;
 
 import java.io.InputStream;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 
@@ -48,33 +49,35 @@ public class UpgradeMVCCVersion extends UpgradeProcess {
 			}
 		}
 
-		DBInspector dbInspector = new DBInspector(connection);
+		try (Connection connection = getConnection()) {
+			DBInspector dbInspector = new DBInspector(connection);
 
-		tableName = dbInspector.normalizeName(tableName, databaseMetaData);
+			tableName = dbInspector.normalizeName(tableName, databaseMetaData);
 
-		try (ResultSet tableResultSet = databaseMetaData.getTables(
+			try (ResultSet tableResultSet = databaseMetaData.getTables(
 				dbInspector.getCatalog(), dbInspector.getSchema(), tableName,
 				null)) {
 
-			if (!tableResultSet.next()) {
-				_log.error("Table " + tableName + " does not exist");
+				if (!tableResultSet.next()) {
+					_log.error("Table " + tableName + " does not exist");
 
-				return;
-			}
+					return;
+				}
 
-			try (ResultSet columnResultSet = databaseMetaData.getColumns(
+				try (ResultSet columnResultSet = databaseMetaData.getColumns(
 					dbInspector.getCatalog(), dbInspector.getSchema(),
 					tableName,
 					dbInspector.normalizeName(
 						"mvccVersion", databaseMetaData))) {
 
-				if (columnResultSet.next()) {
-					return;
-				}
+					if (columnResultSet.next()) {
+						return;
+					}
 
-				try (LoggingTimer loggingTimer = new LoggingTimer(tableName)) {
-					alterTableAddColumn(
-						tableName, "mvccVersion", "LONG default 0 not null");
+					try (LoggingTimer loggingTimer = new LoggingTimer(tableName)) {
+						alterTableAddColumn(
+							tableName, "mvccVersion", "LONG default 0 not null");
+					}
 				}
 			}
 		}
@@ -110,7 +113,8 @@ public class UpgradeMVCCVersion extends UpgradeProcess {
 	}
 
 	protected void upgradeClassElementMVCCVersions() throws Exception {
-		try (LoggingTimer loggingTimer = new LoggingTimer()) {
+		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();) {
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
 
 			List<Element> classElements = getClassElements();
@@ -126,7 +130,8 @@ public class UpgradeMVCCVersion extends UpgradeProcess {
 	}
 
 	protected void upgradeModuleTableMVCCVersions() throws Exception {
-		try (LoggingTimer loggingTimer = new LoggingTimer()) {
+		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();) {
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
 
 			String[] moduleTableNames = getModuleTableNames();

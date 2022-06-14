@@ -17,6 +17,7 @@ package com.liferay.change.tracking.web.internal.upgrade.v1_0_5;
 import com.liferay.change.tracking.web.internal.constants.PublicationRoleConstants;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -26,7 +27,8 @@ public class PublicationsAdminRoleNameUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Role_ set name = ?, title = NULL where name = ?")) {
 
 			preparedStatement.setString(1, PublicationRoleConstants.NAME_ADMIN);

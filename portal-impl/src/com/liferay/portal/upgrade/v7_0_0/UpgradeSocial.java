@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -29,7 +30,8 @@ import java.sql.Statement;
 public class UpgradeSocial extends UpgradeProcess {
 
 	protected void addSocialActivitySets(long delta) throws Exception {
-		try (Statement s = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement()) {
 			s.execute(
 				StringBundler.concat(
 					"insert into SocialActivitySet select (activityId + ",
@@ -41,7 +43,8 @@ public class UpgradeSocial extends UpgradeProcess {
 	}
 
 	protected void deleteOrphanedSocialRequests() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from SocialRequest where classNameId = ? and classPK " +
 					"not in (select groupId from Group_)")) {
 
@@ -84,7 +87,8 @@ public class UpgradeSocial extends UpgradeProcess {
 	}
 
 	protected long getDelta(long increment) throws Exception {
-		try (Statement s = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement()) {
 			try (ResultSet resultSet = s.executeQuery(
 					"select min(activityId) from SocialActivity")) {
 
@@ -100,7 +104,8 @@ public class UpgradeSocial extends UpgradeProcess {
 	}
 
 	protected int getSocialActivitySetsCount() throws Exception {
-		try (Statement s = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement()) {
 			String query = "select count(activitySetId) from SocialActivitySet";
 
 			try (ResultSet resultSet = s.executeQuery(query)) {
@@ -114,7 +119,8 @@ public class UpgradeSocial extends UpgradeProcess {
 	}
 
 	protected void updateSocialActivities(long delta) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update SocialActivity set activitySetId = (activityId + ?) " +
 					"where mirrorActivityId = 0")) {
 
@@ -125,7 +131,8 @@ public class UpgradeSocial extends UpgradeProcess {
 	}
 
 	private long _getCounterIncrement() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select currentId from Counter where name = ?")) {
 
 			preparedStatement1.setString(1, Counter.class.getName());

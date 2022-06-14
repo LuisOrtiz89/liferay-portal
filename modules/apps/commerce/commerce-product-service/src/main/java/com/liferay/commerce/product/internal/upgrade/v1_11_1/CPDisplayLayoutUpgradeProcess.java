@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -36,11 +37,12 @@ public class CPDisplayLayoutUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (Statement s =
+		try (Connection connection = getConnection();
+			 Statement s =
 				connection.createStatement(
 					ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 
-			ResultSet resultSet = s.executeQuery(_SELECT_CPDISPLAYLAYOUT_SQL)) {
+			 ResultSet resultSet = s.executeQuery(_SELECT_CPDISPLAYLAYOUT_SQL)) {
 
 			while (resultSet.next()) {
 				long groupId = resultSet.getLong("groupId");

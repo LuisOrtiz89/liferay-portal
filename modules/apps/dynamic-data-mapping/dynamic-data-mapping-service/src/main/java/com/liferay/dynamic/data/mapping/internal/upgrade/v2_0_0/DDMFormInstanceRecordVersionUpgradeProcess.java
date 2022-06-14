@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -28,15 +29,16 @@ public class DDMFormInstanceRecordVersionUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDLRecordVersion.* , DDMFormInstance.groupId as ",
 					"formInstanceGroupId, DDMFormInstance.version as ",
 					"formInstanceVersion from DDLRecordVersion inner join ",
 					"DDMFormInstance on DDLRecordVersion.recordSetId = ",
 					"DDMFormInstance.formInstanceId"));
-			ResultSet resultSet = preparedStatement1.executeQuery();
-			PreparedStatement preparedStatement2 =
+			 ResultSet resultSet = preparedStatement1.executeQuery();
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(
@@ -89,7 +91,8 @@ public class DDMFormInstanceRecordVersionUpgradeProcess extends UpgradeProcess {
 	private void _deleteDDLRecordVersion(long recordVersionId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from DDLRecordVersion where recordVersionId = ?")) {
 
 			preparedStatement.setLong(1, recordVersionId);

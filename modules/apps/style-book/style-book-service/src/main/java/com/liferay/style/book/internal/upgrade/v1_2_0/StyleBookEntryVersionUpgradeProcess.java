@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -39,10 +40,11 @@ public class StyleBookEntryVersionUpgradeProcess extends UpgradeProcess {
 			"StyleBookEntryVersion", "uuid_", "VARCHAR(75) null");
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						"select styleBookEntryId from StyleBookEntry");
-				PreparedStatement preparedStatement2 =
+				 PreparedStatement preparedStatement2 =
 					AutoBatchPreparedStatementUtil.autoBatch(
 						connection,
 						"update StyleBookEntryVersion set uuid_ = ? where " +

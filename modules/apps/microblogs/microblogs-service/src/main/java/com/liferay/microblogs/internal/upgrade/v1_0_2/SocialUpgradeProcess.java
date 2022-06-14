@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -37,7 +38,8 @@ public class SocialUpgradeProcess extends UpgradeProcess {
 	private void _updateSocialActivity(long activityId, JSONObject jsonObject)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update SocialActivity set extraData = ? where activityId = " +
 					"?")) {
 
@@ -50,6 +52,7 @@ public class SocialUpgradeProcess extends UpgradeProcess {
 
 	private void _upgradeMicroblogActivities() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select activityId, extraData from SocialActivity where " +
 					"classNameId = ?")) {

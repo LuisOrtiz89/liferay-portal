@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.util.PropsValues;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -46,9 +47,10 @@ public class UpgradeRegion extends UpgradeProcess {
 			"User_.defaultUser = [$TRUE$] and Company.webId = ",
 			StringUtil.quote(PropsValues.COMPANY_DEFAULT_WEB_ID));
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(sql));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			if (resultSet.next()) {
 				companyId = resultSet.getLong(1);
@@ -75,7 +77,8 @@ public class UpgradeRegion extends UpgradeProcess {
 		}
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						"select regionId from Region where uuid_ is null");
 				PreparedStatement preparedStatement2 =

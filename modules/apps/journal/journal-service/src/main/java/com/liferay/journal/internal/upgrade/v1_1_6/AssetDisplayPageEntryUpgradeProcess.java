@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -98,7 +99,8 @@ public class AssetDisplayPageEntryUpgradeProcess extends UpgradeProcess {
 		_uuidsMaps.clear();
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(
 					StringBundler.concat(
 						"select groupId, liveGroupId from Group_ where ",

@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -37,7 +38,8 @@ public class DDLRecordSetVersionUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select DDLRecordSet.*, TEMP_TABLE.structureVersionId ",
 					"from DDLRecordSet inner join (select structureId, ",
@@ -46,7 +48,7 @@ public class DDLRecordSetVersionUpgradeProcess extends UpgradeProcess {
 					"DDMStructureVersion.structureId) TEMP_TABLE on ",
 					"DDLRecordSet.DDMStructureId = TEMP_TABLE.structureId ",
 					"where scope != 2"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(

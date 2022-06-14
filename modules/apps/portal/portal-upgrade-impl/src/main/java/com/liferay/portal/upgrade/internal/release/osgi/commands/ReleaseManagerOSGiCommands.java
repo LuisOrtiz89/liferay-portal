@@ -306,7 +306,7 @@ public class ReleaseManagerOSGiCommands {
 	private String _checkPortal(boolean showUpgradeSteps) {
 		try (Connection connection = DataAccess.getConnection()) {
 			Version currentSchemaVersion =
-				PortalUpgradeProcess.getCurrentSchemaVersion(connection);
+				PortalUpgradeProcess.getCurrentSchemaVersion();
 
 			SortedMap<Version, UpgradeProcess> pendingUpgradeProcesses =
 				PortalUpgradeProcess.getPendingUpgradeProcesses(

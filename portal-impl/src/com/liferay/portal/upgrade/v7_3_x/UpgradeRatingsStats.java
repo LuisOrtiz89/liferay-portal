@@ -17,6 +17,7 @@ package com.liferay.portal.upgrade.v7_3_x;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -28,15 +29,17 @@ public class UpgradeRatingsStats extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		alterTableAddColumn("RatingsStats", "createDate", "DATE null");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				_getUpdateSQL("createDate", "min"))) {
 
 			preparedStatement.executeUpdate();
 		}
-
+		
 		alterTableAddColumn("RatingsStats", "modifiedDate", "DATE null");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				_getUpdateSQL("modifiedDate", "max"))) {
 
 			preparedStatement.executeUpdate();

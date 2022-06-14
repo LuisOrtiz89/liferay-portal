@@ -18,6 +18,7 @@ import com.liferay.journal.content.compatibility.converter.JournalContentCompati
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -36,7 +37,8 @@ public class JournalArticleContentUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select id_, content from JournalArticle")) {
 
 			ResultSet resultSet1 = preparedStatement1.executeQuery();

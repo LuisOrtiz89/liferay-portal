@@ -22,6 +22,7 @@ import com.liferay.portal.workflow.kaleo.runtime.util.WorkflowContextUtil;
 
 import java.io.Serializable;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -63,7 +64,8 @@ public abstract class BaseUpgradeClassNames extends UpgradeProcess {
 			String workflowContext)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"update ", tableName, " set workflowContext = ? where ",
 					primaryKeyName, " = ?"))) {
@@ -80,6 +82,7 @@ public abstract class BaseUpgradeClassNames extends UpgradeProcess {
 		throws Exception {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(tableName);
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select ", primaryKeyName, ", workflowContext from ",

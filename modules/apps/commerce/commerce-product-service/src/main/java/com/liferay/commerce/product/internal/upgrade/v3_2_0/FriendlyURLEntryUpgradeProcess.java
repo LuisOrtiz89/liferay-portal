@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -52,21 +53,22 @@ public class FriendlyURLEntryUpgradeProcess extends UpgradeProcess {
 		long cProductClassNameId = _classNameLocalService.getClassNameId(
 			CProduct.class);
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select * from FriendlyURLEntry where classNameId in (",
 					assetCategoryClassNameId, ",", cProductClassNameId, ")"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update FriendlyURLEntry set groupId = ? where " +
 						"friendlyURLEntryId = ?");
-			PreparedStatement preparedStatement3 =
+			 PreparedStatement preparedStatement3 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update FriendlyURLEntryLocalization set groupId = ? " +
 						"where friendlyURLEntryId = ?");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				long companyId = resultSet.getLong("companyId");

@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portlet.PortletPreferencesImpl;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -139,7 +140,8 @@ public class LayoutTypeUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateLayout(long plid, String portletId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Layout set typeSettings = ?, type_ = ? where plid = " +
 					"?")) {
 
@@ -152,7 +154,8 @@ public class LayoutTypeUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateLayouts() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select plid, groupId, companyId, typeSettings from Layout " +
 					"where type_ = ?")) {
 

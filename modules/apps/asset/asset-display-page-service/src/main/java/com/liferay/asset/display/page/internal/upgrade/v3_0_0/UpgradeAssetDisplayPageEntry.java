@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -52,13 +53,14 @@ public class UpgradeAssetDisplayPageEntry
 		long fileEntryClassNameId = PortalUtil.getClassNameId(
 			FileEntry.class.getName());
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select groupId, companyId, userId, userName, fileEntryId ",
 					"from DLFileEntry where fileEntryId not in (select ",
 					"classPK from AssetDisplayPageEntry where classNameId in (",
 					dlFileEntryClassNameId, ", ", fileEntryClassNameId, "))"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					StringBundler.concat(
@@ -97,7 +99,8 @@ public class UpgradeAssetDisplayPageEntry
 			}
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"delete from AssetDisplayPageEntry where (classNameId = ? or " +
 					"classNameId = ?) and type_ = ?")) {
 

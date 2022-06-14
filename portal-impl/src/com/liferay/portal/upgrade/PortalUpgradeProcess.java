@@ -15,6 +15,7 @@
 package com.liferay.portal.upgrade;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ReleaseConstants;
@@ -44,10 +45,11 @@ import java.util.TreeMap;
  */
 public class PortalUpgradeProcess extends UpgradeProcess {
 
-	public static Version getCurrentSchemaVersion(Connection connection)
+	public static Version getCurrentSchemaVersion()
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = DataAccess.getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select schemaVersion from Release_ where servletContextName " +
 					"= ?")) {
 
@@ -106,7 +108,7 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 		Version latestSchemaVersion = getLatestSchemaVersion();
 
-		if (latestSchemaVersion.equals(getCurrentSchemaVersion(connection))) {
+		if (latestSchemaVersion.equals(getCurrentSchemaVersion())) {
 			return true;
 		}
 
@@ -116,7 +118,7 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 	public static boolean isInRequiredSchemaVersion(Connection connection)
 		throws SQLException {
 
-		Version currentSchemaVersion = getCurrentSchemaVersion(connection);
+		Version currentSchemaVersion = getCurrentSchemaVersion();
 
 		Version requiredSchemaVersion = getRequiredSchemaVersion();
 
@@ -165,9 +167,7 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 		String message = "Completed upgrade process ";
 
-		try (Connection connection = getConnection()) {
-			this.connection = connection;
-
+		try {
 			if (_log.isInfoEnabled()) {
 				String info = "Upgrading " + ClassUtil.getClassName(this);
 
@@ -182,7 +182,6 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 			throw new UpgradeException(exception);
 		}
 		finally {
-			this.connection = null;
 
 			if (_log.isInfoEnabled()) {
 				_log.info(
@@ -195,10 +194,11 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		_initializeRelease(connection);
+
+		_initializeRelease();
 
 		for (Version pendingSchemaVersion :
-				getPendingSchemaVersions(getCurrentSchemaVersion(connection))) {
+			getPendingSchemaVersions(getCurrentSchemaVersion())) {
 
 			upgrade(_upgradeProcesses.get(pendingSchemaVersion));
 
@@ -218,7 +218,8 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 	protected void updateSchemaVersion(Version newSchemaVersion)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Release_ set schemaVersion = ? where " +
 					"servletContextName = ?")) {
 
@@ -230,8 +231,9 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 		}
 	}
 
-	private void _initializeRelease(Connection connection) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+	private void _initializeRelease() throws Exception {
+		try (Connection connection = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Release_ set schemaVersion = ?, buildNumber = ? " +
 					"where servletContextName = ? and buildNumber < ?")) {
 

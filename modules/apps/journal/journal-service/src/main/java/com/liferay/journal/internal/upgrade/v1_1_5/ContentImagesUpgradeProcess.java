@@ -36,6 +36,7 @@ import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -232,7 +233,8 @@ public class ContentImagesUpgradeProcess extends UpgradeProcess {
 
 	private void _updateContentImages() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select id_, resourcePrimKey, groupId, companyId, userId, " +
 					"content from JournalArticle where content like ?")) {
 

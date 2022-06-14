@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -58,13 +59,14 @@ public class ArticleAssetsUpgradeProcess extends UpgradeProcess {
 	private void _updateDefaultDraftArticleAssets(long companyId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select resourcePrimKey, indexable from JournalArticle ",
 					"where companyId = ", companyId, " and version = ",
 					JournalArticleConstants.VERSION_DEFAULT, " and status = ",
 					WorkflowConstants.STATUS_DRAFT));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long resourcePrimKey = resultSet.getLong("resourcePrimKey");

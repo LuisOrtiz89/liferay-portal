@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,7 +42,8 @@ public class CommerceShippingMethodUpgradeProcess
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(
 				"select commerceShippingMethodId, groupId from " +
 					"CommerceShippingMethod")) {
@@ -82,7 +84,8 @@ public class CommerceShippingMethodUpgradeProcess
 		String sql =
 			"select * from CommerceChannel where siteGroupId = " + groupId;
 
-		try (Statement s = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement()) {
 			s.setMaxRows(1);
 
 			try (ResultSet resultSet = s.executeQuery(sql)) {

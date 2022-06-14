@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.dao.orm.common.SQLTransformer;
 import com.liferay.portal.kernel.service.ImageLocalService;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -71,12 +72,13 @@ public class ShoppingUpgradeProcess extends BaseUpgradeProcess {
 	}
 
 	private void _deleteFromShoppingItem(String type) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(
 					StringBundler.concat(
 						"select ", type, "Id from ShoppingItem where ", type,
 						" = [$TRUE$]")));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				_imageLocalService.deleteImage(resultSet.getLong(1));

@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -70,12 +71,13 @@ public class UpgradeMessageBoards extends UpgradeProcess {
 	}
 
 	protected void populateMBDiscussionGroupId() throws Exception {
-		try (PreparedStatement preparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update MBDiscussion set groupId = ? where discussionId " +
 						"= ?");
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				StringBundler.concat(
 					"select MBThread.groupId, MBDiscussion.discussionId from ",
 					"MBDiscussion inner join MBThread on ",

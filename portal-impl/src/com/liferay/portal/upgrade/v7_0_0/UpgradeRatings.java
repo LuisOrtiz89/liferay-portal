@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -42,9 +43,10 @@ public class UpgradeRatings extends UpgradeProcess {
 
 	protected void upgradeRatingsEntry() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select distinct classNameId from RatingsEntry");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				upgradeRatingsEntry(resultSet.getLong("classNameId"));
@@ -82,7 +84,8 @@ public class UpgradeRatings extends UpgradeProcess {
 			long classNameId, int normalizationFactor)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update RatingsEntry set score = score / ? where classNameId " +
 					"= ?")) {
 
@@ -96,7 +99,8 @@ public class UpgradeRatings extends UpgradeProcess {
 	protected void upgradeRatingsEntryThumbs(long classNameId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update RatingsEntry set score = ? where score = ? and " +
 					"classNameId = ?")) {
 
@@ -120,7 +124,8 @@ public class UpgradeRatings extends UpgradeProcess {
 				"update RatingsStats set totalEntries = ?, totalScore = ?, " +
 					"averageScore = ? where classNameId = ? and classPK = ?";
 
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(selectSQL);
 				ResultSet resultSet = preparedStatement1.executeQuery();
 				PreparedStatement preparedStatement2 =

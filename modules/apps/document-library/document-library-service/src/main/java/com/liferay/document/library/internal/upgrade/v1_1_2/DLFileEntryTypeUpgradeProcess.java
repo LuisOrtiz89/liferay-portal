@@ -17,6 +17,7 @@ package com.liferay.document.library.internal.upgrade.v1_1_2;
 import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -33,7 +34,9 @@ public class DLFileEntryTypeUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (
+			Connection connection = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select fileEntryTypeId, companyId, userId from " +
 					"DLFileEntryType where fileEntryTypeKey in ('IMAGE " +
 						"GALLERY IMAGE', 'Image Gallery Image')");

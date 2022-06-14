@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -30,10 +31,11 @@ public class LayoutPageTemplateStructureUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select layoutPageTemplateStructureId, classPK from " +
 					"LayoutPageTemplateStructure where classNameId = ?");
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update LayoutPageTemplateStructure set classNameId = ?, " +
@@ -69,7 +71,8 @@ public class LayoutPageTemplateStructureUpgradeProcess extends UpgradeProcess {
 			long layoutPageTemplateEntryId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select plid from LayoutPageTemplateEntry where " +
 					"layoutPageTemplateEntryId = ?")) {
 

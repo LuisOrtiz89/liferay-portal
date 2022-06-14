@@ -16,6 +16,7 @@ package com.liferay.portal.workflow.kaleo.internal.upgrade.v3_2_0;
 
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -28,7 +29,8 @@ public class KaleoInstanceUpgradeProcess extends UpgradeProcess {
 		if (!hasColumn("KaleoInstance", "active_")) {
 			alterTableAddColumn("KaleoInstance", "active_", "BOOLEAN");
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"update KaleoInstance set active_ = ?")) {
 

@@ -47,6 +47,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -392,7 +393,8 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMStructure() throws Exception {
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select DDMStructure.structureId, ",
@@ -402,7 +404,7 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 						"DDMStructureVersion.structureid where ",
 						"DDMStructure.version = DDMStructureVersion.version ",
 						"and DDMStructure.classNameId = ?"));
-			PreparedStatement updatePreparedStatement =
+			 PreparedStatement updatePreparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMStructure set definition = ? where " +
@@ -427,7 +429,8 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMStructureLayout() throws Exception {
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select DDMStructureLayout.structureLayoutId, ",
@@ -471,7 +474,8 @@ public class DDMStructureUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeDDMStructureVersion() throws Exception {
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select DDMStructureVersion.structureVersionId, ",

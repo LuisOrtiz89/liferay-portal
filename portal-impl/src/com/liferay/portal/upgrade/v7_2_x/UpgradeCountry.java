@@ -16,6 +16,7 @@ package com.liferay.portal.upgrade.v7_2_x;
 
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -48,7 +49,8 @@ public class UpgradeCountry extends UpgradeProcess {
 	private void _updateAddressCountryToChina(long oldCountryId, long regionId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Address set countryId = 2, regionId = ? where " +
 					"countryId = ?")) {
 

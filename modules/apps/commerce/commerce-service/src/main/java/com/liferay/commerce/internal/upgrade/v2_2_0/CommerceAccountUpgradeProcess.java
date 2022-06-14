@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ListUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -58,9 +59,10 @@ public class CommerceAccountUpgradeProcess extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		List<Long> queuedOrganizationIds = new ArrayList<>();
 
-		try (Statement s = connection.createStatement(
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet resultSet = s.executeQuery(
+			 ResultSet resultSet = s.executeQuery(
 				"select organizationId from Organization_ where type_ = " +
 					"'account'")) {
 
@@ -172,7 +174,8 @@ public class CommerceAccountUpgradeProcess extends UpgradeProcess {
 			"select commerceAccountId from CommerceAccountOrganizationRel " +
 				"where organizationId = " + parentOrganizationId;
 
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(sql)) {
 
 			if (resultSet.next()) {

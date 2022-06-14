@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.settings.Settings;
 import com.liferay.portal.kernel.settings.SettingsFactory;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -50,8 +51,9 @@ public class CommerceSiteTypeUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				"select siteGroupId from CommerceChannel")) {
 
 			while (resultSet.next()) {
@@ -93,7 +95,8 @@ public class CommerceSiteTypeUpgradeProcess extends UpgradeProcess {
 		String sql =
 			"select * from CommerceChannel where siteGroupId = " + groupId;
 
-		try (Statement s = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement()) {
 			s.setMaxRows(1);
 
 			try (ResultSet resultSet = s.executeQuery(sql)) {

@@ -24,6 +24,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -46,18 +47,19 @@ public class DDMFormInstanceUpgradeProcess extends UpgradeProcess {
 		sb.append("settings_ like '%workflowDefinition\\\",\\\"value\\\":\\\"");
 		sb.append("[\\\\\\\\\"%@%\\\\\\\\\"]\\\"%'");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select formInstanceId, settings_ from DDMFormInstance " +
 					sb.toString());
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMFormInstance set settings_ = ? where " +
 						"formInstanceId = ?");
-			PreparedStatement preparedStatement3 = connection.prepareStatement(
+			 PreparedStatement preparedStatement3 = connection.prepareStatement(
 				"select formInstanceVersionId, settings_ from " +
 					"DDMFormInstanceVersion " + sb.toString());
-			PreparedStatement preparedStatement4 =
+			 PreparedStatement preparedStatement4 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update DDMFormInstanceVersion set settings_ = ? where " +

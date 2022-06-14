@@ -24,6 +24,7 @@ import com.liferay.portal.workflow.kaleo.runtime.util.WorkflowContextUtil;
 
 import java.io.Serializable;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -67,12 +68,13 @@ public class WorkflowContextUpgradeProcess extends UpgradeProcess {
 		throws Exception {
 
 		try (LoggingTimer loggingTimer = new LoggingTimer(tableName);
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select ", fieldName, ", workflowContext from ", tableName,
 					" where workflowContext is not null and workflowContext ",
 					"not like '%serializable%'"));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			JSONSerializer jsonSerializer = _getJSONSerializer();
 
@@ -110,7 +112,8 @@ public class WorkflowContextUpgradeProcess extends UpgradeProcess {
 			String workflowContext)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"update ", tableName, " set workflowContext = ? where ",
 					primaryKeyName, " = ?"))) {

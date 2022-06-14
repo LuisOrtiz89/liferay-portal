@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.service.ImageLocalService;
 import com.liferay.ratings.kernel.service.RatingsStatsLocalService;
 import com.liferay.subscription.service.SubscriptionLocalService;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -69,9 +70,10 @@ public class SoftwareCatalogUpgradeProcess extends BaseUpgradeProcess {
 			return;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select fullImageId, thumbnailId from SCProductScreenshot");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long fullImageId = resultSet.getLong("fullImageId");
@@ -93,7 +95,8 @@ public class SoftwareCatalogUpgradeProcess extends BaseUpgradeProcess {
 		String className =
 			"com.liferay.portlet.softwarecatalog.model.SCProductEntry";
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId, productEntryId from SCProductEntry");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 

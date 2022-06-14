@@ -78,8 +78,7 @@ public abstract class UpgradeProcess
 
 		String message = "Completed upgrade process ";
 
-		try (Connection connection = getConnection()) {
-			this.connection = connection;
+		try {
 
 			if (isSkipUpgradeProcess()) {
 				return;
@@ -107,8 +106,6 @@ public abstract class UpgradeProcess
 			throw new UpgradeException(throwable);
 		}
 		finally {
-			this.connection = null;
-
 			if (_log.isInfoEnabled()) {
 				_log.info(
 					StringBundler.concat(
@@ -162,10 +159,7 @@ public abstract class UpgradeProcess
 		IndexMetadata indexMetadata = new IndexMetadata(
 			"IX_TEMP", tableName, unique, columnNames);
 
-		try (LoggingTimer loggingTimer = new LoggingTimer(tableName)) {
-			addIndexes(
-				connection, new ArrayList<>(Arrays.asList(indexMetadata)));
-		}
+		addIndexes(new ArrayList<>(Arrays.asList(indexMetadata)));
 
 		return () -> {
 			try {

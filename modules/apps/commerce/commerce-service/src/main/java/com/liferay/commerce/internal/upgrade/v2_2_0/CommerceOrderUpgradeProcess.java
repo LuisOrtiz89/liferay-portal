@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -69,15 +70,16 @@ public class CommerceOrderUpgradeProcess
 			"update CommerceOrder set commerceAccountId = ? where " +
 				"orderUserId = ?";
 
-		try (PreparedStatement preparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateCommerceOrderSQL1);
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection, updateCommerceOrderSQL2);
-			Statement s = connection.createStatement(
+			 Statement s = connection.createStatement(
 				ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-			ResultSet resultSet = s.executeQuery(
+			 ResultSet resultSet = s.executeQuery(
 				"select distinct orderOrganizationId, orderUserId from " +
 					"CommerceOrder")) {
 
@@ -140,7 +142,8 @@ public class CommerceOrderUpgradeProcess
 			"select commerceAccountId from CommerceAccountOrganizationRel " +
 				"where organizationId = " + organizationId;
 
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(sql)) {
 
 			if (resultSet.next()) {

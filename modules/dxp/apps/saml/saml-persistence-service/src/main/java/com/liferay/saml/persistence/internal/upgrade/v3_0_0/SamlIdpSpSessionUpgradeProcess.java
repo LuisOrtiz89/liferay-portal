@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,7 +42,8 @@ public class SamlIdpSpSessionUpgradeProcess extends UpgradeProcess {
 
 			int latestSamlPeerBindingId = _getLatestSamlPeerBindingId();
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						StringBundler.concat(
 							"select min(samlIdpSpSessionId) as ",
@@ -51,7 +53,7 @@ public class SamlIdpSpSessionUpgradeProcess extends UpgradeProcess {
 							"SamlIdpSpSession group by companyId, userId, ",
 							"userName, nameIdFormat, nameIdValue, ",
 							"samlSpEntityId"));
-				ResultSet resultSet = preparedStatement.executeQuery()) {
+				 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 				while (resultSet.next()) {
 					int samlIdpSpSessionId = resultSet.getInt(
@@ -118,7 +120,8 @@ public class SamlIdpSpSessionUpgradeProcess extends UpgradeProcess {
 	}
 
 	private int _getLatestSamlPeerBindingId() throws SQLException {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select max(samlPeerBindingId) from SamlPeerBinding");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -131,7 +134,8 @@ public class SamlIdpSpSessionUpgradeProcess extends UpgradeProcess {
 	}
 
 	private int _getSamlIdpSpSessionIdOffset() throws SQLException {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select min(samlIdpSpSessionId) - 1 from SamlIdpSpSession");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 

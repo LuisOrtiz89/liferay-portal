@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -49,7 +50,8 @@ public class UpgradeCountryCode extends UpgradeProcess {
 	}
 
 	private void _upgradeCountry() throws Exception {
-		try (PreparedStatement preparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection,
 					StringBundler.concat(
@@ -69,7 +71,7 @@ public class UpgradeCountryCode extends UpgradeProcess {
 						"Company.companyId where User_.defaultUser = [$TRUE$] ",
 						"and Company.companyId not in (select companyId from ",
 						"Country where a2 = 'NA')")));
-			ResultSet resultSet = preparedStatement2.executeQuery()) {
+			 ResultSet resultSet = preparedStatement2.executeQuery()) {
 
 			if (resultSet.next()) {
 				Timestamp now = new Timestamp(System.currentTimeMillis());
@@ -106,7 +108,8 @@ public class UpgradeCountryCode extends UpgradeProcess {
 			String countryA2, String regionName, String regionCode)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement1 =
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection,
 					StringBundler.concat(

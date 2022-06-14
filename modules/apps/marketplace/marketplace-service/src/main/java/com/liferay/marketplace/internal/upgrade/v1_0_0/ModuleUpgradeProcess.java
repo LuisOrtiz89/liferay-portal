@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
 import java.io.IOException;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -43,9 +44,10 @@ public class ModuleUpgradeProcess extends UpgradeProcess {
 		alterTableAddColumn(
 			"Marketplace_Module", "bundleVersion", "VARCHAR(75)");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select moduleId, contextName from Marketplace_Module");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long moduleId = resultSet.getLong("moduleId");

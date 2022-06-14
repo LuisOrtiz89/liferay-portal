@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,7 +40,7 @@ public class UpgradeKernelPackage extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws UpgradeException {
-		try {
+		try (Connection connection = getConnection()) {
 			upgradeTable(
 				"ClassName_", "value", getClassNames(), WildcardMode.SURROUND,
 				true);
@@ -99,7 +100,8 @@ public class UpgradeKernelPackage extends UpgradeProcess {
 			String updateSQL, String[] name)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				selectSQL);
 			ResultSet resultSet = preparedStatement1.executeQuery();
 			PreparedStatement preparedStatement2 =

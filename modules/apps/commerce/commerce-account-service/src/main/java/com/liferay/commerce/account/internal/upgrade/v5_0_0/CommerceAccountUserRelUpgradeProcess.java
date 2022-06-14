@@ -18,6 +18,7 @@ import com.liferay.account.service.AccountEntryUserRelLocalService;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -40,7 +41,8 @@ public class CommerceAccountUserRelUpgradeProcess extends UpgradeProcess {
 			"select * from CommerceAccountUserRel order by commerceAccountId " +
 				"asc, commerceAccountUserId asc";
 
-		try (Statement selectStatement = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement selectStatement = connection.createStatement()) {
 			ResultSet resultSet = selectStatement.executeQuery(
 				selectCommerceAccountUserRel);
 

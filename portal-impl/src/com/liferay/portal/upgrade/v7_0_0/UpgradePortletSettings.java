@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortletKeys;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -49,7 +50,8 @@ public abstract class UpgradePortletSettings extends UpgradeProcess {
 			_log.debug("Copy portlet settings as service settings");
 		}
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select PortletPreferences.portletPreferencesId, ",
@@ -59,7 +61,7 @@ public abstract class UpgradePortletSettings extends UpgradeProcess {
 						"where PortletPreferences.ownerType = ", ownerType,
 						" and PortletPreferences.portletId = '", portletId,
 						"'"));
-			ResultSet resultSet = selectPreparedStatement.executeQuery()) {
+			 ResultSet resultSet = selectPreparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long oldPortletPreferencesId = resultSet.getLong(1);
@@ -138,7 +140,8 @@ public abstract class UpgradePortletSettings extends UpgradeProcess {
 
 		sb.append(")");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sb.toString())) {
 
 			int i = 0;
@@ -222,7 +225,8 @@ public abstract class UpgradePortletSettings extends UpgradeProcess {
 			long oldPortletPreferencesId, long newPortletPreferencesId)
 		throws SQLException {
 
-		try (PreparedStatement selectPreparedStatement =
+		try (Connection connection = getConnection();
+			 PreparedStatement selectPreparedStatement =
 				connection.prepareStatement(
 					StringBundler.concat(
 						"select portletPreferenceValueId from ",

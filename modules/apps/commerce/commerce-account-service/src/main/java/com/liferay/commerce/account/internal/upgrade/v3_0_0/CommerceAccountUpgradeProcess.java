@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -70,7 +71,8 @@ public class CommerceAccountUpgradeProcess extends UpgradeProcess {
 		String selectCommerceAccountSQL =
 			"select * from CommerceAccount order by commerceAccountId asc";
 
-		try (Statement selectStatement = connection.createStatement()) {
+		try (Connection connection = getConnection();
+			 Statement selectStatement = connection.createStatement()) {
 			ResultSet resultSet = selectStatement.executeQuery(
 				selectCommerceAccountSQL);
 

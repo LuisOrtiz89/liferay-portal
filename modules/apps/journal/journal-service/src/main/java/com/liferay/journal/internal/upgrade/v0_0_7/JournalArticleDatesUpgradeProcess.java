@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -37,8 +38,9 @@ public class JournalArticleDatesUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateCreateDate() throws Exception {
-		try (Statement s = connection.createStatement();
-			PreparedStatement preparedStatement =
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update JournalArticle set createDate = ? where " +
@@ -68,7 +70,8 @@ public class JournalArticleDatesUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateModifiedDate() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select classPK, version, AssetEntry.modifiedDate from ",
 					"AssetEntry, (select modifiedDate, ",

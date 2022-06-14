@@ -18,6 +18,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -30,17 +31,18 @@ public class MBThreadUpgradeProcess extends UpgradeProcess {
 	protected void doUpgrade() throws Exception {
 		alterTableAddColumn("MBThread", "title", "STRING null");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				StringBundler.concat(
 					"select MBThread.threadId, MBMessage.subject from ",
 					"MBThread inner join MBMessage on MBThread.rootMessageId ",
 					"= MBMessage.messageId and MBThread.threadId = ",
 					"MBMessage.threadId"));
-			PreparedStatement preparedStatement2 =
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update MBThread set title = ? where threadId = ?");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
 				String title = resultSet.getString(2);

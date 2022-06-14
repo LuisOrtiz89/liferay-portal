@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -280,11 +281,12 @@ public class LayoutPageTemplateStructureRelUpgradeProcess
 	}
 
 	private void _upgradeLayoutPageTemplateStructureRel() throws Exception {
-		try (Statement s = connection.createStatement();
-			ResultSet resultSet = s.executeQuery(
+		try (Connection connection = getConnection();
+			 Statement s = connection.createStatement();
+			 ResultSet resultSet = s.executeQuery(
 				"select lPageTemplateStructureRelId, segmentsExperienceId, " +
 					"data_ from LayoutPageTemplateStructureRel");
-			PreparedStatement preparedStatement =
+			 PreparedStatement preparedStatement =
 				AutoBatchPreparedStatementUtil.autoBatch(
 					connection,
 					"update LayoutPageTemplateStructureRel set data_ = ? " +

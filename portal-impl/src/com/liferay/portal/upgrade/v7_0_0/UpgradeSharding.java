@@ -145,7 +145,8 @@ public class UpgradeSharding extends UpgradeProcess {
 
 		DataSource dataSource = dataSourceFactoryBean.createInstance();
 
-		try (Connection targetConnection = dataSource.getConnection()) {
+		try (Connection connection = getConnection();
+			 Connection targetConnection = dataSource.getConnection()) {
 			copyCompanyTable(connection, targetConnection, shardName);
 			copyControlTable(
 				connection, targetConnection, ClassNameTable.TABLE_NAME,
@@ -211,6 +212,7 @@ public class UpgradeSharding extends UpgradeProcess {
 
 	protected List<Long> getCompanyIds(String shardName) throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select classPK from Shard where name = ?")) {
 
@@ -230,6 +232,7 @@ public class UpgradeSharding extends UpgradeProcess {
 
 	protected List<String> getShardNames() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select name from Shard");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
