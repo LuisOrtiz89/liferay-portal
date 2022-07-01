@@ -19,6 +19,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.portlet.PortletPreferencesFactoryUtil;
 import com.liferay.portal.kernel.upgrade.BasePortletPreferencesUpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
@@ -51,20 +52,22 @@ public class UpgradePortletPreferences
 			String portletId, String xml)
 		throws Exception {
 
-		PortletPreferences portletPreferences =
-			PortletPreferencesFactoryUtil.fromXML(
-				companyId, ownerId, ownerType, plid, portletId, xml);
+		try (LoggingTimer loggingTimer = new LoggingTimer("asset.publisher.web.internal.upgradePreferences")) {
+			PortletPreferences portletPreferences =
+				PortletPreferencesFactoryUtil.fromXML(
+					companyId, ownerId, ownerType, plid, portletId, xml);
 
-		String[] assetEntryXmls = portletPreferences.getValues(
-			"assetEntryXml", new String[0]);
+			String[] assetEntryXmls = portletPreferences.getValues(
+				"assetEntryXml", new String[0]);
 
-		if (ArrayUtil.isNotEmpty(assetEntryXmls)) {
-			_upgradeTypes(assetEntryXmls);
+			if (ArrayUtil.isNotEmpty(assetEntryXmls)) {
+				_upgradeTypes(assetEntryXmls);
 
-			portletPreferences.setValues("assetEntryXml", assetEntryXmls);
+				portletPreferences.setValues("assetEntryXml", assetEntryXmls);
+			}
+
+			return PortletPreferencesFactoryUtil.toXML(portletPreferences);
 		}
-
-		return PortletPreferencesFactoryUtil.toXML(portletPreferences);
 	}
 
 	private void _upgradeTypes(String[] assetEntryXmls) throws Exception {
