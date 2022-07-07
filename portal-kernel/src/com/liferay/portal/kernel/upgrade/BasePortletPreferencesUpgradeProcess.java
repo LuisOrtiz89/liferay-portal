@@ -417,10 +417,9 @@ public abstract class BasePortletPreferencesUpgradeProcess
 				sb.append(whereClause);
 			}
 
-			try (LoggingTimer loggingTimer2 = new LoggingTimer("_updatePortletPreferenceValues:ExecuteQueries");
-				Connection connection = getConnection();
-				 PreparedStatement preparedStatement1 = connection.prepareStatement(
-					 sb.toString());
+			try (LoggingTimer loggingTimer2 = new LoggingTimer(
+				"_updatePortletPreferenceValues:ExecuteQueries");
+				 Connection connection = getConnection();
 				 PreparedStatement preparedStatement2 = connection.prepareStatement(
 					 "select portletPreferenceValueId, largeValue, name, " +
 					 "readOnly, smallValue from PortletPreferenceValue where " +
@@ -454,70 +453,91 @@ public abstract class BasePortletPreferencesUpgradeProcess
 					 AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 						 connection,
 						 "delete from PortletPreferenceValue where " +
-						 "portletPreferencesId = ?");
-				 ResultSet resultSet = preparedStatement1.executeQuery()) {
+						 "portletPreferencesId = ?")) {
 
-				while (resultSet.next()) {
-					long portletPreferencesId = resultSet.getLong(
-						"portletPreferencesId");
-					long companyId = resultSet.getLong("companyId");
-
-					if (companyId > 0) {
+				processConcurrently(
+					sb.toString(),
+					resultSet -> {
+						long portletPreferencesId = resultSet.getLong(
+							"portletPreferencesId");
+						long companyId = resultSet.getLong("companyId");
 						int ownerType = resultSet.getInt("ownerType");
 						long plid = resultSet.getLong("plid");
 						long ownerId = resultSet.getLong("ownerId");
 						String portletId = resultSet.getString("portletId");
+						long ctCollectionId = resultSet.getLong("ctCollectionId");
 
-						preparedStatement2.setLong(1, portletPreferencesId);
+						return new Object[] {
+							portletPreferencesId, companyId, ownerType, plid,
+							ownerId, portletId, ctCollectionId
+						};
+					},
+					values -> {
+						long portletPreferencesId = (Long)values[0];
+						long companyId = (Long)values[1];
+						int ownerType = (Integer)values[2];
+						long plid = (Long)values[3];
+						long ownerId = (Long)values[4];
+						String portletId = (String)values[5];
+						long ctCollectionId = (Long)values[6];
 
-						Map<String, PreferenceValues> preferenceValuesMap =
-							_getPreferenceValuesMap(preparedStatement2);
+						if (companyId > 0) {
+							preparedStatement2.setLong(1, portletPreferencesId);
 
-						String preferences = _toXMLString(preferenceValuesMap);
+							Map<String, PreferenceValues> preferenceValuesMap =
+								_getPreferenceValuesMap(preparedStatement2);
 
-						String newPreferences = upgradePreferences(
-							companyId, ownerId, ownerType, plid, portletId,
-							preferences);
+							String preferences =
+								_toXMLString(preferenceValuesMap);
 
-						if (preferences.equals(newPreferences)) {
-							continue;
+							String newPreferences = upgradePreferences(
+								companyId, ownerId, ownerType, plid, portletId,
+								preferences);
+
+							if (preferences.equals(newPreferences)) {
+								return;
+							}
+
+							_upgradePortletPreferenceValues(
+								preferenceValuesMap, ctCollectionId,
+								portletPreferencesId, companyId,
+								newPreferences, preparedStatement3,
+								preparedStatement4, preparedStatement5);
 						}
+						else {
+							preparedStatement6.setLong(1, portletPreferencesId);
 
-						_upgradePortletPreferenceValues(
-							preferenceValuesMap,
-							resultSet.getLong("ctCollectionId"),
-							portletPreferencesId, companyId, newPreferences,
-							preparedStatement3, preparedStatement4,
-							preparedStatement5);
-					}
-					else {
-						preparedStatement6.setLong(1, portletPreferencesId);
+							preparedStatement6.addBatch();
 
-						preparedStatement6.addBatch();
+							preparedStatement7.setLong(1, portletPreferencesId);
 
-						preparedStatement7.setLong(1, portletPreferencesId);
+							preparedStatement7.addBatch();
+						}
+					},
+					"ERROR cambiar esto");
 
-						preparedStatement7.addBatch();
-					}
-				}
-
-				try (LoggingTimer loggingTimer3 = new LoggingTimer("_updatePortletPreferenceValues:Statement3")) {
+				try (LoggingTimer loggingTimer3 = new LoggingTimer(
+					"_updatePortletPreferenceValues:Statement3")) {
 					preparedStatement3.executeBatch();
 				}
 
-				try (LoggingTimer loggingTimer3 = new LoggingTimer("_updatePortletPreferenceValues:Statement4")) {
+				try (LoggingTimer loggingTimer3 = new LoggingTimer(
+					"_updatePortletPreferenceValues:Statement4")) {
 					preparedStatement4.executeBatch();
 				}
 
-				try (LoggingTimer loggingTimer3 = new LoggingTimer("_updatePortletPreferenceValues:Statement5")) {
+				try (LoggingTimer loggingTimer3 = new LoggingTimer(
+					"_updatePortletPreferenceValues:Statement5")) {
 					preparedStatement5.executeBatch();
 				}
 
-				try (LoggingTimer loggingTimer3 = new LoggingTimer("_updatePortletPreferenceValues:Statement6")) {
+				try (LoggingTimer loggingTimer3 = new LoggingTimer(
+					"_updatePortletPreferenceValues:Statement6")) {
 					preparedStatement6.executeBatch();
 				}
 
-				try (LoggingTimer loggingTimer3 = new LoggingTimer("_updatePortletPreferenceValues:Statement7")) {
+				try (LoggingTimer loggingTimer3 = new LoggingTimer(
+					"_updatePortletPreferenceValues:Statement7")) {
 					preparedStatement7.executeBatch();
 				}
 			}
