@@ -418,42 +418,7 @@ public abstract class BasePortletPreferencesUpgradeProcess
 			}
 
 			try (LoggingTimer loggingTimer2 = new LoggingTimer(
-				"_updatePortletPreferenceValues:ExecuteQueries");
-				 Connection connection = getConnection();
-				 PreparedStatement preparedStatement2 = connection.prepareStatement(
-					 "select portletPreferenceValueId, largeValue, name, " +
-					 "readOnly, smallValue from PortletPreferenceValue where " +
-					 "portletPreferencesId = ? order by index_ asc");
-				 PreparedStatement preparedStatement3 =
-					 AutoBatchPreparedStatementUtil.concurrentAutoBatch(
-						 connection,
-						 StringBundler.concat(
-							 "insert into PortletPreferenceValue (mvccVersion, ",
-							 "ctCollectionId, portletPreferenceValueId, companyId, ",
-							 "portletPreferencesId, index_, largeValue, name, ",
-							 "readOnly, smallValue) values (0, ?, ?, ?, ?, ?, ?, ",
-							 "?, ?, ?)"));
-				 PreparedStatement preparedStatement4 =
-					 AutoBatchPreparedStatementUtil.concurrentAutoBatch(
-						 connection,
-						 "update PortletPreferenceValue set largeValue = ?, " +
-						 "readOnly = ?, smallValue = ? where " +
-						 "portletPreferenceValueId = ?");
-				 PreparedStatement preparedStatement5 =
-					 AutoBatchPreparedStatementUtil.concurrentAutoBatch(
-						 connection,
-						 "delete from PortletPreferenceValue where " +
-						 "portletPreferenceValueId = ?");
-				 PreparedStatement preparedStatement6 =
-					 AutoBatchPreparedStatementUtil.concurrentAutoBatch(
-						 connection,
-						 "delete from PortletPreferences where " +
-						 "portletPreferencesId = ?");
-				 PreparedStatement preparedStatement7 =
-					 AutoBatchPreparedStatementUtil.concurrentAutoBatch(
-						 connection,
-						 "delete from PortletPreferenceValue where " +
-						 "portletPreferencesId = ?")) {
+				"_updatePortletPreferenceValues:ExecuteQueries")) {
 
 				processConcurrently(
 					sb.toString(),
@@ -482,64 +447,101 @@ public abstract class BasePortletPreferencesUpgradeProcess
 						long ctCollectionId = (Long)values[6];
 
 						if (companyId > 0) {
-							preparedStatement2.setLong(1, portletPreferencesId);
+							try (Connection connection = getConnection();
+								 PreparedStatement preparedStatement2 = connection.prepareStatement(
+									 "select portletPreferenceValueId, largeValue, name, " +
+									 "readOnly, smallValue from PortletPreferenceValue where " +
+									 "portletPreferencesId = ? order by index_ asc");
+								 PreparedStatement preparedStatement3 =
+									 AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+										 connection,
+										 StringBundler.concat(
+											 "insert into PortletPreferenceValue (mvccVersion, ",
+											 "ctCollectionId, portletPreferenceValueId, companyId, ",
+											 "portletPreferencesId, index_, largeValue, name, ",
+											 "readOnly, smallValue) values (0, ?, ?, ?, ?, ?, ?, ",
+											 "?, ?, ?)"));
+								 PreparedStatement preparedStatement4 =
+									 AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+										 connection,
+										 "update PortletPreferenceValue set largeValue = ?, " +
+										 "readOnly = ?, smallValue = ? where " +
+										 "portletPreferenceValueId = ?");
+								 PreparedStatement preparedStatement5 =
+									 AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+										 connection,
+										 "delete from PortletPreferenceValue where " +
+										 "portletPreferenceValueId = ?")) {
+								preparedStatement2.setLong(
+									1, portletPreferencesId);
 
-							Map<String, PreferenceValues> preferenceValuesMap =
-								_getPreferenceValuesMap(preparedStatement2);
+								Map<String, PreferenceValues>
+									preferenceValuesMap =
+									_getPreferenceValuesMap(preparedStatement2);
 
-							String preferences =
-								_toXMLString(preferenceValuesMap);
+								String preferences =
+									_toXMLString(preferenceValuesMap);
 
-							String newPreferences = upgradePreferences(
-								companyId, ownerId, ownerType, plid, portletId,
-								preferences);
+								String newPreferences = upgradePreferences(
+									companyId, ownerId, ownerType, plid,
+									portletId,
+									preferences);
 
-							if (preferences.equals(newPreferences)) {
-								return;
+								if (preferences.equals(newPreferences)) {
+									return;
+								}
+
+								_upgradePortletPreferenceValues(
+									preferenceValuesMap, ctCollectionId,
+									portletPreferencesId, companyId,
+									newPreferences, preparedStatement3,
+									preparedStatement4, preparedStatement5);
+
+								try (LoggingTimer loggingTimer3 = new LoggingTimer(
+									"_updatePortletPreferenceValues:Statement3")) {
+									preparedStatement3.executeBatch();
+								}
+
+								try (LoggingTimer loggingTimer3 = new LoggingTimer(
+									"_updatePortletPreferenceValues:Statement4")) {
+									preparedStatement4.executeBatch();
+								}
+
+								try (LoggingTimer loggingTimer3 = new LoggingTimer(
+									"_updatePortletPreferenceValues:Statement5")) {
+									preparedStatement5.executeBatch();
+								}
 							}
-
-							_upgradePortletPreferenceValues(
-								preferenceValuesMap, ctCollectionId,
-								portletPreferencesId, companyId,
-								newPreferences, preparedStatement3,
-								preparedStatement4, preparedStatement5);
 						}
 						else {
-							preparedStatement6.setLong(1, portletPreferencesId);
+							try (Connection connection = getConnection();
+								 PreparedStatement preparedStatement6 =
+									 connection.prepareStatement(
+										 "delete from PortletPreferences where " +
+										 "portletPreferencesId = ?");
+								 PreparedStatement preparedStatement7 =
+										 connection.prepareStatement(
+										 "delete from PortletPreferenceValue where " +
+										 "portletPreferencesId = ?")) {
+								preparedStatement6.setLong(
+									1, portletPreferencesId);
 
-							preparedStatement6.addBatch();
+								try (LoggingTimer loggingTimer3 = new LoggingTimer(
+									"_updatePortletPreferenceValues:Statement6")) {
+									preparedStatement6.executeUpdate();
+								}
 
-							preparedStatement7.setLong(1, portletPreferencesId);
+								preparedStatement7.setLong(
+									1, portletPreferencesId);
 
-							preparedStatement7.addBatch();
+								try (LoggingTimer loggingTimer3 = new LoggingTimer(
+									"_updatePortletPreferenceValues:Statement7")) {
+									preparedStatement7.executeUpdate();
+								}
+							}
 						}
 					},
-					"ERROR cambiar esto");
-
-				try (LoggingTimer loggingTimer3 = new LoggingTimer(
-					"_updatePortletPreferenceValues:Statement3")) {
-					preparedStatement3.executeBatch();
-				}
-
-				try (LoggingTimer loggingTimer3 = new LoggingTimer(
-					"_updatePortletPreferenceValues:Statement4")) {
-					preparedStatement4.executeBatch();
-				}
-
-				try (LoggingTimer loggingTimer3 = new LoggingTimer(
-					"_updatePortletPreferenceValues:Statement5")) {
-					preparedStatement5.executeBatch();
-				}
-
-				try (LoggingTimer loggingTimer3 = new LoggingTimer(
-					"_updatePortletPreferenceValues:Statement6")) {
-					preparedStatement6.executeBatch();
-				}
-
-				try (LoggingTimer loggingTimer3 = new LoggingTimer(
-					"_updatePortletPreferenceValues:Statement7")) {
-					preparedStatement7.executeBatch();
-				}
+					"ERROR processing upgrade of PortletPreferenceValues");
 			}
 		}
 	}
