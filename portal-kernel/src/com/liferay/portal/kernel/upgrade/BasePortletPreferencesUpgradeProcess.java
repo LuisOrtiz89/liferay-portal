@@ -529,11 +529,10 @@ public abstract class BasePortletPreferencesUpgradeProcess
 
 		PortletPreferences portletPreferences = null;
 
-		try (LoggingTimer loggingTimer4 = new LoggingTimer("_upgradePortletPreferenceValues:fromDefaultXML")) {
-			portletPreferences =
-				PortletPreferencesFactoryUtil.fromDefaultXML(
-					newPreferences);
-		}
+
+		portletPreferences =
+			PortletPreferencesFactoryUtil.fromDefaultXML(
+				newPreferences);
 
 		Map<String, Map.Entry<PreferenceValues, PreferenceValues>>
 			preferenceEntries = new HashMap<>(preferenceMap.size());
