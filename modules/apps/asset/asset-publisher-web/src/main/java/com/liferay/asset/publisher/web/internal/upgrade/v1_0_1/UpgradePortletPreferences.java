@@ -52,22 +52,20 @@ public class UpgradePortletPreferences
 			String portletId, String xml)
 		throws Exception {
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("asset.publisher.web.internal.upgradePreferences")) {
-			PortletPreferences portletPreferences =
-				PortletPreferencesFactoryUtil.fromXML(
-					companyId, ownerId, ownerType, plid, portletId, xml);
+		PortletPreferences portletPreferences =
+			PortletPreferencesFactoryUtil.fromXML(
+				companyId, ownerId, ownerType, plid, portletId, xml);
 
-			String[] assetEntryXmls = portletPreferences.getValues(
-				"assetEntryXml", new String[0]);
+		String[] assetEntryXmls = portletPreferences.getValues(
+			"assetEntryXml", new String[0]);
 
-			if (ArrayUtil.isNotEmpty(assetEntryXmls)) {
-				_upgradeTypes(assetEntryXmls);
+		if (ArrayUtil.isNotEmpty(assetEntryXmls)) {
+			_upgradeTypes(assetEntryXmls);
 
-				portletPreferences.setValues("assetEntryXml", assetEntryXmls);
-			}
-
-			return PortletPreferencesFactoryUtil.toXML(portletPreferences);
+			portletPreferences.setValues("assetEntryXml", assetEntryXmls);
 		}
+
+		return PortletPreferencesFactoryUtil.toXML(portletPreferences);
 	}
 
 	private void _upgradeTypes(String[] assetEntryXmls) throws Exception {
