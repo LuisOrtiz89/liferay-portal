@@ -57,8 +57,7 @@ public abstract class BasePortletPreferencesUpgradeProcess
 	protected long getCompanyId(String sql, long primaryKey) throws Exception {
 		long companyId = 0;
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("getCompanyId");
-			Connection connection = getConnection();
+		try (Connection connection = getConnection();
 			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
@@ -77,8 +76,7 @@ public abstract class BasePortletPreferencesUpgradeProcess
 	protected Object[] getGroup(long groupId) throws Exception {
 		Object[] group = null;
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("getGroup");
-			Connection connection = getConnection();
+		try (Connection connection = getConnection();
 			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId from Group_ where groupId = ?")) {
 
@@ -99,8 +97,7 @@ public abstract class BasePortletPreferencesUpgradeProcess
 	protected Object[] getLayout(long plid) throws Exception {
 		Object[] layout = null;
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("getLayout");
-			Connection connection = getConnection();
+		try (Connection connection = getConnection();
 			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId, companyId, privateLayout, layoutId from " +
 					"Layout where plid = ?")) {
@@ -134,8 +131,7 @@ public abstract class BasePortletPreferencesUpgradeProcess
 
 		Object[] layoutRevision = null;
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("getLayoutRevision");
-			Connection connection = getConnection();
+		try (Connection connection = getConnection();
 			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId, companyId, privateLayout, layoutRevisionId " +
 					"from LayoutRevision where layoutRevisionId = ?")) {
@@ -169,8 +165,7 @@ public abstract class BasePortletPreferencesUpgradeProcess
 
 		String uuid = null;
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("getLayoutUuid");
-			Connection connection = getConnection();
+		try (Connection connection = getConnection();
 			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select uuid_ from Layout where groupId = ? and " +
 					"privateLayout = ? and layoutId = ?")) {
@@ -266,8 +261,7 @@ public abstract class BasePortletPreferencesUpgradeProcess
 
 		Map<String, PreferenceValues> preferenceValuesMap = new HashMap<>();
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("_getPreferenceValuesMap");
-			ResultSet resultSet = selectPreparedStatement.executeQuery()) {
+		try (ResultSet resultSet = selectPreparedStatement.executeQuery()) {
 			while (resultSet.next()) {
 				long portletPreferenceValueId = resultSet.getLong(
 					"portletPreferenceValueId");
@@ -300,32 +294,30 @@ public abstract class BasePortletPreferencesUpgradeProcess
 			return PortletConstants.DEFAULT_PREFERENCES;
 		}
 
-		try (LoggingTimer loggingTimer = new LoggingTimer("_toXMLString")) {
-			Element portletPreferencesElement = new Element(
-				"portlet-preferences", false);
+		Element portletPreferencesElement = new Element(
+			"portlet-preferences", false);
 
-			for (Map.Entry<String, PreferenceValues> entry :
-				preferenceMap.entrySet()) {
+		for (Map.Entry<String, PreferenceValues> entry :
+			preferenceMap.entrySet()) {
 
-				Element preferenceElement =
-					portletPreferencesElement.addElement(
-						"preference");
+			Element preferenceElement =
+				portletPreferencesElement.addElement(
+					"preference");
 
-				preferenceElement.addElement("name", entry.getKey());
+			preferenceElement.addElement("name", entry.getKey());
 
-				PreferenceValues preferenceValues = entry.getValue();
+			PreferenceValues preferenceValues = entry.getValue();
 
-				for (String value : preferenceValues._values) {
-					preferenceElement.addElement("value", value);
-				}
-
-				if (preferenceValues._readOnly) {
-					preferenceElement.addElement("read-only", Boolean.TRUE);
-				}
+			for (String value : preferenceValues._values) {
+				preferenceElement.addElement("value", value);
 			}
 
-			return portletPreferencesElement.toXMLString();
+			if (preferenceValues._readOnly) {
+				preferenceElement.addElement("read-only", Boolean.TRUE);
+			}
 		}
+
+		return portletPreferencesElement.toXMLString();
 	}
 
 	private void _updatePortletPreferences() throws Exception {
@@ -390,13 +382,9 @@ public abstract class BasePortletPreferencesUpgradeProcess
 					}
 				}
 
-				try (LoggingTimer loggingTimer3 = new LoggingTimer("_updatePortletPreferences:Statement2")) {
-					preparedStatement2.executeBatch();
-				}
+				preparedStatement2.executeBatch();
 
-				try (LoggingTimer loggingTimer3 = new LoggingTimer("_updatePortletPreferences:Statement3")) {
-					preparedStatement3.executeBatch();
-				}
+				preparedStatement3.executeBatch();
 			}
 		}
 	}
@@ -497,20 +485,11 @@ public abstract class BasePortletPreferencesUpgradeProcess
 									newPreferences, preparedStatement3,
 									preparedStatement4, preparedStatement5);
 
-								try (LoggingTimer loggingTimer3 = new LoggingTimer(
-									"_updatePortletPreferenceValues:Statement3")) {
-									preparedStatement3.executeBatch();
-								}
+								preparedStatement3.executeBatch();
 
-								try (LoggingTimer loggingTimer3 = new LoggingTimer(
-									"_updatePortletPreferenceValues:Statement4")) {
-									preparedStatement4.executeBatch();
-								}
+								preparedStatement4.executeBatch();
 
-								try (LoggingTimer loggingTimer3 = new LoggingTimer(
-									"_updatePortletPreferenceValues:Statement5")) {
-									preparedStatement5.executeBatch();
-								}
+								preparedStatement5.executeBatch();
 							}
 						}
 						else {
@@ -526,18 +505,12 @@ public abstract class BasePortletPreferencesUpgradeProcess
 								preparedStatement6.setLong(
 									1, portletPreferencesId);
 
-								try (LoggingTimer loggingTimer3 = new LoggingTimer(
-									"_updatePortletPreferenceValues:Statement6")) {
-									preparedStatement6.executeUpdate();
-								}
+								preparedStatement6.executeUpdate();
 
 								preparedStatement7.setLong(
 									1, portletPreferencesId);
 
-								try (LoggingTimer loggingTimer3 = new LoggingTimer(
-									"_updatePortletPreferenceValues:Statement7")) {
-									preparedStatement7.executeUpdate();
-								}
+								preparedStatement7.executeUpdate();
 							}
 						}
 					},
@@ -554,198 +527,180 @@ public abstract class BasePortletPreferencesUpgradeProcess
 			PreparedStatement deletePreparedStatement)
 		throws Exception {
 
-		try (LoggingTimer loggingTimer3 = new LoggingTimer("_upgradePortletPreferenceValues")) {
+		PortletPreferences portletPreferences = null;
 
-			PortletPreferences portletPreferences = null;
+		try (LoggingTimer loggingTimer4 = new LoggingTimer("_upgradePortletPreferenceValues:fromDefaultXML")) {
+			portletPreferences =
+				PortletPreferencesFactoryUtil.fromDefaultXML(
+					newPreferences);
+		}
 
-			try (LoggingTimer loggingTimer4 = new LoggingTimer("_upgradePortletPreferenceValues:fromDefaultXML")) {
-				portletPreferences =
-					PortletPreferencesFactoryUtil.fromDefaultXML(
-						newPreferences);
+		Map<String, Map.Entry<PreferenceValues, PreferenceValues>>
+			preferenceEntries = new HashMap<>(preferenceMap.size());
+
+		int newCount = 0;
+
+		Map<String, String[]> newPreferenceMap =
+			portletPreferences.getMap();
+
+		for (Map.Entry<String, String[]> entry : newPreferenceMap.entrySet()) {
+			String[] values = entry.getValue();
+
+			if (values == null) {
+				continue;
 			}
 
-			Map<String, Map.Entry<PreferenceValues, PreferenceValues>>
-				preferenceEntries = new HashMap<>(preferenceMap.size());
+			int size = 0;
 
-			int newCount = 0;
+			String name = entry.getKey();
 
-			Map<String, String[]> newPreferenceMap =
-				portletPreferences.getMap();
+			PreferenceValues preferenceValues =
+				preferenceMap.remove(name);
 
-			try (LoggingTimer loggingTimer4 = new LoggingTimer("_upgradePortletPreferenceValues:Browse newPreferenceMap")) {
-				for (Map.Entry<String, String[]> entry : newPreferenceMap.entrySet()) {
-					String[] values = entry.getValue();
-
-					if (values == null) {
-						continue;
-					}
-
-					int size = 0;
-
-					String name = entry.getKey();
-
-					PreferenceValues preferenceValues =
-						preferenceMap.remove(name);
-
-					if (preferenceValues != null) {
-						size = preferenceValues._values.size();
-					}
-
-					if (values.length > size) {
-						newCount += values.length - size;
-					}
-
-					PreferenceValues newPreferenceValues =
-						new PreferenceValues();
-
-					newPreferenceValues._readOnly =
-						portletPreferences.isReadOnly(
-							entry.getKey());
-
-					Collections.addAll(newPreferenceValues._values, values);
-
-					preferenceEntries.put(
-						name,
-						new AbstractMap.SimpleImmutableEntry<>(
-							preferenceValues, newPreferenceValues));
-				}
+			if (preferenceValues != null) {
+				size = preferenceValues._values.size();
 			}
 
-			try (LoggingTimer loggingTimer4 = new LoggingTimer("_upgradePortletPreferenceValues:browsePortletPreferenceValues")) {
-				for (PreferenceValues portletPreferenceValues :
-					preferenceMap.values()) {
-
-					for (long portletPreferenceValueId :
-						portletPreferenceValues._portletPreferenceValueIds) {
-
-						deletePreparedStatement.setLong(
-							1, portletPreferenceValueId);
-
-						deletePreparedStatement.addBatch();
-					}
-				}
+			if (values.length > size) {
+				newCount += values.length - size;
 			}
 
-			long batchCounter = 0;
+			PreferenceValues newPreferenceValues =
+				new PreferenceValues();
 
-			if (newCount > 0) {
-				batchCounter = increment(
-					PortletPreferenceValue.class.getName(), newCount);
+			newPreferenceValues._readOnly =
+				portletPreferences.isReadOnly(
+					entry.getKey());
 
-				batchCounter -= newCount;
+			Collections.addAll(newPreferenceValues._values, values);
+
+			preferenceEntries.put(
+				name,
+				new AbstractMap.SimpleImmutableEntry<>(
+					preferenceValues, newPreferenceValues));
+		}
+
+		for (PreferenceValues portletPreferenceValues :
+			preferenceMap.values()) {
+
+			for (long portletPreferenceValueId :
+				portletPreferenceValues._portletPreferenceValueIds) {
+
+				deletePreparedStatement.setLong(
+					1, portletPreferenceValueId);
+
+				deletePreparedStatement.addBatch();
+			}
+		}
+
+		long batchCounter = 0;
+
+		if (newCount > 0) {
+			batchCounter = increment(
+				PortletPreferenceValue.class.getName(), newCount);
+
+			batchCounter -= newCount;
+		}
+
+		int smallValueMaxLength = ModelHintsUtil.getMaxLength(
+			PortletPreferenceValue.class.getName(), "smallValue");
+
+		for (Map.Entry<String, Map.Entry<PreferenceValues, PreferenceValues>>
+			entry : preferenceEntries.entrySet()) {
+
+			Map.Entry<PreferenceValues, PreferenceValues>
+				preferenceValuesEntry = entry.getValue();
+
+			PreferenceValues oldPreferenceValues =
+				preferenceValuesEntry.getKey();
+
+			PreferenceValues newPreferenceValues =
+				preferenceValuesEntry.getValue();
+
+			List<String> newValues = newPreferenceValues._values;
+
+			int oldSize = 0;
+
+			if (oldPreferenceValues != null) {
+				oldSize = oldPreferenceValues._values.size();
 			}
 
-			int smallValueMaxLength = ModelHintsUtil.getMaxLength(
-				PortletPreferenceValue.class.getName(), "smallValue");
+			for (int i = 0; i < newValues.size(); i++) {
+				String value = newValues.get(i);
 
-			try (LoggingTimer loggingTimer4 = new LoggingTimer("_upgradePortletPreferenceValues:browsePreferenceEntries")) {
-				for (Map.Entry<String, Map.Entry<PreferenceValues, PreferenceValues>>
-					entry : preferenceEntries.entrySet()) {
+				if (oldSize > i) {
+					if (!Objects.equals(
+						value,
+						oldPreferenceValues._values.get(i)) ||
+						(newPreferenceValues._readOnly !=
+						 oldPreferenceValues._readOnly)) {
 
-					Map.Entry<PreferenceValues, PreferenceValues>
-						preferenceValuesEntry = entry.getValue();
+						String largeValue = null;
+						String smallValue = null;
 
-					PreferenceValues oldPreferenceValues =
-						preferenceValuesEntry.getKey();
-
-					PreferenceValues newPreferenceValues =
-						preferenceValuesEntry.getValue();
-
-					List<String> newValues = newPreferenceValues._values;
-
-					int oldSize = 0;
-
-					if (oldPreferenceValues != null) {
-						oldSize = oldPreferenceValues._values.size();
-					}
-
-					try (LoggingTimer loggingTimer5 = new LoggingTimer("_upgradePortletPreferenceValues:browseInsertUpdateBatch")) {
-						for (int i = 0; i < newValues.size(); i++) {
-							String value = newValues.get(i);
-
-							if (oldSize > i) {
-								try (LoggingTimer loggingTimer6 = new LoggingTimer("_upgradePortletPreferenceValues:updateBatch")) {
-									if (!Objects.equals(
-										value,
-										oldPreferenceValues._values.get(i)) ||
-										(newPreferenceValues._readOnly !=
-										 oldPreferenceValues._readOnly)) {
-
-										String largeValue = null;
-										String smallValue = null;
-
-										if (value.length() >
-											smallValueMaxLength) {
-											largeValue = value;
-										}
-										else {
-											smallValue = value;
-										}
-
-										updatePreparedStatement.setString(
-											1, largeValue);
-										updatePreparedStatement.setBoolean(
-											2, newPreferenceValues._readOnly);
-										updatePreparedStatement.setString(
-											3, smallValue);
-
-										updatePreparedStatement.setLong(
-											4,
-											oldPreferenceValues._portletPreferenceValueIds.get(
-												i));
-
-										updatePreparedStatement.addBatch();
-									}
-								}
-							}
-							else {
-								try (LoggingTimer loggingTimer6 = new LoggingTimer(
-									"_upgradePortletPreferenceValues:insertBatch")) {
-									String largeValue = null;
-									String smallValue = null;
-
-									if (value.length() > smallValueMaxLength) {
-										largeValue = value;
-									}
-									else {
-										smallValue = value;
-									}
-
-									insertPreparedStatement.setLong(
-										1, ctCollectionId);
-									insertPreparedStatement.setLong(
-										2, ++batchCounter);
-									insertPreparedStatement.setLong(
-										3, companyId);
-									insertPreparedStatement.setLong(
-										4, portletPreferencesId);
-									insertPreparedStatement.setInt(5, i);
-									insertPreparedStatement.setString(
-										6, largeValue);
-									insertPreparedStatement.setString(
-										7, entry.getKey());
-									insertPreparedStatement.setBoolean(
-										8, newPreferenceValues._readOnly);
-									insertPreparedStatement.setString(
-										9, smallValue);
-
-									insertPreparedStatement.addBatch();
-								}
-							}
+						if (value.length() >
+							smallValueMaxLength) {
+							largeValue = value;
 						}
-					}
-
-					try (LoggingTimer loggingTimer5 = new LoggingTimer("_upgradePortletPreferenceValues:browseDeleteBatch")) {
-						for (int i = newValues.size(); i < oldSize; i++) {
-							deletePreparedStatement.setLong(
-								1,
-								oldPreferenceValues._portletPreferenceValueIds.get(
-									i));
-
-							deletePreparedStatement.addBatch();
+						else {
+							smallValue = value;
 						}
+
+						updatePreparedStatement.setString(
+							1, largeValue);
+						updatePreparedStatement.setBoolean(
+							2, newPreferenceValues._readOnly);
+						updatePreparedStatement.setString(
+							3, smallValue);
+
+						updatePreparedStatement.setLong(
+							4,
+							oldPreferenceValues._portletPreferenceValueIds.get(
+								i));
+
+						updatePreparedStatement.addBatch();
 					}
 				}
+				else {
+					String largeValue = null;
+					String smallValue = null;
+
+					if (value.length() > smallValueMaxLength) {
+						largeValue = value;
+					}
+					else {
+						smallValue = value;
+					}
+
+					insertPreparedStatement.setLong(
+						1, ctCollectionId);
+					insertPreparedStatement.setLong(
+						2, ++batchCounter);
+					insertPreparedStatement.setLong(
+						3, companyId);
+					insertPreparedStatement.setLong(
+						4, portletPreferencesId);
+					insertPreparedStatement.setInt(5, i);
+					insertPreparedStatement.setString(
+						6, largeValue);
+					insertPreparedStatement.setString(
+						7, entry.getKey());
+					insertPreparedStatement.setBoolean(
+						8, newPreferenceValues._readOnly);
+					insertPreparedStatement.setString(
+						9, smallValue);
+
+					insertPreparedStatement.addBatch();
+				}
+			}
+
+			for (int i = newValues.size(); i < oldSize; i++) {
+				deletePreparedStatement.setLong(
+					1,
+					oldPreferenceValues._portletPreferenceValueIds.get(
+						i));
+
+				deletePreparedStatement.addBatch();
 			}
 		}
 	}
