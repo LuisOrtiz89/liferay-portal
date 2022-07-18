@@ -196,7 +196,9 @@ public class Log4jLogContextUpgradeLogWrapper extends LogWrapper {
 	}
 
 	private void _cleanThreadContext() {
-		ThreadContext.clearMap();
+		if (StartupHelperUtil.isUpgrading()) {
+			ThreadContext.clearMap();
+		}
 	}
 
 	private void _populateThreadContext() {
