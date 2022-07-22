@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -58,9 +59,10 @@ public class UpgradeSQLServer extends UpgradeProcess {
 
 			String sql = sb.toString();
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(sql);
-				ResultSet resultSet = preparedStatement.executeQuery()) {
+				 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 				while (resultSet.next()) {
 					String tableName = resultSet.getString("table_name");
@@ -199,7 +201,8 @@ public class UpgradeSQLServer extends UpgradeProcess {
 
 		String sql = sb.toString();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql);
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -263,7 +266,8 @@ public class UpgradeSQLServer extends UpgradeProcess {
 
 		String sql = sb.toString();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql);
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 

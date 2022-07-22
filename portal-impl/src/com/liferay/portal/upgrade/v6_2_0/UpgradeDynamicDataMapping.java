@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -96,7 +97,8 @@ public class UpgradeDynamicDataMapping extends UpgradeProcess {
 			long structureId, String structureKey, String xsd)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update DDMStructure set structureKey = ?, xsd = ? where " +
 					"structureId = ?")) {
 
@@ -115,6 +117,7 @@ public class UpgradeDynamicDataMapping extends UpgradeProcess {
 
 	protected void updateStructures() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select structureId, structureKey, xsd from DDMStructure");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -139,6 +142,7 @@ public class UpgradeDynamicDataMapping extends UpgradeProcess {
 
 	protected void updateStructuresClassNameId() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"update DDMStructure set classNameId = ? where classNameId = " +
 					"?")) {
@@ -166,7 +170,8 @@ public class UpgradeDynamicDataMapping extends UpgradeProcess {
 			long templateId, String templateKey, String script)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update DDMTemplate set templateKey = ?, script = ? where " +
 					"templateId = ?")) {
 
@@ -180,6 +185,7 @@ public class UpgradeDynamicDataMapping extends UpgradeProcess {
 
 	protected void updateTemplates() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select templateId, templateKey, script from DDMTemplate " +
 					"where language = 'xsd'");

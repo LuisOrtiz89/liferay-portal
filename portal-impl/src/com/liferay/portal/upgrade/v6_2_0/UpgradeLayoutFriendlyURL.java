@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -31,11 +32,12 @@ public class UpgradeLayoutFriendlyURL extends UpgradeProcess {
 
 	protected void addLayoutFriendlyURL() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select plid, groupId, companyId, userId, userName, " +
 					"createDate, modifiedDate, privateLayout, friendlyURL " +
 						"from Layout");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long plid = resultSet.getLong("plid");
@@ -69,7 +71,8 @@ public class UpgradeLayoutFriendlyURL extends UpgradeProcess {
 		sb.append("friendlyURL, languageId) values (?, ?, ?, ?, ?, ?, ?, ?, ");
 		sb.append("?, ?, ?, ?)");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sb.toString())) {
 
 			preparedStatement.setString(1, PortalUUIDUtil.generate());

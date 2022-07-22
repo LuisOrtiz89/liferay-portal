@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -78,7 +79,8 @@ public abstract class BaseUuidUpgradeProcess extends UpgradeProcess {
 			updateSB.append(primKeyColumnName);
 			updateSB.append(" = ?");
 
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				PreparedStatement preparedStatement1 =
 					connection.prepareStatement(selectSB.toString());
 				PreparedStatement preparedStatement2 =
 					AutoBatchPreparedStatementUtil.autoBatch(

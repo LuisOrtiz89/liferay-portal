@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 
 import java.io.IOException;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,8 +43,10 @@ public abstract class UpgradeModules extends UpgradeProcess {
 
 		ReleaseDAO releaseDAO = new ReleaseDAO();
 
-		for (String bundleSymbolicName : bundleSymbolicNames) {
-			releaseDAO.addRelease(connection, bundleSymbolicName);
+		try (Connection connection = getConnection()) {
+			for (String bundleSymbolicName : bundleSymbolicNames) {
+				releaseDAO.addRelease(connection, bundleSymbolicName);
+			}
 		}
 	}
 
@@ -59,7 +62,8 @@ public abstract class UpgradeModules extends UpgradeProcess {
 	protected boolean hasServiceComponent(String buildNamespace)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection  = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select serviceComponentId from ServiceComponent where " +
 					"buildNamespace = ?")) {
 
@@ -83,7 +87,8 @@ public abstract class UpgradeModules extends UpgradeProcess {
 				String oldServletContextName = convertedLegacyModule[0];
 				String newServletContextName = convertedLegacyModule[1];
 
-				try (PreparedStatement preparedStatement =
+				try (Connection connection = getConnection();
+					PreparedStatement preparedStatement =
 						connection.prepareStatement(
 							"select servletContextName, buildNumber from " +
 								"Release_ where servletContextName = ?")) {

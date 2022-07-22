@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.verify.VerifyProcess;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -86,7 +87,8 @@ public class OrganizationServiceVerifyProcess extends VerifyProcess {
 			sb.append("Organization_.organizationId and AssetEntry.classUuid ");
 			sb.append("is null");
 
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				PreparedStatement preparedStatement1 =
 					connection.prepareStatement(sb.toString());
 				ResultSet resultSet = preparedStatement1.executeQuery()) {
 

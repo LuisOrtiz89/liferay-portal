@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.upgrade.v6_2_0.BaseAttachmentsUpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -77,9 +78,10 @@ public class UpgradeWikiAttachments extends BaseAttachmentsUpgradeProcess {
 			sb.append("nodeId from WikiPage group by resourcePrimKey, ");
 			sb.append("groupId, companyId, nodeId");
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(sb.toString());
-				ResultSet resultSet = preparedStatement.executeQuery()) {
+				 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 				while (resultSet.next()) {
 					long resourcePrimKey = resultSet.getLong("resourcePrimKey");

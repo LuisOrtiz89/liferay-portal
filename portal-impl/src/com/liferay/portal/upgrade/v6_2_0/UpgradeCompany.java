@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.util.Validator;
 
 import java.security.Key;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -47,9 +48,10 @@ public class UpgradeCompany extends UpgradeProcess {
 
 	protected void upgradeKey() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId, key_ from Company");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long companyId = resultSet.getLong("companyId");
@@ -75,7 +77,8 @@ public class UpgradeCompany extends UpgradeProcess {
 			}
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Company set key_ = ? where companyId = ?")) {
 
 			preparedStatement.setString(

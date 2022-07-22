@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
@@ -37,7 +38,8 @@ public class UpgradeGroup extends UpgradeProcess {
 
 	protected void upgradeFriendlyURL() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update Group_ set friendlyURL= ? where classNameId = ?")) {
 
 			preparedStatement.setString(1, GroupConstants.GLOBAL_FRIENDLY_URL);

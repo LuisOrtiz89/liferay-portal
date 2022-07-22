@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -41,7 +42,8 @@ public class UpgradeLayoutSet extends UpgradeProcess {
 			sb.append("Group_ on (LayoutSet.groupId = Group_.groupId and ");
 			sb.append("Group_.liveGroupId > 0 and LayoutSet.logo = ?)");
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				PreparedStatement preparedStatement =
 					connection.prepareStatement(sb.toString())) {
 
 				preparedStatement.setBoolean(1, true);

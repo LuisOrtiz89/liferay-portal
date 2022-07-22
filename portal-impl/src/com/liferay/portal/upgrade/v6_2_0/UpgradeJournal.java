@@ -41,6 +41,7 @@ import com.liferay.portal.kernel.xml.Node;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -78,7 +79,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 
 		String sql = sb.toString();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement.setString(1, uuid);
@@ -157,7 +159,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 
 		String sql = sb.toString();
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
 			preparedStatement.setString(1, uuid);
@@ -269,7 +272,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 	}
 
 	protected long getCompanyGroupId(long companyId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId from Group_ where classNameId = ? and " +
 					"classPK = ?")) {
 
@@ -364,7 +368,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 	}
 
 	protected Locale getDefaultLocale(long companyId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select languageId from User_ where companyId = ? and " +
 					"defaultUser = ?")) {
 
@@ -396,7 +401,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 	}
 
 	protected long getRoleId(String roleName) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select roleId from Role_ where name = ?")) {
 
 			preparedStatement.setString(1, roleName);
@@ -451,6 +457,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 
 	protected void updateAssetEntryClassTypeId() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				SQLTransformer.transform(
 					"select distinct companyId, groupId, resourcePrimKey, " +
@@ -491,6 +498,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 
 	protected void updateContentSearch() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId, portletId from JournalContentSearch group " +
 					"by groupId, portletId having count(groupId) > 1 and " +
@@ -509,7 +517,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 	protected void updateContentSearch(long groupId, String portletId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select preferences from PortletPreferences inner join " +
 					"Layout on PortletPreferences.plid = Layout.plid where " +
 						"groupId = ? and portletId = ?");
@@ -594,7 +603,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 			long journalStructureId, Long ddmStructureId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update JournalArticle set classNameId = ?, classPK = ? " +
 					"where classNameId = ? and classPK = ?")) {
 
@@ -648,6 +658,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 		insertSB.append("?, ?, ?, ?, ?, ?)");
 
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				selectSB.toString());
 			PreparedStatement preparedStatement2 =
@@ -866,6 +877,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 
 	protected void updateLinkToLayoutContent() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				SQLTransformer.transform(
 					"select id_, groupId, content from JournalArticle where " +
@@ -1026,7 +1038,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 	}
 
 	protected long updateStructure(String structureId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from JournalStructure where structureId = ?")) {
 
 			preparedStatement.setString(1, structureId);
@@ -1050,6 +1063,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 
 	protected void updateStructures() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from JournalStructure");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -1064,6 +1078,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 
 	protected void updateTemplates() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select * from JournalTemplate");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -1155,6 +1170,7 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 
 	protected void upgradeURLTitle() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select distinct groupId, articleId, urlTitle from " +
 					"JournalArticle");
@@ -1235,7 +1251,8 @@ public class UpgradeJournal extends BaseUpgradePortletPreferences {
 			long groupId, String articleId, String urlTitle)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select count(*) from JournalArticle where groupId = ? and " +
 					"urlTitle = ? and articleId != ?")) {
 

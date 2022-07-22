@@ -26,6 +26,7 @@ import java.net.URI;
 
 import java.security.MessageDigest;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -53,10 +54,11 @@ public class OpenIdConnectSessionUpgradeProcess extends UpgradeProcess {
 		alterTableAddColumn(
 			"OpenIdConnectSession", "clientId", "VARCHAR(256) null");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select openIdConnectSessionId, configurationPid from " +
 					"OpenIdConnectSession");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long openIdConnectSessionId = resultSet.getLong(
@@ -120,7 +122,8 @@ public class OpenIdConnectSessionUpgradeProcess extends UpgradeProcess {
 		String openIdConnectClientId = GetterUtil.getString(
 			properties.get("openIdConnectClientId"));
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update OpenIdConnectSession set authServerWellKnownURI = ?, " +
 					"clientId = ? WHERE openIdConnectSessionId = ?")) {
 

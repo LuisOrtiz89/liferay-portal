@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -34,7 +35,8 @@ public class UpgradeLayout extends UpgradeProcess {
 	protected long getLayoutPrototypeGroupId(String layoutPrototypeUuid)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId from Group_ where classPK = (select " +
 					"layoutPrototypeId from LayoutPrototype where uuid_ = " +
 						"?)")) {
@@ -55,7 +57,8 @@ public class UpgradeLayout extends UpgradeProcess {
 			long groupId, String sourcePrototypeLayoutUuid)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select count(*) from Layout where uuid_ = ? and groupId = ? " +
 					"and privateLayout = ?")) {
 
@@ -88,7 +91,8 @@ public class UpgradeLayout extends UpgradeProcess {
 			sb.append("layoutPrototypeUuid != '' and ");
 			sb.append("sourcePrototypeLayoutUuid != ''");
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				PreparedStatement preparedStatement =
 					connection.prepareStatement(sb.toString());
 				ResultSet resultSet = preparedStatement.executeQuery()) {
 

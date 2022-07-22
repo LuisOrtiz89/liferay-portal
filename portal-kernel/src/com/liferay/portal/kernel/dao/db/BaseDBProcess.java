@@ -71,7 +71,7 @@ import org.osgi.framework.ServiceReference;
  * @author Brian Wing Shun Chan
  */
 public abstract class BaseDBProcess implements DBProcess {
-
+	
 	@Override
 	public void runSQL(Connection connection, String template)
 		throws IOException, SQLException {

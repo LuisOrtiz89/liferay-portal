@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.service.ResourceActionLocalServiceUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -30,14 +31,15 @@ public class VerifyResourceActions extends VerifyProcess {
 
 	protected void deleteDuplicateBitwiseValuesOnResource() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select name, bitwiseValue, min(resourceActionId) as " +
 					"minResourceActionId from ResourceAction group by name, " +
 						"bitwiseValue having count(resourceActionId) > 1");
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
+			 PreparedStatement preparedStatement2 = connection.prepareStatement(
 				"select resourceActionId, actionId from ResourceAction where " +
 					"name = ? and bitwiseValue = ? and resourceActionId != ?");
-			ResultSet resultSet1 = preparedStatement1.executeQuery()) {
+			 ResultSet resultSet1 = preparedStatement1.executeQuery()) {
 
 			while (resultSet1.next()) {
 				String name = resultSet1.getString("name");

@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.service.permission.ModelPermissions;
 import com.liferay.portal.kernel.service.permission.ModelPermissionsFactory;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -51,7 +52,8 @@ public class CommercePaymentMethodGroupRelUpgradeProcess
 			"select CPaymentMethodGroupRelId, companyId, groupId, userId " +
 				"from CommercePaymentMethodGroupRel";
 
-		try (Statement s = connection.createStatement();
+		try (Connection connection = getConnection();
+			Statement s = connection.createStatement();
 			ResultSet resultSet = s.executeQuery(
 				selectCommercePaymentMethodGroupRelSQL)) {
 

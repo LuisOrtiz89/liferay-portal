@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -47,7 +48,8 @@ public class UpgradeLayoutSetBranch extends UpgradeProcess {
 		sb.append("layoutSetPrototypeLinkEnabled = ? where layoutSetBranchId ");
 		sb.append("= ?");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sb.toString())) {
 
 			preparedStatement.setString(1, themeId);
@@ -66,6 +68,7 @@ public class UpgradeLayoutSetBranch extends UpgradeProcess {
 
 	protected void updateLayoutSetBranches() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select groupId, layoutSetBranchId, privateLayout from " +
 					"LayoutSetBranch");
@@ -93,7 +96,8 @@ public class UpgradeLayoutSetBranch extends UpgradeProcess {
 		sb.append("layoutSetPrototypeLinkEnabled from LayoutSet where ");
 		sb.append("groupId = ? and privateLayout = ?");
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sb.toString())) {
 
 			preparedStatement.setLong(1, groupId);

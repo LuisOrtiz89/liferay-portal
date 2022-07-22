@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portlet.PortalPreferencesImpl;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -57,12 +58,13 @@ public class UpgradeCustomizablePortlets extends UpgradeProcess {
 
 	protected void upgradeCustomizablePreferences() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement1 = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select portalPreferencesId, ownerId, ownerType, preferences " +
 					"from PortalPreferences where preferences like " +
 						"'%com.liferay.portal.model.CustomizedPages%'");
-			ResultSet resultSet = preparedStatement1.executeQuery();
-			PreparedStatement preparedStatement2 =
+			 ResultSet resultSet = preparedStatement1.executeQuery();
+			 PreparedStatement preparedStatement2 =
 				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 					connection,
 					"update PortalPreferences set preferences = ? where " +
@@ -134,7 +136,8 @@ public class UpgradeCustomizablePortlets extends UpgradeProcess {
 				sb.append("ownerId = ? and ownerType = ? and plid = ? and ");
 				sb.append("portletId = ?");
 
-				try (PreparedStatement preparedStatement =
+				try (Connection connection = getConnection();
+					 PreparedStatement preparedStatement =
 						connection.prepareStatement(sb.toString())) {
 
 					for (String customPortletId : StringUtil.split(value)) {

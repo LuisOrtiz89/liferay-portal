@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -86,7 +87,8 @@ public class BasicWebContentAssetEntryClassTypeIdUpgradeProcess
 			return;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update AssetEntry set classTypeId = ? where classNameId = ? " +
 					"and companyId = ? and classTypeId = ?")) {
 

@@ -45,6 +45,7 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.service.impl.GroupLocalServiceImpl;
 import com.liferay.portal.util.PortalInstances;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -80,13 +81,14 @@ public class VerifyGroup extends VerifyProcess {
 			sb.append(GroupLocalServiceImpl.ORGANIZATION_NAME_SUFFIX);
 			sb.append("'");
 
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(sb.toString());
-				PreparedStatement preparedStatement2 =
+				 PreparedStatement preparedStatement2 =
 					AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 						connection,
 						"update Group_ set name = ? where groupId = ?");
-				ResultSet resultSet = preparedStatement1.executeQuery()) {
+				 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 				while (resultSet.next()) {
 					String name = resultSet.getString("name");

@@ -40,6 +40,7 @@ import com.liferay.portal.util.PortalInstances;
 
 import java.io.Serializable;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -76,7 +77,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 	}
 
 	protected String getUserName(long userId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select firstName, middleName, lastName from User_ where " +
 					"userId = ?")) {
 
@@ -131,7 +133,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 
 					List<DLFolderTreeModel> treeModels = new ArrayList<>();
 
-					try (PreparedStatement preparedStatement =
+					try (Connection connection = getConnection();
+						 PreparedStatement preparedStatement =
 							connection.prepareStatement(
 								_SELECT_DLFOLDER_BY_PARENT)) {
 
@@ -220,6 +223,7 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 
 	protected void updateDLFolderUserName() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select distinct userId from DLFolder where userName is null " +
 					"or userName = ''");
@@ -257,7 +261,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 			String name, String description)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"update DLFileEntryType set fileEntryTypeKey = ?, name = ?, " +
 					"description = ? where fileEntryTypeId = ?")) {
 
@@ -273,6 +278,7 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 
 	protected void updateFileEntryTypes() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select fileEntryTypeId, companyId, name, description from " +
 					"DLFileEntryType");
@@ -303,7 +309,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 			long[] companyIds = PortalInstances.getCompanyIdsBySQL();
 
 			for (long companyId : companyIds) {
-				try (PreparedStatement folderPreparedStatement =
+				try (Connection connection = getConnection();
+					 PreparedStatement folderPreparedStatement =
 						AutoBatchPreparedStatementUtil.concurrentAutoBatch(
 							connection,
 							"update DLFolder set treePath = ? where folderId " +

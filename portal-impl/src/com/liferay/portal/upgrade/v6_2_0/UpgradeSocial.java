@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -50,7 +51,8 @@ public class UpgradeSocial extends UpgradeProcess {
 			return null;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				extraDataFactory.getSQL())) {
 
 			extraDataFactory.setModelSQLParameters(
@@ -84,7 +86,8 @@ public class UpgradeSocial extends UpgradeProcess {
 		sb.append("SocialActivity where ");
 		sb.append(extraDataFactory.getActivitySQLWhereClause());
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				sb.toString())) {
 
 			extraDataFactory.setActivitySQLParameters(preparedStatement);
@@ -147,7 +150,8 @@ public class UpgradeSocial extends UpgradeProcess {
 			long activityId = entry.getKey();
 			String extraData = entry.getValue();
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"update SocialActivity set extraData = ? where " +
 							"activityId = ?")) {
@@ -195,7 +199,8 @@ public class UpgradeSocial extends UpgradeProcess {
 				return;
 			}
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(
 						"select activityId, activitySetId from " +
 							"SO_SocialActivity");
@@ -689,7 +694,8 @@ public class UpgradeSocial extends UpgradeProcess {
 
 			long classPK = resultSet.getLong("classPK");
 
-			try (PreparedStatement preparedStatement =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement =
 					connection.prepareStatement(extraDataFactory.getSQL())) {
 
 				preparedStatement.setLong(1, classPK);

@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.upgrade.v6_2_0.BaseAttachmentsUpgradeProcess;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -73,11 +74,12 @@ public class UpgradeMessageBoardsAttachments
 	@Override
 	protected void updateAttachments() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
-			PreparedStatement preparedStatement = connection.prepareStatement(
+			 Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select messageId, groupId, companyId, userId, userName, " +
 					"threadId from MBMessage where classNameId = 0 and " +
 						"classPK = 0");
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				long messageId = resultSet.getLong("messageId");

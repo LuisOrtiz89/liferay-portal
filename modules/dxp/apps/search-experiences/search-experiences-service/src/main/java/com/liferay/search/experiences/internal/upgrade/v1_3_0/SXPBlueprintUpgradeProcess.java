@@ -31,6 +31,7 @@ import com.liferay.search.experiences.rest.dto.v1_0.ElementInstance;
 import com.liferay.search.experiences.rest.dto.v1_0.SXPElement;
 import com.liferay.search.experiences.rest.dto.v1_0.util.ElementInstanceUtil;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -53,11 +54,12 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 			long sxpElementId)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement = connection.prepareStatement(
 				"select sxpElementId, externalReferenceCode, readOnly, " +
 					"version from SXPElement where sxpElementId = " +
 						sxpElementId);
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+			 ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
 				com.liferay.search.experiences.model.SXPElement sxpElement =
@@ -169,7 +171,8 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 	private void _upgradeSXPBlueprint() throws Exception {
 		alterTableDropColumn("SXPBlueprint", "key_");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select sxpBlueprintId, elementInstancesJSON, version from " +
 					"SXPBlueprint");
 			PreparedStatement preparedStatement2 =
@@ -207,7 +210,8 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 	private void _upgradeSXPElement() throws Exception {
 		alterTableDropColumn("SXPElement", "key_");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select externalReferenceCode, sxpElementId, description, " +
 					"elementDefinitionJSON, readOnly, title, version from " +
 						"SXPElement");

@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -39,7 +40,8 @@ public class FragmentEntryLinkUpgradeProcess extends UpgradeProcess {
 	}
 
 	private int _getFragmentEntryType(long fragmentEntryId) throws Exception {
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select type_ from FragmentEntry where fragmentEntryId = ? ")) {
 
 			preparedStatement.setLong(1, fragmentEntryId);
@@ -78,7 +80,8 @@ public class FragmentEntryLinkUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _updateFragmentEntryType() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"select fragmentEntryLinkId, fragmentEntryId, editableValues " +
 					"from FragmentEntryLink");
 			ResultSet resultSet1 = preparedStatement1.executeQuery();

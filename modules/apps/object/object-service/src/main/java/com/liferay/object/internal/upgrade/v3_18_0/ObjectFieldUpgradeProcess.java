@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.uuid.PortalUUID;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -54,7 +55,8 @@ public class ObjectFieldUpgradeProcess extends UpgradeProcess {
 			"or ObjectField.name = ? or ObjectField.name = ? or ",
 			"ObjectField.name = ?) and ObjectField.system_ = ?)");
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			 PreparedStatement preparedStatement1 = connection.prepareStatement(
 				selectSQL)) {
 
 			preparedStatement1.setString(1, "creator");

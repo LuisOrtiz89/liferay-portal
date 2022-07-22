@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.StringBundler;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -47,12 +48,13 @@ public class UpgradePortletPreferences extends UpgradeProcess {
 			String deleteSQL =
 				"delete from PortletPreferences where portletPreferencesId = ?";
 
-			try (PreparedStatement preparedStatement1 =
+			try (Connection connection = getConnection();
+				 PreparedStatement preparedStatement1 =
 					connection.prepareStatement(selectSQL);
-				PreparedStatement preparedStatement2 =
+				 PreparedStatement preparedStatement2 =
 					AutoBatchPreparedStatementUtil.autoBatch(
 						connection, deleteSQL);
-				ResultSet resultSet = preparedStatement1.executeQuery()) {
+				 ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 				while (resultSet.next()) {
 					String portletId = GetterUtil.getString(

@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LoggingTimer;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -37,7 +38,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 	protected boolean hasFileEntry(long groupId, long folderId, String title)
 		throws Exception {
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select count(*) from DLFileEntry where groupId = ? and " +
 					"folderId = ? and title = ?")) {
 
@@ -61,6 +63,7 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 
 	protected void updateFileEntries() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer();
+			 Connection connection = getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select fileEntryId, groupId, folderId, title, extension, " +
 					"version from DLFileEntry");
@@ -116,7 +119,8 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 			long fileEntryId, String version, String newTitle)
 		throws SQLException {
 
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+		try (Connection connection = getConnection();
+			PreparedStatement preparedStatement1 = connection.prepareStatement(
 				"update DLFileEntry set title = ? where fileEntryId = ?")) {
 
 			preparedStatement1.setString(1, newTitle);
