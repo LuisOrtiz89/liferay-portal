@@ -434,11 +434,11 @@ public abstract class BaseDBProcess implements DBProcess {
 			unsafeConsumer, exceptionMessage);
 	}
 
-	protected void processConcurrentlyWithAutoBatch(
+	protected void processConcurrently(
 			String selectSqlQuery, String updateSqlQuery,
 			UnsafeFunction<ResultSet, Object[], Exception> unsafeFunction,
 			UnsafeBiConsumer<Object[], PreparedStatement, Exception>
-				unsafeConsumer,
+				unsafeBiConsumer,
 			String exceptionMessage)
 		throws Exception {
 
@@ -457,7 +457,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 						return null;
 					},
-					updateSqlQuery, unsafeConsumer, exceptionMessage);
+					updateSqlQuery, unsafeBiConsumer, exceptionMessage);
 			}
 		}
 	}
@@ -592,12 +592,12 @@ public abstract class BaseDBProcess implements DBProcess {
 
 	private <T> void _processConcurrentlyWithAutoBatch(
 			UnsafeSupplier<T, Exception> unsafeSupplier, String updateSqlQuery,
-			UnsafeBiConsumer<T, PreparedStatement, Exception> unsafeConsumer,
+			UnsafeBiConsumer<T, PreparedStatement, Exception> unsafeBiConsumer,
 			String exceptionMessage)
 		throws Exception {
 
 		Objects.requireNonNull(unsafeSupplier);
-		Objects.requireNonNull(unsafeConsumer);
+		Objects.requireNonNull(unsafeBiConsumer);
 
 		ExecutorService executorService = Executors.newWorkStealingPool();
 
@@ -644,7 +644,7 @@ public abstract class BaseDBProcess implements DBProcess {
 										}
 									});
 
-							unsafeConsumer.accept(current, preparedStatement);
+							unsafeBiConsumer.accept(current, preparedStatement);
 						}
 						catch (Exception exception) {
 							throwableCollector.collect(exception);
