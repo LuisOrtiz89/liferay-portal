@@ -197,7 +197,7 @@ public class JournalArticleLocalizedValuesUpgradeProcess
 
 	private void _updateJournalArticleLocalizedFields() throws Exception {
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			processConcurrentlyWithAutoBatch(
+			processConcurrently(
 				"select id_, companyId, title, description, " +
 					"defaultLanguageId from JournalArticle",
 				"insert into JournalArticleLocalization(" +
