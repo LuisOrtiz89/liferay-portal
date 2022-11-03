@@ -18,6 +18,9 @@ import com.liferay.petra.concurrent.NoticeableExecutorService;
 import com.liferay.petra.concurrent.NoticeableFuture;
 import com.liferay.petra.executor.PortalExecutorManager;
 import com.liferay.petra.function.UnsafeConsumer;
+import com.liferay.portal.kernel.dao.db.BaseDBProcess;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
@@ -119,7 +122,9 @@ public class AutoBatchPreparedStatementUtil {
 			if (++_count >= _HIBERNATE_JDBC_BATCH_SIZE) {
 				_count = 0;
 
+				_log.info("Start Batch Execution on thread because batch size " + Thread.currentThread().getId());
 				localPreparedStatement.executeBatch();
+				_log.info("Finish Batch Execution on thread because batch size " + Thread.currentThread().getId());
 			}
 		}
 
@@ -131,7 +136,11 @@ public class AutoBatchPreparedStatementUtil {
 				PreparedStatement localPreparedStatement =
 					getPreparedStatement();
 
-				return localPreparedStatement.executeBatch();
+				_log.info("Start Batch Execution on thread because manual execution " + Thread.currentThread().getId());
+				int [] result = localPreparedStatement.executeBatch();
+				_log.info("Finish Batch Execution on thread because manual execution " + Thread.currentThread().getId());
+
+				return result;
 			}
 
 			return new int[0];
@@ -233,7 +242,9 @@ public class AutoBatchPreparedStatementUtil {
 				_noticeableExecutorService.submit(
 					() -> {
 						try {
+							_log.info("Starting Batch Execution on thread on async mode " + Thread.currentThread().getId());
 							actionUnsafeConsumer.accept(localPreparedStatement);
+							_log.info("Finished Batch Execution on thread on async mode " + Thread.currentThread().getId());
 						}
 						finally {
 							localPreparedStatement.close();
@@ -358,4 +369,6 @@ public class AutoBatchPreparedStatementUtil {
 
 	}
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		AutoBatchPreparedStatementUtil.class);
 }
