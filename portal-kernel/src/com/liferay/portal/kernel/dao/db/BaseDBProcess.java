@@ -479,7 +479,7 @@ public abstract class BaseDBProcess implements DBProcess {
 			Thread.currentThread(),
 			k -> {
 				try {
-					return AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+					return AutoBatchPreparedStatementUtil.autoBatch(
 						connection, updateSqlQuery);
 				}
 				catch (SQLException sqlException) {
