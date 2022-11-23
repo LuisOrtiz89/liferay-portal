@@ -231,7 +231,7 @@ public class JournalArticleLocalizedValuesUpgradeProcess
 					locales.addAll(descriptionMap.keySet());
 
 					try (PreparedStatement updatePreparedStatement =
-							AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+							AutoBatchPreparedStatementUtil.autoBatch(
 								connection, sql)) {
 
 						for (Locale locale : locales) {
