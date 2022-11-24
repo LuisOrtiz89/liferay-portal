@@ -154,17 +154,17 @@ public class DBUpgrader {
 					"Store \"" + PropsValues.DL_STORE_IMPL +
 						"\" is not available");
 			}
-
-			_stopWatch.stop();
-
-			System.out.println(
-				"\nCompleted Liferay core upgrade process in " +
-					(_stopWatch.getTime() / Time.SECOND) + " seconds");
 		}
 		catch (Exception exception) {
 			_log.error(exception);
 		}
 		finally {
+			_stopWatch.stop();
+
+			System.out.println(
+				"\nCompleted Liferay core upgrade process in " +
+					(_stopWatch.getTime() / Time.SECOND) + " seconds");
+
 			if (PropsValues.UPGRADE_REPORT_ENABLED) {
 				_stopUpgradeReportLogAppender();
 			}
