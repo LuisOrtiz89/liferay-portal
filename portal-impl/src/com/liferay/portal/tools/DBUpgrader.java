@@ -124,6 +124,8 @@ public class DBUpgrader {
 	}
 
 	public static void main(String[] args) {
+		String result = "Completed";
+
 		try {
 			_stopWatch = new StopWatch();
 
@@ -157,13 +159,16 @@ public class DBUpgrader {
 		}
 		catch (Exception exception) {
 			_log.error(exception);
+
+			result = "Failed";
 		}
 		finally {
 			_stopWatch.stop();
 
 			System.out.println(
-				"\nCompleted Liferay core upgrade process in " +
-					(_stopWatch.getTime() / Time.SECOND) + " seconds");
+				StringBundler.concat(
+					"\n", result, " Liferay core upgrade process in ",
+					_stopWatch.getTime() / Time.SECOND, " seconds"));
 
 			if (PropsValues.UPGRADE_REPORT_ENABLED) {
 				_stopUpgradeReportLogAppender();
