@@ -163,8 +163,6 @@ public class DBUpgrader {
 		}
 		catch (Exception exception) {
 			_log.error(exception);
-
-			System.exit(1);
 		}
 		finally {
 			if (PropsValues.UPGRADE_REPORT_ENABLED) {
