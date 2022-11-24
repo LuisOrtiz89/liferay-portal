@@ -167,15 +167,13 @@ public class DBUpgrader {
 
 			System.out.println(
 				StringBundler.concat(
-					"\n", result, " Liferay core upgrade process in ",
+					"\n", result, " Liferay upgrade process in ",
 					_stopWatch.getTime() / Time.SECOND, " seconds"));
 
 			if (PropsValues.UPGRADE_REPORT_ENABLED) {
 				_stopUpgradeReportLogAppender();
 			}
 		}
-
-		System.out.println("Exiting DBUpgrader#main(String[]).");
 	}
 
 	public static void upgradeModules() {
