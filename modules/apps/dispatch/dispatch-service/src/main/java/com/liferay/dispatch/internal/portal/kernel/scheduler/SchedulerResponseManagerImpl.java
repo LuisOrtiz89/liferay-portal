@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.scheduler.SchedulerException;
 import com.liferay.portal.kernel.scheduler.StorageType;
 import com.liferay.portal.kernel.scheduler.TriggerState;
 import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.ListUtil;
 
 import java.util.ArrayList;
@@ -149,6 +150,15 @@ public class SchedulerResponseManagerImpl implements SchedulerResponseManager {
 			schedulerResponse.getDestinationName());
 		message.put(SchedulerEngine.GROUP_NAME, groupName);
 		message.put(SchedulerEngine.JOB_NAME, jobName);
+
+		long currentCompanyId = CompanyThreadLocal.getCompanyId();
+
+		message.remove("companyId");
+
+		message.getValues(
+		).put(
+			"companyId", currentCompanyId
+		);
 
 		_messageBus.sendMessage(
 			schedulerResponse.getDestinationName(), message);
