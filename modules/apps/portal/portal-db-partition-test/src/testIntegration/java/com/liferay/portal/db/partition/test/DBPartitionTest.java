@@ -15,11 +15,27 @@
 package com.liferay.portal.db.partition.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.dispatch.scheduler.SchedulerResponseManager;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.db.partition.DBPartitionUtil;
+import com.liferay.portal.kernel.messaging.BaseMessageListener;
+import com.liferay.portal.kernel.messaging.DestinationNames;
+import com.liferay.portal.kernel.messaging.Message;
+import com.liferay.portal.kernel.model.CompanyConstants;
+import com.liferay.portal.kernel.scheduler.SchedulerEngineHelper;
+import com.liferay.portal.kernel.scheduler.SchedulerEntry;
+import com.liferay.portal.kernel.scheduler.SchedulerEntryImpl;
+import com.liferay.portal.kernel.scheduler.SchedulerException;
+import com.liferay.portal.kernel.scheduler.StorageType;
+import com.liferay.portal.kernel.scheduler.TimeUnit;
+import com.liferay.portal.kernel.scheduler.Trigger;
+import com.liferay.portal.kernel.scheduler.TriggerFactory;
+import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.util.PortalInstances;
 
 import java.util.Arrays;
@@ -162,6 +178,39 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 	}
 
 	@Test
+	public void testScheduledJobManualExecutionCompanyId() throws Exception {
+		TestMessageListener testMessageListener = new TestMessageListener();
+
+		testMessageListener.init();
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setWithSafeCloseable(
+					COMPANY_IDS[COMPANY_IDS.length - 1])) {
+
+			_schedulerResponseManager.run(
+				TestMessageListener.class.getName(),
+				TestMessageListener.class.getName(),
+				StorageType.MEMORY_CLUSTERED);
+		}
+		finally {
+			testMessageListener.destroy();
+		}
+	}
+
+	@Test
+	public void testStartupScheduleJobCompanyId() throws SchedulerException {
+		SchedulerResponse schedulerResponse =
+			_schedulerEngineHelper.getScheduledJob(
+				_STARTUP_LISTENER_CLASS, _STARTUP_LISTENER_CLASS,
+				StorageType.MEMORY_CLUSTERED);
+
+		Message message = schedulerResponse.getMessage();
+
+		Assert.assertEquals(
+			CompanyConstants.SYSTEM, message.getLong("companyId"));
+	}
+
+	@Test
 	public void testUpdateIndexes() throws Exception {
 		try {
 			DBPartitionUtil.forEachCompanyId(
@@ -215,6 +264,54 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 
 		private volatile List<Long> _companyIds = new CopyOnWriteArrayList<>();
+
+	}
+
+	private static final String _STARTUP_LISTENER_CLASS =
+		"com.liferay.journal.web.internal.messaging." +
+			"CheckArticleMessageListener";
+
+	@Inject
+	private SchedulerEngineHelper _schedulerEngineHelper;
+
+	@Inject
+	private SchedulerResponseManager _schedulerResponseManager;
+
+	@Inject
+	private TriggerFactory _triggerFactory;
+
+	private class TestMessageListener extends BaseMessageListener {
+
+		public void destroy() {
+			_schedulerEngineHelper.unregister(this);
+		}
+
+		public void init() {
+			Class<?> clazz = getClass();
+
+			String className = clazz.getName();
+
+			Trigger trigger = _triggerFactory.createTrigger(
+				className, className, null, null, 60, TimeUnit.MINUTE);
+
+			SchedulerEntry schedulerEntry = new SchedulerEntryImpl(
+				className, trigger);
+
+			_schedulerEngineHelper.register(
+				this, schedulerEntry, DestinationNames.SCHEDULER_DISPATCH);
+		}
+
+		@Override
+		protected void doReceive(Message message) throws Exception {
+			long companyId = CompanyThreadLocal.getCompanyId();
+
+			long messageCompanyId = message.getLong("companyId");
+
+			Assert.assertEquals(COMPANY_IDS[COMPANY_IDS.length - 1], companyId);
+
+			Assert.assertEquals(
+				COMPANY_IDS[COMPANY_IDS.length - 1], messageCompanyId);
+		}
 
 	}
 
