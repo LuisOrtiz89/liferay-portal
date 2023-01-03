@@ -2,4 +2,6 @@ dependencies {
 	testIntegrationCompile group: "com.liferay.portal", name: "com.liferay.portal.impl", version: "default"
 	testIntegrationCompile group: "org.springframework", name: "spring-context", version: "5.2.22.RELEASE"
 	testIntegrationCompile project(":test:arquillian-extension-junit-bridge")
+	testIntegrationCompile project(":apps:journal:journal-test-util")
+	testIntegrationCompile project(":apps:journal:journal-api")
 }
