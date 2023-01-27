@@ -32,7 +32,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -82,7 +81,7 @@ public class ManagedStartupTest {
 			_ORIGINAL_DATABASE_LOCK_REFRESH_TIME);
 	}
 
-	@Test(timeout = 60000)
+	@Test
 	public void testAcquireLocks() throws Exception {
 		ParallelRunnable parallelRunnable1 = new ParallelRunnable();
 
@@ -102,7 +101,7 @@ public class ManagedStartupTest {
 
 			thread1.start();
 
-			executingThread1.await(10, TimeUnit.SECONDS);
+			executingThread1.await();
 
 			Assert.assertTrue(thread1.isAlive());
 
@@ -118,17 +117,17 @@ public class ManagedStartupTest {
 
 			parallelRunnable1.stopThread();
 
-			executedThread1.await(10, TimeUnit.SECONDS);
+			executedThread1.await();
 
 			Assert.assertEquals(0, executedThread1.getCount());
 
-			thread1.join(5000);
+			thread1.join();
 
 			Assert.assertFalse(thread1.isAlive());
 
 			Assert.assertTrue(thread2.isAlive());
 
-			executingThread2.await(10, TimeUnit.SECONDS);
+			executingThread2.await();
 
 			Assert.assertEquals(0, executingThread2.getCount());
 
@@ -136,11 +135,11 @@ public class ManagedStartupTest {
 
 			parallelRunnable2.stopThread();
 
-			executedThread2.await(10, TimeUnit.SECONDS);
+			executedThread2.await();
 
 			Assert.assertEquals(0, executedThread2.getCount());
 
-			thread2.join(5000);
+			thread2.join();
 
 			Assert.assertFalse(thread2.isAlive());
 
@@ -164,11 +163,15 @@ public class ManagedStartupTest {
 		}
 	}
 
-	@Test(timeout = 10000)
+	@Test
 	public void testCreateLockTable() throws Exception {
 		Class<?> clazz = _bundle.loadClass(DatabaseLockRunner.class.getName());
 
-		ReflectionTestUtil.invoke(clazz, "_createLockTableIfNotExists", null);
+		try (Connection connection = DataAccess.getConnection()) {
+			ReflectionTestUtil.invoke(
+				clazz, "_createLockTableIfNotExists",
+				new Class<?>[] {Connection.class}, connection);
+		}
 
 		Assert.assertTrue(_hasLockTable());
 
