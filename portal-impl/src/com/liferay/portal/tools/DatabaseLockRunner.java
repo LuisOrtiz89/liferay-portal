@@ -47,75 +47,77 @@ public class DatabaseLockRunner {
 			return;
 		}
 
-		while (true) {
-			long lockId = _getOrCreateLock(lockKey);
+		try (Connection connection = DataAccess.getConnection()) {
+			while (true) {
+				long lockId = _getOrCreateLock(connection, lockKey);
 
-			try (Connection connection = DataAccess.getConnection();
-				PreparedStatement preparedStatement =
-					_getBlockingSelectLockPreparedStatement(
-						connection, lockId, lockKey)) {
+				try (PreparedStatement preparedStatement =
+						_getBlockingSelectLockPreparedStatement(
+							connection, lockId, lockKey)) {
 
-				boolean autoCommit = connection.getAutoCommit();
+					boolean autoCommit = connection.getAutoCommit();
 
-				try {
-					connection.setAutoCommit(false);
+					try {
+						connection.setAutoCommit(false);
 
-					try (ResultSet resultSet =
-							preparedStatement.executeQuery()) {
+						try (ResultSet resultSet =
+								preparedStatement.executeQuery()) {
 
-						if (!resultSet.next()) {
-							continue;
+							if (!resultSet.next()) {
+								continue;
+							}
+						}
+
+						unsafeRunnable.run();
+
+						try (PreparedStatement preparedStatement1 =
+								_getDeleteLockPreparedStatement(
+									connection, lockId)) {
+
+							preparedStatement1.executeUpdate();
+
+							connection.commit();
+						}
+					}
+					finally {
+						connection.setAutoCommit(autoCommit);
+					}
+
+					try (PreparedStatement preparedStatement1 =
+							_getDropLockTablePreparedStatement(connection)) {
+
+						preparedStatement1.executeUpdate();
+					}
+					catch (SQLException sqlException) {
+						if (_log.isDebugEnabled()) {
+							_log.debug(sqlException);
 						}
 					}
 
-					unsafeRunnable.run();
-
-					try (PreparedStatement preparedStatement1 =
-							_getDeleteLockPreparedStatement(
-								connection, lockId)) {
-
-						preparedStatement1.executeUpdate();
-
-						connection.commit();
-					}
-				}
-				finally {
-					connection.setAutoCommit(autoCommit);
-				}
-
-				try (PreparedStatement preparedStatement1 =
-						_getDropLockTablePreparedStatement(connection)) {
-
-					preparedStatement1.executeUpdate();
+					return;
 				}
 				catch (SQLException sqlException) {
 					if (_log.isDebugEnabled()) {
 						_log.debug(sqlException);
 					}
-				}
 
-				return;
-			}
-			catch (SQLException sqlException) {
-				if (_log.isDebugEnabled()) {
-					_log.debug(sqlException);
+					Thread.sleep(PropsValues.DATABASE_LOCK_REFRESH_TIME);
 				}
-
-				Thread.sleep(PropsValues.DATABASE_LOCK_REFRESH_TIME);
 			}
 		}
 	}
 
-	private static void _createLockTableIfNotExists() throws Exception {
+	private static void _createLockTableIfNotExists(Connection connection)
+		throws Exception {
+
 		while (true) {
-			if (_hasLockTable()) {
+			if (_hasLockTable(connection)) {
 				return;
 			}
 
 			DB db = DBManagerUtil.getDB();
 
-			try (Connection connection = DataAccess.getConnection();
-				PreparedStatement preparedStatement1 =
+			try (PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						db.buildSQL(
 							StringBundler.concat(
@@ -202,12 +204,13 @@ public class DatabaseLockRunner {
 		return preparedStatement;
 	}
 
-	private static long _getOrCreateLock(String lockKey) throws Exception {
-		while (true) {
-			_createLockTableIfNotExists();
+	private static long _getOrCreateLock(Connection connection, String lockKey)
+		throws Exception {
 
-			try (Connection connection = DataAccess.getConnection();
-				PreparedStatement preparedStatement =
+		while (true) {
+			_createLockTableIfNotExists(connection);
+
+			try (PreparedStatement preparedStatement =
 					_getSelectLockPreparedStatement(connection, lockKey);
 				ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -249,12 +252,12 @@ public class DatabaseLockRunner {
 		return preparedStatement;
 	}
 
-	private static boolean _hasLockTable() throws Exception {
-		try (Connection connection = DataAccess.getConnection()) {
-			DBInspector dbInspector = new DBInspector(connection);
+	private static boolean _hasLockTable(Connection connection)
+		throws Exception {
 
-			return dbInspector.hasTable(_DATABASE_LOCK_TABLE);
-		}
+		DBInspector dbInspector = new DBInspector(connection);
+
+		return dbInspector.hasTable(_DATABASE_LOCK_TABLE);
 	}
 
 	private static final String _DATABASE_LOCK_TABLE = "DatabaseLock_";
