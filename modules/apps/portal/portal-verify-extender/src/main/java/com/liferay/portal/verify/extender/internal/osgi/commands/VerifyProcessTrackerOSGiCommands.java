@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.NotificationThreadLocal;
 import com.liferay.portal.kernel.workflow.WorkflowThreadLocal;
+import com.liferay.portal.upgrade.util.UpgradeLogContext;
 import com.liferay.portal.verify.VerifyException;
 import com.liferay.portal.verify.VerifyProcess;
 import com.liferay.portlet.exportimport.staging.StagingAdvicesThreadLocal;
@@ -269,12 +270,26 @@ public class VerifyProcessTrackerOSGiCommands {
 
 			for (VerifyProcess verifyProcess : verifyProcesses) {
 				try {
+					Class<?> clazz = verifyProcess.getClass();
+
+					Bundle bundle = FrameworkUtil.getBundle(clazz);
+
+					if (bundle == null) {
+						UpgradeLogContext.setContext("core");
+					}
+					else {
+						UpgradeLogContext.setContext(bundle.getSymbolicName());
+					}
+
 					verifyProcess.verify();
 				}
 				catch (VerifyException verifyException2) {
 					_log.error(verifyException2);
 
 					verifyException1 = verifyException2;
+				}
+				finally {
+					UpgradeLogContext.clearContext();
 				}
 			}
 
