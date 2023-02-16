@@ -28,7 +28,7 @@ public class UpgradeProcessFactory {
 		String tableName, String... columnDefinitions) {
 
 		return new UpgradeProcess(
-			_getUpgradeInfo(
+			_getColumnsUpgradeInfo(
 				tableName,
 				"add the columns " + Arrays.toString(columnDefinitions))) {
 
@@ -51,7 +51,7 @@ public class UpgradeProcessFactory {
 		String tableName, String oldColumnName, String newColumnDefinition) {
 
 		return new UpgradeProcess(
-			_getUpgradeInfo(
+			_getColumnsUpgradeInfo(
 				tableName,
 				StringBundler.concat(
 					"alter the name of the column ", oldColumnName, " to ",
@@ -69,7 +69,7 @@ public class UpgradeProcessFactory {
 		String tableName, String columnName, String newColumnType) {
 
 		return new UpgradeProcess(
-			_getUpgradeInfo(
+			_getColumnsUpgradeInfo(
 				tableName,
 				StringBundler.concat(
 					"alter the type of the column ", columnName, " to ",
@@ -87,7 +87,7 @@ public class UpgradeProcessFactory {
 		String tableName, String... columnNames) {
 
 		return new UpgradeProcess(
-			_getUpgradeInfo(
+			_getColumnsUpgradeInfo(
 				tableName,
 				"drop the columns " + Arrays.toString(columnNames))) {
 
@@ -103,7 +103,8 @@ public class UpgradeProcessFactory {
 
 	public static UpgradeProcess dropTables(String... tableNames) {
 		return new UpgradeProcess(
-			"drop tables " + Arrays.toString(tableNames)) {
+			_getTablesUpgradeInfo(
+			"drop tables " + Arrays.toString(tableNames))) {
 
 			@Override
 			protected void doUpgrade() throws Exception {
@@ -115,13 +116,22 @@ public class UpgradeProcessFactory {
 		};
 	}
 
-	private static String _getUpgradeInfo(String tableName, String message) {
+	private static String _getColumnsUpgradeInfo(String tableName, String message) {
 		Thread thread = Thread.currentThread();
 
 		String callerClassName = thread.getStackTrace()[3].getClassName();
 
 		return StringBundler.concat(
 			callerClassName, " - Modifying table ", tableName, " to ", message);
+	}
+
+	private static String _getTablesUpgradeInfo(String message) {
+		Thread thread = Thread.currentThread();
+
+		String callerClassName = thread.getStackTrace()[3].getClassName();
+
+		return StringBundler.concat(
+			callerClassName, " - Modifying schema to ", message);
 	}
 
 }
