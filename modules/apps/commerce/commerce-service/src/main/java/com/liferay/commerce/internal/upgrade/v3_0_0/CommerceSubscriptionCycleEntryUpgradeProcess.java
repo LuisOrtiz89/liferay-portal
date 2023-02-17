@@ -35,10 +35,6 @@ public class CommerceSubscriptionCycleEntryUpgradeProcess
 				"UPDATE CommerceSubscriptionEntry SET currentCycle = 0 WHERE " +
 					"currentCycle IS NULL");
 		}
-
-		if (hasTable("CSubscriptionCycleEntry")) {
-			runSQL("drop table CSubscriptionCycleEntry");
-		}
 	}
 
 	@Override
@@ -46,6 +42,14 @@ public class CommerceSubscriptionCycleEntryUpgradeProcess
 		return new UpgradeStep[] {
 			UpgradeProcessFactory.addColumns(
 				"CommerceSubscriptionEntry", "currentCycle LONG")
+		};
+	}
+
+	@Override
+	protected UpgradeStep[] getPostUpgradeSteps() {
+		return new UpgradeStep[] {
+			UpgradeProcessFactory.dropTables(
+				"CSubscriptionCycleEntry")
 		};
 	}
 
