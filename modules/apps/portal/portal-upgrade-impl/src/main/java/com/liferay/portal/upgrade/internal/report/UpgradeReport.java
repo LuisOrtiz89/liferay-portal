@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.tools.DBUpgrader;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
 import com.liferay.portal.upgrade.internal.release.osgi.commands.ReleaseManagerOSGiCommands;
+import com.liferay.portal.upgrade.util.DBUpgradeStatus;
 import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
@@ -60,7 +61,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -74,51 +74,12 @@ public class UpgradeReport {
 
 	public UpgradeReport() {
 		_initialBuildNumber = _getBuildNumber();
-		_initialSchemaVersion = _getSchemaVersion();
 		_initialTableCounts = _getTableCounts();
-	}
-
-	public void addErrorMessage(String loggerName, String message) {
-		Map<String, Integer> errorMessages = _errorMessages.computeIfAbsent(
-			loggerName, key -> new ConcurrentHashMap<>());
-
-		int occurrences = errorMessages.computeIfAbsent(message, key -> 0);
-
-		occurrences++;
-
-		errorMessages.put(message, occurrences);
-	}
-
-	public void addEventMessage(String loggerName, String message) {
-		List<String> eventMessages = _eventMessages.computeIfAbsent(
-			loggerName, key -> new ArrayList<>());
-
-		eventMessages.add(message);
-	}
-
-	public void addWarningMessage(String loggerName, String message) {
-		Map<String, Integer> warningMessages = _warningMessages.computeIfAbsent(
-			loggerName, key -> new ConcurrentHashMap<>());
-
-		int count = warningMessages.computeIfAbsent(message, key -> 0);
-
-		count++;
-
-		warningMessages.put(message, count);
-	}
-
-	public void filterMessages() {
-		for (String filteredClassName : _FILTERED_CLASS_NAMES) {
-			_errorMessages.remove(filteredClassName);
-			_warningMessages.remove(filteredClassName);
-		}
 	}
 
 	public void generateReport(
 		PersistenceManager persistenceManager,
 		ReleaseManagerOSGiCommands releaseManagerOSGiCommands) {
-
-		filterMessages();
 
 		_persistenceManager = persistenceManager;
 
@@ -304,10 +265,16 @@ public class UpgradeReport {
 		Set<Map.Entry<String, Map<String, Integer>>> entrySet;
 
 		if (type.equals("errors")) {
-			entrySet = _errorMessages.entrySet();
+			Map<String, Map<String, Integer>> errorMessages =
+				DBUpgradeStatus.getErrorMessages();
+
+			entrySet = errorMessages.entrySet();
 		}
 		else {
-			entrySet = _warningMessages.entrySet();
+			Map<String, Map<String, Integer>> warningMessages =
+				DBUpgradeStatus.getWarningMessages();
+
+			entrySet = warningMessages.entrySet();
 		}
 
 		if (entrySet.isEmpty()) {
@@ -371,9 +338,16 @@ public class UpgradeReport {
 	private String _getPortalVersionsInfo() {
 		return StringBundler.concat(
 			_getReleaseInfo(
-				_initialBuildNumber, _initialSchemaVersion, "initial"),
+				_initialBuildNumber,
+				DBUpgradeStatus.getInitialSchemaVersion(
+					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME),
+				"initial"),
 			StringPool.NEW_LINE,
-			_getReleaseInfo(_getBuildNumber(), _getSchemaVersion(), "final"),
+			_getReleaseInfo(
+				_getBuildNumber(),
+				DBUpgradeStatus.getFinalSchemaVersion(
+					ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME),
+				"final"),
 			StringPool.NEW_LINE,
 			_getReleaseInfo(
 				ReleaseInfo.getBuildNumber(),
@@ -512,27 +486,6 @@ public class UpgradeReport {
 		return null;
 	}
 
-	private String _getSchemaVersion() {
-		try (Connection connection = DataAccess.getConnection();
-			PreparedStatement preparedStatement = connection.prepareStatement(
-				"select schemaVersion from Release_ where releaseId = " +
-					ReleaseConstants.DEFAULT_ID)) {
-
-			ResultSet resultSet = preparedStatement.executeQuery();
-
-			if (resultSet.next()) {
-				return resultSet.getString("schemaVersion");
-			}
-		}
-		catch (SQLException sqlException) {
-			if (_log.isWarnEnabled()) {
-				_log.warn("Unable to get schema version", sqlException);
-			}
-		}
-
-		return null;
-	}
-
 	private Map<String, Integer> _getTableCounts() {
 		try (Connection connection = DataAccess.getConnection()) {
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
@@ -580,7 +533,10 @@ public class UpgradeReport {
 	}
 
 	private String _getUpgradeProcessesInfo() {
-		List<String> messages = _eventMessages.get(
+		Map<String, ArrayList<String>> eventMessages =
+			DBUpgradeStatus.getEventMessages();
+
+		List<String> messages = eventMessages.get(
 			UpgradeProcess.class.getName());
 
 		if (ListUtil.isEmpty(messages)) {
@@ -673,27 +629,15 @@ public class UpgradeReport {
 		"com.liferay.portal.store.file.system.configuration." +
 			"FileSystemStoreConfiguration";
 
-	private static final String[] _FILTERED_CLASS_NAMES = {
-		"com.liferay.portal.search.elasticsearch7.internal.sidecar." +
-			"SidecarManager"
-	};
-
 	private static final String _UNDERLINE = "--------------";
 
 	private static final int _UPGRADE_PROCESSES_COUNT = 20;
 
 	private static final Log _log = LogFactoryUtil.getLog(UpgradeReport.class);
 
-	private final Map<String, Map<String, Integer>> _errorMessages =
-		new ConcurrentHashMap<>();
-	private final Map<String, ArrayList<String>> _eventMessages =
-		new ConcurrentHashMap<>();
 	private final int _initialBuildNumber;
-	private final String _initialSchemaVersion;
 	private final Map<String, Integer> _initialTableCounts;
 	private PersistenceManager _persistenceManager;
 	private String _rootDir;
-	private final Map<String, Map<String, Integer>> _warningMessages =
-		new ConcurrentHashMap<>();
 
 }
