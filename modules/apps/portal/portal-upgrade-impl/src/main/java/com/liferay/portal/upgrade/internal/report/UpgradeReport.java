@@ -452,6 +452,8 @@ public class UpgradeReport {
 		).put(
 			"portal", _getPortalVersionInfo()
 		).put(
+			"type", DBUpgradeStatus.getUpgradeType()
+		).put(
 			"database.version", _getDialectInfo()
 		).put(
 			_PROPERTY_KEY, _getPropertiesInfo()
