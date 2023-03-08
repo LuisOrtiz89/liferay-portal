@@ -454,6 +454,8 @@ public class UpgradeReport {
 		).put(
 			"type", DBUpgradeStatus.getUpgradeType()
 		).put(
+			"result", DBUpgradeStatus.getUpgradeStatus()
+		).put(
 			"database.version", _getDialectInfo()
 		).put(
 			_PROPERTY_KEY, _getPropertiesInfo()
