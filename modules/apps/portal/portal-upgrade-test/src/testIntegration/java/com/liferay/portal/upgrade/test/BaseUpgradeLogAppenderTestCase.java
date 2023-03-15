@@ -89,8 +89,6 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		builder.withPattern("%level - %m%n %X");
 
-		_unsyncStringWriter = new UnsyncStringWriter();
-
 		_logContextAppender = WriterAppender.createAppender(
 			builder.build(), null, _unsyncStringWriter,
 			"logContextWriterAppender", false, false);
@@ -107,8 +105,6 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	public void tearDown() {
 		_appender.stop();
 
-		_reportContent = null;
-
 		File reportsDir = new File(getFilePath(), "reports");
 
 		if ((reportsDir != null) && reportsDir.exists()) {
@@ -124,8 +120,6 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		_upgradeReportLogger.removeAppender(_logContextAppender);
 
 		_logContextAppender.stop();
-
-		_logContextAppender = null;
 	}
 
 	@Test
@@ -532,7 +526,6 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	private static boolean _originalUpgradeLogContextEnabled;
 	private static final Pattern _pattern = Pattern.compile(
 		"(\\w+_?)\\s+(\\d+|-)\\s+(\\d+|-)\n");
-	private static UnsyncStringWriter _unsyncStringWriter;
 	private static Logger _upgradeReportLogger;
 
 	@Inject(filter = "appender.name=UpgradeLogAppender")
@@ -542,5 +535,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	private ReleaseLocalService _releaseLocalService;
 
 	private String _reportContent;
+	private final UnsyncStringWriter _unsyncStringWriter =
+		new UnsyncStringWriter();
 
 }
