@@ -5,6 +5,7 @@ dependencies {
 	testIntegrationCompile group: "org.osgi", name: "osgi.core", version: "6.0.0"
 	testIntegrationCompile group: "org.ow2.asm", name: "asm", version: "7.0"
 	testIntegrationCompile project(":apps:layout:layout-test-util")
+	testIntegrationCompile project(":apps:portal:portal-upgrade-impl")
 	testIntegrationCompile project(":apps:static:osgi:osgi-util")
 	testIntegrationCompile project(":apps:static:portal:portal-upgrade-api")
 	testIntegrationCompile project(":test:arquillian-extension-junit-bridge")
