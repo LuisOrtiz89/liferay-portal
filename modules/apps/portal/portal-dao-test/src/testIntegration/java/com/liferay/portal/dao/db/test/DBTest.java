@@ -100,12 +100,16 @@ public class DBTest {
 
 	@Test
 	public void testAlterColumnTypeChangeToNotNull() throws Exception {
+		_db.runSQL(
+			"insert into " + _TABLE_NAME_1 +
+			" (id, notNilColumn, nilColumn, typeString) values (2, 'testValue', null, 'testValue')");
+
 		_db.alterColumnType(
-			_connection, _TABLE_NAME_1, "nilColumn", "VARCHAR(75) not null");
+			_connection, _TABLE_NAME_1, "nilColumn", "VARCHAR(75) not null default '0'");
 
 		Assert.assertTrue(
 			_dbInspector.hasColumnType(
-				_TABLE_NAME_1, "nilColumn", "VARCHAR(75) not null"));
+				_TABLE_NAME_1, "nilColumn", "VARCHAR(75) not null default '0'"));
 	}
 
 	@Test
