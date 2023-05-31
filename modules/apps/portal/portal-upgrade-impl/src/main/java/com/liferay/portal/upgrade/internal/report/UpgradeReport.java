@@ -460,9 +460,9 @@ public class UpgradeReport {
 
 				return longestRunningUpgradeProcesses;
 			}
-		).put(
-			"errors", _getMessagesPrinters(upgradeRecorder.getErrorMessages())
 		)/*.put(
+			"errors", _getMessagesPrinters(upgradeRecorder.getErrorMessages())
+		).put(
 			"warnings",
 			_getMessagesPrinters(upgradeRecorder.getWarningMessages())
 		)*/.build();
