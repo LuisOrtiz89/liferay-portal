@@ -462,10 +462,10 @@ public class UpgradeReport {
 			}
 		).put(
 			"errors", _getMessagesPrinters(upgradeRecorder.getErrorMessages())
-		).put(
+		)/*.put(
 			"warnings",
 			_getMessagesPrinters(upgradeRecorder.getWarningMessages())
-		).build();
+		)*/.build();
 	}
 
 	private File _getReportFile() {
