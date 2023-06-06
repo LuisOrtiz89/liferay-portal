@@ -14,11 +14,14 @@
 
 package com.liferay.portal.tools.db.partition.virtual.instance.migrator.util;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.tools.db.partition.virtual.instance.migrator.Release;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,11 +30,68 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Luis Ortiz
  */
 public class DatabaseUtil {
+	public static List<String> copyTableStructures(
+			Connection sourceConnection, Connection destinationConnection,
+			String destinationCatalog, List<String> exclusions,
+			boolean controlTables, boolean objectTables)
+		throws Exception {
+
+		boolean local = _sameHostDatabases(
+			sourceConnection, destinationConnection);
+
+		List<String> tableNames = getPartitionedTableNames(
+			sourceConnection, controlTables, objectTables);
+
+		String defaultCatalog = destinationConnection.getCatalog();
+
+		String sourceDatabaseURL =
+			_getHostFromConnection(sourceConnection) + "/" +
+			sourceConnection.getCatalog();
+
+		String query = "";
+
+		for (String tableName : tableNames) {
+			if (!exclusions.contains(tableName)) {
+				if (local) {
+					query = _getLocalCreateTableSQL(
+						sourceConnection.getCatalog(), destinationCatalog,
+						tableName);
+				}
+				else {
+					query = _getRemoteCreateTableSQL(
+						sourceConnection, tableName);
+				}
+
+				try {
+					destinationConnection.setCatalog(destinationCatalog);
+
+					try (PreparedStatement preparedStatement =
+							 destinationConnection.prepareStatement(query)) {
+
+						preparedStatement.executeUpdate();
+
+						System.out.println(
+							StringBundler.concat(
+								"[INFO] Copied table structure for table ",
+								tableName, " from ", sourceDatabaseURL,
+								" by using the script \"", query, "\""));
+					}
+				}
+				finally {
+					destinationConnection.setCatalog(defaultCatalog);
+				}
+			}
+		}
+
+		return tableNames;
+	}
 
 	public static List<String> getFailedServletContextNames(
 			Connection connection)
@@ -51,7 +111,8 @@ public class DatabaseUtil {
 		return failedServletContextNames;
 	}
 
-	public static List<String> getPartitionedTableNames(Connection connection)
+	public static List<String> getPartitionedTableNames(Connection connection,
+			boolean controlTables, boolean objectTables)
 		throws Exception {
 
 		List<String> partitionedTableNames = new ArrayList<>();
@@ -61,11 +122,16 @@ public class DatabaseUtil {
 		DBInspector dbInspector = new DBInspector(connection);
 
 		for (String tableName : dbInspector.getTableNames(null)) {
-			if (!dbInspector.isControlTable(companyIds, tableName) &&
-				!dbInspector.isObjectTable(companyIds, tableName)) {
-
-				partitionedTableNames.add(tableName);
+			if (dbInspector.isObjectTable(companyIds, tableName) && !objectTables) {
+				continue;
 			}
+			else if (dbInspector.isControlTable(companyIds, tableName) &&
+					 !controlTables) {
+
+				continue;
+			}
+
+			partitionedTableNames.add(tableName);
 		}
 
 		return partitionedTableNames;
@@ -184,6 +250,65 @@ public class DatabaseUtil {
 
 		return companyIds;
 	}
+
+	private static String _getHostFromConnection(Connection connection)
+		throws SQLException {
+
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+		String databaseURL = databaseMetaData.getURL();
+
+		Matcher matcher = _jdbcHostPattern.matcher(databaseURL);
+
+		if (matcher.matches()) {
+			return matcher.group(1);
+		}
+
+		return null;
+	}
+
+	private static String _getLocalCreateTableSQL(
+		String sourceCatalog, String destinationCatalog, String tableName) {
+
+		return StringBundler.concat(
+			"create table if not exists ", destinationCatalog,
+			StringPool.PERIOD, tableName, " like ", sourceCatalog,
+			StringPool.PERIOD, tableName);
+	}
+
+	private static String _getRemoteCreateTableSQL(
+			Connection connection, String tableName)
+		throws SQLException {
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+			"show create table " + tableName)) {
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				if (resultSet.next()) {
+					return resultSet.getString(2);
+				}
+			}
+		}
+
+		return null;
+	}
+
+	private static boolean _sameHostDatabases(
+			Connection sourceConnection, Connection destinationConnection)
+		throws SQLException {
+
+		String sourceURL = _getHostFromConnection(sourceConnection);
+		String destinationURL = _getHostFromConnection(destinationConnection);
+
+		if (!sourceURL.equals(destinationURL)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	private static final Pattern _jdbcHostPattern = Pattern.compile(
+		"jdbc:mysql://(.*)/(.*)\\?.*");
 
 	private static String _schemaPrefix = "lpartition_";
 

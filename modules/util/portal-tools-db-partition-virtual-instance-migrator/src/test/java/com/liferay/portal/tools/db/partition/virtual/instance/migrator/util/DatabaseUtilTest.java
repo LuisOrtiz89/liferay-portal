@@ -170,7 +170,7 @@ public class DatabaseUtilTest {
 		);
 
 		List<String> tableNames = DatabaseUtil.getPartitionedTableNames(
-			_connection);
+			_connection, false, false);
 
 		Assert.assertEquals(tableNames.toString(), 2, tableNames.size());
 		Assert.assertFalse(tableNames.contains("Company"));
@@ -189,7 +189,7 @@ public class DatabaseUtilTest {
 		Mockito.when(
 			_connection.prepareStatement(
 				"select servletContextName, schemaVersion, verified from " +
-					"Release_")
+				"Release_")
 		).thenReturn(
 			_preparedStatement
 		);
@@ -278,7 +278,7 @@ public class DatabaseUtilTest {
 	}
 
 	private void _testGetFailedServletContextNames(
-			Consumer<List<String>> consumer, boolean state)
+		Consumer<List<String>> consumer, boolean state)
 		throws SQLException {
 
 		Mockito.when(
@@ -325,14 +325,14 @@ public class DatabaseUtilTest {
 	}
 
 	private void _testGetReleasesMap(
-			BiConsumer<Release, Map<String, Release>> biConsumer,
-			Release release)
+		BiConsumer<Release, Map<String, Release>> biConsumer,
+		Release release)
 		throws SQLException {
 
 		Mockito.when(
 			_connection.prepareStatement(
 				"select servletContextName, schemaVersion, verified from " +
-					"Release_")
+				"Release_")
 		).thenReturn(
 			_preparedStatement
 		);
@@ -415,6 +415,8 @@ public class DatabaseUtilTest {
 	}
 
 	private void _testHasWebId(boolean hasWebId) throws SQLException {
+		Mockito.reset(_preparedStatement);
+
 		Mockito.when(
 			_connection.prepareStatement(
 				"select companyId from Company where webId = ?")
