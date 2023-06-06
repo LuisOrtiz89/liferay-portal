@@ -246,7 +246,8 @@ public class DatabaseUtilTest {
 			true
 		);
 
-		List<String> tableNames = DatabaseUtil.getTableNames(_connection);
+		List<String> tableNames = DatabaseUtil.getTableNames(
+			_connection, false, false);
 
 		Assert.assertTrue(tableNames.size() == 2);
 

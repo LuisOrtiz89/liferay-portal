@@ -173,9 +173,9 @@ public class Validator {
 		throws SQLException {
 
 		List<String> sourceTableNames = DatabaseUtil.getTableNames(
-			sourceConnection);
+			sourceConnection, false, false);
 		List<String> destinationTableNames = DatabaseUtil.getTableNames(
-			destinationConnection);
+			destinationConnection, false, false);
 
 		for (String tableName : sourceTableNames) {
 			if (destinationTableNames.contains(tableName)) {

@@ -14,6 +14,8 @@
 
 package com.liferay.portal.tools.db.partition.virtual.instance.migrator.internal.util;
 
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.tools.db.partition.virtual.instance.migrator.internal.release.Release;
@@ -31,11 +33,69 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Luis Ortiz
  */
 public class DatabaseUtil {
+
+	public static List<String> copyTableStructures(
+			Connection sourceConnection, Connection destinationConnection,
+			String destinationCatalog, List<String> exclusions,
+			boolean controlTables, boolean objectTables)
+		throws SQLException {
+
+		boolean local = _sameHostDatabases(
+			sourceConnection, destinationConnection);
+
+		List<String> tableNames = getTableNames(
+			sourceConnection, controlTables, objectTables);
+
+		String defaultCatalog = destinationConnection.getCatalog();
+
+		String sourceDatabaseURL =
+			_getHostFromConnection(sourceConnection) + "/" +
+				sourceConnection.getCatalog();
+
+		String query = "";
+
+		for (String tableName : tableNames) {
+			if (!exclusions.contains(tableName)) {
+				if (local) {
+					query = _getLocalCreateTableSQL(
+						sourceConnection.getCatalog(), destinationCatalog,
+						tableName);
+				}
+				else {
+					query = _getRemoteCreateTableSQL(
+						sourceConnection, tableName);
+				}
+
+				try {
+					destinationConnection.setCatalog(destinationCatalog);
+
+					try (PreparedStatement preparedStatement =
+							destinationConnection.prepareStatement(query)) {
+
+						preparedStatement.executeUpdate();
+
+						System.out.println(
+							StringBundler.concat(
+								"[INFO] Copied table structure for table ",
+								tableName, " from ", sourceDatabaseURL,
+								" by using the script \"", query, "\""));
+					}
+				}
+				finally {
+					destinationConnection.setCatalog(defaultCatalog);
+				}
+			}
+		}
+
+		return tableNames;
+	}
 
 	public static List<String> getFailedServletContextNames(
 			Connection connection)
@@ -100,7 +160,8 @@ public class DatabaseUtil {
 		return releases;
 	}
 
-	public static List<String> getTableNames(Connection connection)
+	public static List<String> getTableNames(
+			Connection connection, boolean controlTables, boolean objectTables)
 		throws SQLException {
 
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
@@ -114,11 +175,16 @@ public class DatabaseUtil {
 			while (resultSet.next()) {
 				String tableName = resultSet.getString("TABLE_NAME");
 
-				if (!_isObjectTable(connection, tableName) &&
-					!_isControlTable(connection, tableName)) {
-
-					tableNames.add(tableName);
+				if (_isObjectTable(connection, tableName) && !objectTables) {
+					continue;
 				}
+				else if (_isControlTable(connection, tableName) &&
+						 !controlTables) {
+
+					continue;
+				}
+
+				tableNames.add(tableName);
 			}
 		}
 
@@ -248,6 +314,48 @@ public class DatabaseUtil {
 		return 0;
 	}
 
+	private static String _getHostFromConnection(Connection connection)
+		throws SQLException {
+
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+		String databaseURL = databaseMetaData.getURL();
+
+		Matcher matcher = _jdbcHostPattern.matcher(databaseURL);
+
+		if (matcher.matches()) {
+			return matcher.group(1);
+		}
+
+		return null;
+	}
+
+	private static String _getLocalCreateTableSQL(
+		String sourceCatalog, String destinationCatalog, String tableName) {
+
+		return StringBundler.concat(
+			"create table if not exists ", destinationCatalog,
+			StringPool.PERIOD, tableName, " like ", sourceCatalog,
+			StringPool.PERIOD, tableName);
+	}
+
+	private static String _getRemoteCreateTableSQL(
+			Connection connection, String tableName)
+		throws SQLException {
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				"show create table " + tableName)) {
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				if (resultSet.next()) {
+					return resultSet.getString(2);
+				}
+			}
+		}
+
+		return null;
+	}
+
 	private static boolean _hasColumn(
 			String tableName, String columnName, Connection connection)
 		throws SQLException {
@@ -311,10 +419,26 @@ public class DatabaseUtil {
 		return name;
 	}
 
+	private static boolean _sameHostDatabases(
+			Connection sourceConnection, Connection destinationConnection)
+		throws SQLException {
+
+		String sourceURL = _getHostFromConnection(sourceConnection);
+		String destinationURL = _getHostFromConnection(destinationConnection);
+
+		if (!sourceURL.equals(destinationURL)) {
+			return false;
+		}
+
+		return true;
+	}
+
 	private static final HashMap<Connection, List<Long>> _companyIds =
 		new HashMap<>();
 	private static final Set<String> _controlTableNames = new HashSet<>(
 		Arrays.asList("Company", "VirtualHost"));
+	private static final Pattern _jdbcHostPattern = Pattern.compile(
+		"jdbc:mysql://(.*)/(.*)\\?.*");
 	private static String _schemaPrefix = "lpartition_";
 
 }

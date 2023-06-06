@@ -17,6 +17,7 @@ package com.liferay.portal.tools.db.partition.virtual.instance.migrator;
 import com.liferay.portal.tools.db.partition.virtual.instance.migrator.error.ErrorCodes;
 import com.liferay.portal.tools.db.partition.virtual.instance.migrator.internal.recorder.Recorder;
 import com.liferay.portal.tools.db.partition.virtual.instance.migrator.internal.util.DatabaseUtil;
+import com.liferay.portal.tools.db.partition.virtual.instance.migrator.internal.util.Migrator;
 import com.liferay.portal.tools.db.partition.virtual.instance.migrator.internal.util.Validator;
 
 import java.sql.Connection;
@@ -129,6 +130,11 @@ public class VirtualInstanceMigrator {
 				}
 
 				System.out.println("All validations passed successfully");
+
+				Migrator.migrateDatabases(
+					_sourceConnection, _destinationConnection);
+
+				System.out.println("Migration completed successfully");
 			}
 			catch (ParseException parseException) {
 				System.err.println(

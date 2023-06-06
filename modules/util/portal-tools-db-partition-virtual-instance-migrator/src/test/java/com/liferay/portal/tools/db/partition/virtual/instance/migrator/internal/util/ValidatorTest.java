@@ -338,13 +338,14 @@ public class ValidatorTest {
 		List<String> sourceTableNames, List<String> destinationTableNames) {
 
 		_databaseMockedStatic.when(
-			() -> DatabaseUtil.getTableNames(_sourceConnection)
+			() -> DatabaseUtil.getTableNames(_sourceConnection, false, false)
 		).thenReturn(
 			sourceTableNames
 		);
 
 		_databaseMockedStatic.when(
-			() -> DatabaseUtil.getTableNames(_destinationConnection)
+			() -> DatabaseUtil.getTableNames(
+				_destinationConnection, false, false)
 		).thenReturn(
 			destinationTableNames
 		);
