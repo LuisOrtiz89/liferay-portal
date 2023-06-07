@@ -15,14 +15,33 @@
 package com.liferay.portal.model.impl;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.model.ShardedModel;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.PropsUtil;
 
 /**
  * @author Brian Wing Shun Chan
  */
-public class ClassNameImpl extends ClassNameBaseImpl {
+public class ClassNameImpl extends ClassNameBaseImpl implements ShardedModel {
 
 	public ClassNameImpl() {
 		setValue(StringPool.BLANK);
 	}
 
+	@Override
+	public long getCompanyId() {
+		if (_DATABASE_PARTITION_ENABLED) {
+			return CompanyThreadLocal.getCompanyId();
+		}
+
+		return 0;
+	}
+
+	@Override
+	public void setCompanyId(long companyId) {
+	}
+
+	private static final boolean _DATABASE_PARTITION_ENABLED =
+		GetterUtil.getBoolean(PropsUtil.get("database.partition.enabled"));
 }
