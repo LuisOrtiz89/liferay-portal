@@ -33,6 +33,9 @@ public class Migrator {
 
 		List<String> copiedTables = _copyTableStructures(
 			sourceConnection, destinationConnection, newCatalog);
+
+		DatabaseUtil.copyTablesContent(
+			sourceConnection, destinationConnection, newCatalog, copiedTables);
 	}
 
 	private static List<String> _copyNoncontrolTableStructures(
