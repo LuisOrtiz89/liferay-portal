@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
@@ -41,6 +42,71 @@ import java.util.regex.Pattern;
  */
 public class DatabaseUtil {
 
+	public static void copyTablesContent(
+			Connection sourceConnection, Connection destinationConnection,
+			String newCatalog, List<String> tableNames)
+		throws SQLException {
+
+		String currentCatalog = destinationConnection.getCatalog();
+
+		for (String tableName : tableNames) {
+			int count = 0;
+
+			try (PreparedStatement preparedStatement =
+					sourceConnection.prepareStatement(
+						"select * from " + tableName)) {
+
+				preparedStatement.setFetchSize(_FETCH_SIZE);
+
+				boolean autoCommit = destinationConnection.getAutoCommit();
+
+				try (ResultSet resultSet = preparedStatement.executeQuery()) {
+					destinationConnection.setCatalog(newCatalog);
+
+					String query = _getInsertRowQuery(tableName, resultSet);
+
+					destinationConnection.setAutoCommit(false);
+
+					PreparedStatement preparedStatement1 =
+						destinationConnection.prepareStatement(query);
+
+					int batchCount = 0;
+
+					while (resultSet.next()) {
+						_populateParamsDynamically(
+							preparedStatement1, resultSet);
+
+						preparedStatement1.addBatch();
+
+						if (++batchCount >= _BATCH_SIZE) {
+							batchCount = 0;
+
+							int[] counts = preparedStatement1.executeBatch();
+
+							count += Arrays.stream(
+								counts
+							).sum();
+						}
+					}
+
+					int[] counts = preparedStatement1.executeBatch();
+
+					count += Arrays.stream(
+						counts
+					).sum();
+				}
+				finally {
+					destinationConnection.setCatalog(currentCatalog);
+					destinationConnection.setAutoCommit(autoCommit);
+				}
+			}
+
+			System.out.println(
+				StringBundler.concat(
+					"[INFO] Copied ", count, " rows for table ", tableName));
+		}
+	}
+
 	public static List<String> copyTableStructures(
 			Connection sourceConnection, Connection destinationConnection,
 			String destinationCatalog, List<String> exclusions,
@@ -52,6 +118,8 @@ public class DatabaseUtil {
 
 		List<String> tableNames = getTableNames(
 			sourceConnection, controlTables, objectTables);
+
+		List<String> copiedTableNames = new ArrayList<>();
 
 		String defaultCatalog = destinationConnection.getCatalog();
 
@@ -81,6 +149,8 @@ public class DatabaseUtil {
 
 						preparedStatement.executeUpdate();
 
+						copiedTableNames.add(tableName);
+
 						System.out.println(
 							StringBundler.concat(
 								"[INFO] Copied table structure for table ",
@@ -94,7 +164,7 @@ public class DatabaseUtil {
 			}
 		}
 
-		return tableNames;
+		return copiedTableNames;
 	}
 
 	public static List<String> getFailedServletContextNames(
@@ -330,6 +400,37 @@ public class DatabaseUtil {
 		return null;
 	}
 
+	private static String _getInsertRowQuery(
+			String tableName, ResultSet resultSet)
+		throws SQLException {
+
+		String query = "insert into " + tableName + " (";
+
+		ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+
+		int nColumns = resultSetMetaData.getColumnCount();
+
+		for (int count = 1; count <= nColumns; count++) {
+			query += resultSetMetaData.getColumnName(count);
+
+			if (count < nColumns) {
+				query += ", ";
+			}
+		}
+
+		query += ") values (";
+
+		for (int count = 1; count <= nColumns; count++) {
+			query += "?";
+
+			if (count < nColumns) {
+				query += ", ";
+			}
+		}
+
+		return query + ")";
+	}
+
 	private static String _getLocalCreateTableSQL(
 		String sourceCatalog, String destinationCatalog, String tableName) {
 
@@ -419,6 +520,19 @@ public class DatabaseUtil {
 		return name;
 	}
 
+	private static void _populateParamsDynamically(
+			PreparedStatement preparedStatement, ResultSet resultSet)
+		throws SQLException {
+
+		ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+
+		int nColumns = resultSetMetaData.getColumnCount();
+
+		for (int count = 1; count <= nColumns; count++) {
+			preparedStatement.setObject(count, resultSet.getObject(count));
+		}
+	}
+
 	private static boolean _sameHostDatabases(
 			Connection sourceConnection, Connection destinationConnection)
 		throws SQLException {
@@ -432,6 +546,10 @@ public class DatabaseUtil {
 
 		return true;
 	}
+
+	private static final int _BATCH_SIZE = 100;
+
+	private static final int _FETCH_SIZE = 100;
 
 	private static final HashMap<Connection, List<Long>> _companyIds =
 		new HashMap<>();
