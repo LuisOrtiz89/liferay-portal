@@ -5,12 +5,18 @@
 
 package com.liferay.portal.service.impl;
 
+import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.cache.CacheRegistryItem;
 import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.Validator;
@@ -20,6 +26,7 @@ import com.liferay.portal.service.base.ClassNameLocalServiceBaseImpl;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Brian Wing Shun Chan
@@ -31,42 +38,87 @@ public class ClassNameLocalServiceImpl
 	@Override
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public ClassName addClassName(String value) {
-		ClassName className = classNamePersistence.fetchByValue(value);
+		AtomicReference<ClassName> currentClassName = new AtomicReference<>();
+		long currentCompanyId = CompanyThreadLocal.getCompanyId();
 
-		if (className == null) {
-			long classNameId = counterLocalService.increment();
+		try {
+			_companyLocalService.forEachCompanyId(
+				companyId -> {
+					ClassName className = classNamePersistence.fetchByValue(
+						value);
 
-			className = classNamePersistence.create(classNameId);
+					if (className == null) {
+						long classNameId = counterLocalService.increment();
 
-			className.setValue(value);
+						className = classNamePersistence.create(classNameId);
 
-			className = classNamePersistence.update(className);
+						className.setValue(value);
+
+						className = classNamePersistence.update(className);
+					}
+
+					if (companyId == currentCompanyId) {
+						currentClassName.set(className);
+					}
+				});
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
 		}
 
-		return className;
+		return currentClassName.get();
 	}
 
 	@Override
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public void checkClassNames() {
-		List<ClassName> classNames = classNamePersistence.findAll();
+		try {
+			_companyLocalService.forEachCompanyId(
+				companyId -> {
+					List<ClassName> classNames = classNamePersistence.findAll();
 
-		for (ClassName className : classNames) {
-			_classNames.put(className.getValue(), className);
+					for (ClassName className : classNames) {
+						_classNames.put(
+							_getCompoundValue(className.getValue()), className);
+					}
+
+					List<String> models = ModelHintsUtil.getModels();
+
+					for (String model : models) {
+						getClassName(model);
+					}
+				});
 		}
-
-		List<String> models = ModelHintsUtil.getModels();
-
-		for (String model : models) {
-			getClassName(model);
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
 		}
 	}
 
 	@Override
 	public ClassName deleteClassName(ClassName className) {
-		_classNames.remove(className.getValue());
+		AtomicReference<ClassName> currentClassName = new AtomicReference<>();
+		long currentCompanyId = CompanyThreadLocal.getCompanyId();
 
-		return classNamePersistence.remove(className);
+		try {
+			_companyLocalService.forEachCompanyId(
+				companyId -> {
+					ClassName className1 = _classNames.remove(
+						_getCompoundValue(className.getValue()));
+
+					if (companyId == currentCompanyId) {
+						currentClassName.set(className);
+					}
+
+					if (className1 != null) {
+						classNamePersistence.remove(className1);
+					}
+				});
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
+
+		return currentClassName.get();
 	}
 
 	@Override
@@ -81,7 +133,8 @@ public class ClassNameLocalServiceImpl
 		}
 
 		ClassName className = _classNames.computeIfAbsent(
-			value, key -> classNamePersistence.fetchByValue(value));
+			_getCompoundValue(value),
+			key -> classNamePersistence.fetchByValue(value));
 
 		if (className == null) {
 			return _nullClassName;
@@ -101,9 +154,11 @@ public class ClassNameLocalServiceImpl
 		// performance. Create the class name if one does not exist.
 
 		ClassName className = _classNames.computeIfAbsent(
-			value,
+			_getCompoundValue(value),
 			key -> {
-				try {
+				try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
+						CompanyThreadLocal.getCompanyId())) {
+
 					return classNameLocalService.addClassName(value);
 				}
 				catch (Throwable throwable) {
@@ -146,11 +201,23 @@ public class ClassNameLocalServiceImpl
 		_classNames.clear();
 	}
 
+	private String _getCompoundValue(String value) {
+		if (DBPartitionUtil.isPartitionEnabled()) {
+			return StringBundler.concat(
+				value, StringPool.AT, CompanyThreadLocal.getCompanyId());
+		}
+
+		return value;
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		ClassNameLocalServiceImpl.class);
 
 	private static final Map<String, ClassName> _classNames =
 		new ConcurrentHashMap<>();
 	private static final ClassName _nullClassName = new ClassNameImpl();
+
+	@BeanReference(type = CompanyLocalService.class)
+	private CompanyLocalService _companyLocalService;
 
 }
