@@ -12,9 +12,10 @@ This tool allows to migrate a virtual instance to a new partition in a database 
     -dsp,--destination-schema-prefix <arg> Set the schema prefix for non-default partitions in destination database.
     -du,--destination-user <arg> Set the destination database user name.
     -h,--help Print help message.
+    -mem, --memory <arg> Set the memory used by the JVM during the execution of the migrator tool.
     -s,--source-jdbc-url <arg> Set the JDBC url for the schema in the source database.
     -sp,--source-password <arg> Set the source database user password.
     -su,--source-user <arg> Set the source database user name.
 
 ## Execution example
-    java -jar com.liferay.portal.tools.db.partition.virtual.instance.migrator.jar -s "jdbc:mysql://localhost:3306/lpartition_xxxxx?useUnicode=true&characterEncoding=UTF-8&useFastDateParsing=false&useTimezone=true&serverTimezone=GMT" -su sourceDatabaseUser -sp sourceDatabasePassword -d "jdbc:mysql://localhost:3306/lportal?useUnicode=true&characterEncoding=UTF-8&useFastDateParsing=false&useTimezone=true&serverTimezone=GMT" -du destinationDatabaseUser -dp destinationDatabasePassword
+    java -jar com.liferay.portal.tools.db.partition.virtual.instance.migrator.jar -mem 1G -s "jdbc:mysql://localhost:3306/lpartition_xxxxx?useUnicode=true&characterEncoding=UTF-8&useFastDateParsing=false&useTimezone=true&serverTimezone=GMT" -su sourceDatabaseUser -sp sourceDatabasePassword -d "jdbc:mysql://localhost:3306/lportal?useUnicode=true&characterEncoding=UTF-8&useFastDateParsing=false&useTimezone=true&serverTimezone=GMT" -du destinationDatabaseUser -dp destinationDatabasePassword
