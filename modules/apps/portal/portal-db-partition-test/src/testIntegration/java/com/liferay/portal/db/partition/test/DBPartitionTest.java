@@ -31,10 +31,12 @@ import com.liferay.portal.spring.aop.AopInvocationHandler;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.util.PortalInstances;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -132,6 +134,25 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 	}
 
 	@Test
+	public void testDeleteClassName() throws Exception {
+		DBPartitionUtil.forEachCompanyId(
+			companyId -> db.runSQL(
+				StringBundler.concat(
+					"alter table ", TEST_CONTROL_TABLE_NAME, " add column ",
+					TEST_CONTROL_TABLE_NEW_COLUMN, " bigint")));
+
+
+
+		createIndex(TEST_CONTROL_TABLE_NAME);
+
+		DBPartitionUtil.forEachCompanyId(
+			companyId -> dropIndex(TEST_CONTROL_TABLE_NAME));
+
+		Assert.assertTrue(
+			!dbInspector.hasIndex(TEST_CONTROL_TABLE_NAME, TEST_INDEX_NAME));
+	}
+
+	@Test
 	public void testDropIndexControlTable() throws Exception {
 		createIndex(TEST_CONTROL_TABLE_NAME);
 
@@ -172,6 +193,27 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 					}
 				});
 		}
+	}
+
+	@Test
+	public void test()
+		throws SQLException, IOException {
+		db.runSQL(
+			StringBundler.concat(
+				"select value from classname_ where classname = 'com.liferay.portal.kernel.model.Address'"));
+
+
+		_companyLocalService.forEachCompanyId(
+			companyId -> Assert.assertNotNull(_classNameLocalService.fetchClassName("Test")));
+
+		_companyLocalService.forEachCompanyId(
+			companyId -> {
+				_classNameLocalService.fetchClassName("value");
+
+			}
+		)
+
+
 	}
 
 	@Test
