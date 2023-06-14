@@ -25,6 +25,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
@@ -40,6 +41,8 @@ import org.junit.Test;
 
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 /**
  * @author Luis Ortiz
@@ -114,6 +117,60 @@ public class DatabaseUtilTest {
 
 		_mockAndAssertCopyLocalTableStructures(
 			false, Arrays.asList("Table2"), false, true);
+	}
+
+	@Test
+	public void testCopyTableContent() throws SQLException {
+		Connection destinationConnection = Mockito.mock(Connection.class);
+
+		List<String> tableNames = Arrays.asList(
+			"Table1", "Table2", "Company", "Object_x_25000");
+		List<Integer> numberOfColumns = Arrays.asList(4, 2, 10, 5);
+		List<Integer> numberOfRows = Arrays.asList(8, 12, 2, 9);
+
+		List<PreparedStatement> destinationPreparedStatements =
+			new ArrayList<>();
+
+		for (int count = 0; count < tableNames.size(); count++) {
+			String tableName = tableNames.get(count);
+			int columns = numberOfColumns.get(count);
+			int rows = numberOfRows.get(count);
+
+			_mockBrowseSourceTable(_sourceConnection, tableName, columns, rows);
+			destinationPreparedStatements.add(
+				_mockInsertDestinationData(
+					destinationConnection, tableName, columns, rows));
+		}
+
+		DatabaseUtil.copyTablesContent(
+			_sourceConnection, destinationConnection, _DESTINATION_CATALOG_NAME,
+			tableNames);
+
+		String outputString = _testOutByteArrayOutputStream.toString();
+
+		for (int count = 0; count < tableNames.size(); count++) {
+			String tableName = tableNames.get(count);
+			int columns = numberOfColumns.get(count);
+			int rows = numberOfRows.get(count);
+
+			PreparedStatement preparedStatement =
+				destinationPreparedStatements.get(count);
+
+			Assert.assertTrue(
+				outputString.contains(
+					StringBundler.concat(
+						"Copied ", rows, " rows for table ", tableName)));
+
+			Mockito.verify(
+				preparedStatement, Mockito.times(rows)
+			).addBatch();
+
+			Mockito.verify(
+				preparedStatement, Mockito.times(rows * columns)
+			).setObject(
+				Mockito.anyInt(), Mockito.any()
+			);
+		}
 	}
 
 	@Test
@@ -491,6 +548,74 @@ public class DatabaseUtilTest {
 		);
 	}
 
+	private void _mockBrowseSourceTable(
+			Connection connection, String tableName, int columns, int rows)
+		throws SQLException {
+
+		PreparedStatement preparedStatement = Mockito.mock(
+			PreparedStatement.class);
+		ResultSet resultSet = Mockito.mock(ResultSet.class);
+
+		Mockito.when(
+			connection.prepareStatement("select * from " + tableName)
+		).thenReturn(
+			preparedStatement
+		);
+
+		Mockito.when(
+			preparedStatement.executeQuery()
+		).thenReturn(
+			resultSet
+		);
+
+		ResultSetMetaData resultSetMetaData = Mockito.mock(
+			ResultSetMetaData.class);
+
+		Mockito.when(
+			resultSet.getMetaData()
+		).thenReturn(
+			resultSetMetaData
+		);
+
+		Mockito.when(
+			resultSetMetaData.getColumnCount()
+		).thenReturn(
+			columns
+		);
+
+		for (int count = 1; count <= columns; count++) {
+			Mockito.when(
+				resultSetMetaData.getColumnName(count)
+			).thenReturn(
+				"Column" + count
+			);
+		}
+
+		Mockito.when(
+			resultSet.next()
+		).thenAnswer(
+			new Answer() {
+
+				public Object answer(InvocationOnMock invocation) {
+					if (_count++ < rows) {
+						return true;
+					}
+
+					return false;
+				}
+
+				private int _count;
+
+			}
+		);
+
+		Mockito.when(
+			resultSet.getObject(Mockito.anyInt())
+		).thenReturn(
+			new Object()
+		);
+	}
+
 	private void _mockCatalog(Connection connection, String catalog)
 		throws SQLException {
 
@@ -723,6 +848,56 @@ public class DatabaseUtilTest {
 		).thenReturn(
 			true
 		);
+	}
+
+	private PreparedStatement _mockInsertDestinationData(
+			Connection connection, String tableName, int columns, int rows)
+		throws SQLException {
+
+		PreparedStatement preparedStatement = Mockito.mock(
+			PreparedStatement.class);
+
+		String query = "insert into " + tableName + " (";
+
+		for (int count = 1; count <= columns; count++) {
+			query += "Column" + count;
+
+			if (count < columns) {
+				query += ", ";
+			}
+		}
+
+		query += ") values (";
+
+		for (int count = 1; count <= columns; count++) {
+			query += "?";
+
+			if (count < columns) {
+				query += ", ";
+			}
+		}
+
+		query += ")";
+
+		Mockito.when(
+			connection.prepareStatement(query)
+		).thenReturn(
+			preparedStatement
+		);
+
+		int[] response = new int[rows];
+
+		for (int count = 1; count <= rows; count++) {
+			response[count - 1] = 1;
+		}
+
+		Mockito.when(
+			preparedStatement.executeBatch()
+		).thenReturn(
+			response
+		);
+
+		return preparedStatement;
 	}
 
 	private void _mockReleaseState(boolean stateGood) throws SQLException {
