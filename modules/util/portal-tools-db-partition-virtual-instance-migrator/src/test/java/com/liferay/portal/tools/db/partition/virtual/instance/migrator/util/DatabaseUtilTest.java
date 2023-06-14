@@ -14,8 +14,12 @@
 
 package com.liferay.portal.tools.db.partition.virtual.instance.migrator.util;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.tools.db.partition.virtual.instance.migrator.Release;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -23,12 +27,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.mockito.ArgumentCaptor;
@@ -38,6 +47,36 @@ import org.mockito.Mockito;
  * @author Luis Ortiz
  */
 public class DatabaseUtilTest {
+
+	@Before
+	public void setUp() {
+		System.setOut(new PrintStream(_testOutByteArrayOutputStream));
+	}
+
+	@After
+	public void tearDown() {
+		System.setOut(_originalOut);
+	}
+
+	@Test
+	public void testCopyLocalTableStructures() throws Exception {
+		_testCopyLocalTableStructures(
+			true, Arrays.asList("Table2"), false, false);
+		_testCopyLocalTableStructures(
+			true, Collections.emptyList(), true, true);
+		_testCopyLocalTableStructures(
+			true, Arrays.asList("Table1"), true, false);
+		_testCopyLocalTableStructures(
+			true, Arrays.asList("Table2"), false, true);
+		_testCopyLocalTableStructures(
+			false, Arrays.asList("Table2"), false, false);
+		_testCopyLocalTableStructures(
+			false, Collections.emptyList(), true, true);
+		_testCopyLocalTableStructures(
+			false, Arrays.asList("Table1"), true, false);
+		_testCopyLocalTableStructures(
+			false, Arrays.asList("Table2"), false, true);
+	}
 
 	@Test
 	public void testGetFailedServletContextNames() throws SQLException {
@@ -197,54 +236,73 @@ public class DatabaseUtilTest {
 		_testIsDefaultPartition(true);
 	}
 
-	private void _testGetFailedServletContextNames(
-		Consumer<List<String>> consumer, boolean state)
+	private void _assertCopiedTable(
+		String tableName, List<String> expectedTables, boolean local) {
+
+		String outputString = _testOutByteArrayOutputStream.toString();
+
+		if (expectedTables.contains(tableName)) {
+			if (local) {
+				Assert.assertTrue(
+					outputString.contains(
+						StringBundler.concat(
+							"create table if not exists ",
+							_DESTINATION_CATALOG_NAME, ".", tableName, " like ",
+							_DEFAULT_SOURCE_CATALOG_NAME, ".", tableName)));
+			}
+			else {
+				Assert.assertTrue(
+					outputString.contains(
+						StringBundler.concat(
+							"Copied table structure for table ", tableName,
+							" from localhost:8000/",
+							_DEFAULT_SOURCE_CATALOG_NAME,
+							" by using the script \"create table ", tableName,
+							"\"")));
+			}
+		}
+		else {
+			Assert.assertFalse(outputString.contains(tableName));
+		}
+	}
+
+	private void _mockCatalog(Connection connection, String catalog)
 		throws SQLException {
 
 		Mockito.when(
-			_sourceConnection.prepareStatement(
-				"select servletContextName from Release_ where state_ != 0;")
+			connection.getCatalog()
 		).thenReturn(
-			_sourcePreparedStatement
+			catalog
 		);
-
-		Mockito.when(
-			_sourcePreparedStatement.executeQuery()
-		).thenReturn(
-			_sourceResultSet
-		);
-
-		if (state) {
-			Mockito.when(
-				_sourceResultSet.next()
-			).thenReturn(
-				false
-			);
-		}
-		else {
-			Mockito.when(
-				_sourceResultSet.getString(1)
-			).thenReturn(
-				"module1"
-			).thenReturn(
-				"module2"
-			);
-
-			Mockito.when(
-				_sourceResultSet.next()
-			).thenReturn(
-				true
-			).thenReturn(
-				true
-			).thenReturn(
-				false
-			);
-		}
-
-		consumer.accept(DatabaseUtil.getFailedServletContextNames(_sourceConnection));
 	}
 
-	private void _testGetPartitionedTableNames(boolean controlTables, boolean objectTables, Consumer<List<String>> consumer) throws Exception {
+	private void _mockConnectionURL(
+			Connection connection, DatabaseMetaData databaseMetaData,
+			boolean local)
+		throws SQLException {
+
+		Mockito.when(
+			connection.getMetaData()
+		).thenReturn(
+			databaseMetaData
+		);
+
+		String url =
+			"jdbc:mysql://localhost:8000/" + _DEFAULT_DESTINATION_CATALOG_NAME;
+
+		if (!local) {
+			url =
+				"jdbc:mysql://remotehost:8000/" + _DEFAULT_SOURCE_CATALOG_NAME;
+		}
+
+		Mockito.when(
+			databaseMetaData.getURL()
+		).thenReturn(
+			url
+		);
+	}
+
+	private void _mockGetPartitionedTableNames() throws Exception {
 
 		// Mock _sourceConnection
 
@@ -354,9 +412,162 @@ public class DatabaseUtilTest {
 		).thenReturn(
 			false
 		);
+	}
+
+	private void _mockRemotePreparedStatement(
+		Connection connection, String tableName)
+		throws SQLException {
+
+		PreparedStatement preparedStatement = Mockito.mock(
+			PreparedStatement.class);
+
+		Mockito.when(
+			connection.prepareStatement("show create table " + tableName)
+		).thenReturn(
+			preparedStatement
+		);
+
+		ResultSet resultSet = Mockito.mock(ResultSet.class);
+
+		Mockito.when(
+			preparedStatement.executeQuery()
+		).thenReturn(
+			resultSet
+		);
+
+		Mockito.when(
+			resultSet.getString(2)
+		).thenReturn(
+			"create table " + tableName
+		);
+
+		Mockito.when(
+			resultSet.next()
+		).thenReturn(
+			true
+		).thenReturn(
+			false
+		);
+	}
+
+	private void _testCopyLocalTableStructures(
+		boolean local, List<String> excludedTableNames,
+		boolean controlTables, boolean objectTables)
+		throws Exception {
+		_testOutByteArrayOutputStream.reset();
+
+		_mockConnectionURL(_sourceConnection, _sourceDatabaseMetaData, true);
+
+		Connection destinationConnection = Mockito.mock(Connection.class);
+		DatabaseMetaData destinationDatabaseMetaData = Mockito.mock(
+			DatabaseMetaData.class);
+
+		_mockConnectionURL(
+			destinationConnection, destinationDatabaseMetaData, local);
+
+		_mockGetPartitionedTableNames();
+
+		_mockCatalog(_sourceConnection, _DEFAULT_SOURCE_CATALOG_NAME);
+		_mockCatalog(destinationConnection, _DEFAULT_DESTINATION_CATALOG_NAME);
+
+		_mockRemotePreparedStatement(_sourceConnection, "Company");
+		_mockRemotePreparedStatement(_sourceConnection, "Object_x_25000");
+		_mockRemotePreparedStatement(_sourceConnection, "Table1");
+		_mockRemotePreparedStatement(_sourceConnection, "Table2");
+
+		PreparedStatement preparedStatement = Mockito.mock(
+			PreparedStatement.class);
+
+		Mockito.when(
+			destinationConnection.prepareStatement(Mockito.anyString())
+		).thenReturn(
+			preparedStatement
+		);
+
+		List<String> copiedTables = DatabaseUtil.copyTableStructures(
+			_sourceConnection, destinationConnection, _DESTINATION_CATALOG_NAME,
+			excludedTableNames, controlTables, objectTables);
+
+		List<String> expectedTables = new ArrayList<>();
+
+		if (!excludedTableNames.contains("Company") && controlTables) {
+			expectedTables.add("Company");
+		}
+
+		if (!excludedTableNames.contains("Object_x_25000") && objectTables) {
+			expectedTables.add("Object_x_25000");
+		}
+
+		if (!excludedTableNames.contains("Table1")) {
+			expectedTables.add("Table1");
+		}
+
+		if (!excludedTableNames.contains("Table2")) {
+			expectedTables.add("Table2");
+		}
+
+		Assert.assertEquals(
+			copiedTables.toString(), expectedTables.size(),
+			copiedTables.size());
+
+		_assertCopiedTable("Company", expectedTables, local);
+		_assertCopiedTable("Object_x_25000", expectedTables, local);
+		_assertCopiedTable("Table1", expectedTables, local);
+		_assertCopiedTable("Table2", expectedTables, local);
+	}
+
+	private void _testGetPartitionedTableNames(boolean controlTables, boolean objectTables, Consumer<List<String>> consumer) throws Exception {
+		_mockGetPartitionedTableNames();
 
 		consumer.accept(DatabaseUtil.getPartitionedTableNames(
 			_sourceConnection, controlTables, objectTables));
+	}
+
+	private void _testGetFailedServletContextNames(
+		Consumer<List<String>> consumer, boolean state)
+		throws SQLException {
+
+		Mockito.when(
+			_sourceConnection.prepareStatement(
+				"select servletContextName from Release_ where state_ != 0;")
+		).thenReturn(
+			_sourcePreparedStatement
+		);
+
+		Mockito.when(
+			_sourcePreparedStatement.executeQuery()
+		).thenReturn(
+			_sourceResultSet
+		);
+
+		if (state) {
+			Mockito.when(
+				_sourceResultSet.next()
+			).thenReturn(
+				false
+			);
+		}
+		else {
+			Mockito.when(
+				_sourceResultSet.getString(1)
+			).thenReturn(
+				"module1"
+			).thenReturn(
+				"module2"
+			);
+
+			Mockito.when(
+				_sourceResultSet.next()
+			).thenReturn(
+				true
+			).thenReturn(
+				true
+			).thenReturn(
+				false
+			);
+		}
+
+		consumer.accept(DatabaseUtil.getFailedServletContextNames(_sourceConnection));
 	}
 
 	private void _testGetReleasesMap(
@@ -520,19 +731,21 @@ public class DatabaseUtilTest {
 			defaultPartition, DatabaseUtil.isDefaultPartition(_sourceConnection));
 	}
 
-	private final Connection _destinationConnection = Mockito.mock(
-		Connection.class);
-	private final DatabaseMetaData _destinationDatabaseMetaData = Mockito.mock(
-		DatabaseMetaData.class);
-	private final PreparedStatement _destinationPreparedStatement =
-		Mockito.mock(PreparedStatement.class);
-	private final ResultSet _destinationResultSet = Mockito.mock(
-		ResultSet.class);
+	private static final String _DEFAULT_DESTINATION_CATALOG_NAME = "lportal";
+
+	private static final String _DEFAULT_SOURCE_CATALOG_NAME =
+		"lpartition_11111";
+
+	private static final String _DESTINATION_CATALOG_NAME = "lpartition_123456";
+
+	private final PrintStream _originalOut = System.out;
 	private final Connection _sourceConnection = Mockito.mock(Connection.class);
 	private final DatabaseMetaData _sourceDatabaseMetaData = Mockito.mock(
 		DatabaseMetaData.class);
 	private final PreparedStatement _sourcePreparedStatement = Mockito.mock(
 		PreparedStatement.class);
 	private final ResultSet _sourceResultSet = Mockito.mock(ResultSet.class);
+	private final ByteArrayOutputStream _testOutByteArrayOutputStream =
+		new ByteArrayOutputStream();
 
 }
