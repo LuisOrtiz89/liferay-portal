@@ -243,7 +243,7 @@ public class DatabaseUtilTest {
 
 		consumer.accept(DatabaseUtil.getFailedServletContextNames(_sourceConnection));
 	}
-	
+
 	private void _testGetPartitionedTableNames(boolean controlTables, boolean objectTables, Consumer<List<String>> consumer) throws Exception {
 
 		// Mock _sourceConnection

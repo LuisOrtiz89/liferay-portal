@@ -427,7 +427,7 @@ public class DatabaseUtil {
 	private static final int _FETCH_SIZE = 100;
 
 	private static final Pattern _jdbcHostPattern = Pattern.compile(
-		"jdbc:mysql://(.*)/(.*)\\?.*");
+		"jdbc:mysql://([^\\?]*)/([^\\?]*)(\\?([^\\?]*))?");
 
 	private static String _schemaPrefix = "lpartition_";
 
