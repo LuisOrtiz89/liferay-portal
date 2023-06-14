@@ -556,7 +556,7 @@ public class DatabaseUtil {
 	private static final Set<String> _controlTableNames = new HashSet<>(
 		Arrays.asList("Company", "VirtualHost"));
 	private static final Pattern _jdbcHostPattern = Pattern.compile(
-		"jdbc:mysql://(.*)/(.*)\\?.*");
+		"jdbc:mysql://([^\\?]*)/([^\\?]*)(\\?([^\\?]*))?");
 	private static String _schemaPrefix = "lpartition_";
 
 }
