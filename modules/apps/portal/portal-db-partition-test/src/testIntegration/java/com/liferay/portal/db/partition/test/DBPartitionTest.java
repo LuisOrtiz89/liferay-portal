@@ -19,6 +19,8 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.model.ModelHints;
+import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
@@ -26,6 +28,8 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.model.DefaultModelHintsImpl;
+import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
 import com.liferay.portal.service.impl.CompanyLocalServiceImpl;
 import com.liferay.portal.spring.aop.AopInvocationHandler;
 import com.liferay.portal.test.rule.Inject;
@@ -217,6 +221,40 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 	}
 
 	@Test
+	public void testCheckClassName()
+		throws SQLException, IOException {
+		ModelHintsUtil modelHintsUtil = new ModelHintsUtil();
+
+		ModelHints originalModelHints = modelHintsUtil.getModelHints();
+
+		try {
+			ReflectionTestUtil.setFieldValue(
+				modelHintsUtil, "_modelHints", _classNameModelHints);
+
+			_classNameLocalServiceImpl.addClassName(_classNameModelHints.getModels().get(0));
+
+			db.runSQL(
+				StringBundler.concat(
+					"alter table ", TEST_CONTROL_TABLE_NAME,
+					" drop column ",
+					TEST_CONTROL_TABLE_NEW_COLUMN));
+
+			_classNameLocalServiceImpl.checkClassNames();
+
+			_companyLocalService.forEachCompanyId(
+				companyId -> Assert.assertNotNull(
+					_classNameLocalServiceImpl.fetchClassName("Test")));
+		}
+		finally {
+			_classNameLocalServiceImpl.deleteClassName(
+				_classNameLocalServiceImpl.getClassName("Test"));
+
+			ReflectionTestUtil.setFieldValue(
+				modelHintsUtil, "_modelHints", originalModelHints);
+		}
+	}
+
+	@Test
 	public void testRemoveDBPartitionWhenCompanyCreationFails()
 		throws Exception {
 
@@ -325,5 +363,20 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
+
+	@Inject
+	private ClassNameLocalServiceImpl _classNameLocalServiceImpl;
+
+	@Inject
+	private final ClassNameModelHints _classNameModelHints =
+		new ClassNameModelHints();
+
+	private class ClassNameModelHints extends DefaultModelHintsImpl {
+
+		@Override
+		public List<String> getModels() {
+			return Arrays.asList("Test");
+		}
+	}
 
 }

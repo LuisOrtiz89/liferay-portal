@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
+import com.liferay.portal.model.DefaultModelHintsImpl;
 import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -33,6 +34,10 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Sofía Mendoza Gutiérrez
@@ -125,4 +130,11 @@ public class ClassNameLocalServiceTest {
 	private final ClassNameModelHints _classNameModelHints =
 		new ClassNameModelHints();
 
+	private class ClassNameModelHints extends DefaultModelHintsImpl {
+
+		@Override
+		public List<String> getModels() {
+			return Arrays.asList("Test");
+		}
+	}
 }
