@@ -64,16 +64,16 @@ public class ClassNameLocalServiceTest {
 
 	@Test
 	public void testAddClassName() {
-		_classNameLocalServiceImpl.addClassName("Test");
+		_classNameLocalServiceImpl.addClassName(_CLASSNAME_VALUE);
 
 		try {
 			_companyLocalService.forEachCompanyId(
 				companyId -> Assert.assertNotNull(
-					_classNameLocalServiceImpl.fetchClassName("Test")));
+					_classNameLocalServiceImpl.fetchClassName(_CLASSNAME_VALUE)));
 		}
 		finally {
 			_classNameLocalServiceImpl.deleteClassName(
-				_classNameLocalServiceImpl.getClassName("Test"));
+				_classNameLocalServiceImpl.getClassName(_CLASSNAME_VALUE));
 		}
 	}
 
@@ -91,11 +91,11 @@ public class ClassNameLocalServiceTest {
 
 			_companyLocalService.forEachCompanyId(
 				companyId -> Assert.assertNotNull(
-					_classNameLocalServiceImpl.fetchClassName("Test")));
+					_classNameLocalServiceImpl.fetchClassName(_CLASSNAME_VALUE)));
 		}
 		finally {
 			_classNameLocalServiceImpl.deleteClassName(
-				_classNameLocalServiceImpl.getClassName("Test"));
+				_classNameLocalServiceImpl.getClassName(_CLASSNAME_VALUE));
 
 			ReflectionTestUtil.setFieldValue(
 				modelHintsUtil, "_modelHints", originalModelHints);
@@ -104,15 +104,17 @@ public class ClassNameLocalServiceTest {
 
 	@Test
 	public void testDeleteClassName() {
-		_classNameLocalServiceImpl.addClassName("Test");
+		_classNameLocalServiceImpl.addClassName(_CLASSNAME_VALUE);
 
 		_classNameLocalServiceImpl.deleteClassName(
-			_classNameLocalServiceImpl.getClassName("Test"));
+			_classNameLocalServiceImpl.getClassName(_CLASSNAME_VALUE));
 
 		_companyLocalService.forEachCompanyId(
 			companyId -> Assert.assertNull(
-				_classNameLocalServiceImpl.fetchClassName("Test")));
+				_classNameLocalServiceImpl.fetchClassName(_CLASSNAME_VALUE)));
 	}
+
+	private static final String _CLASSNAME_VALUE = "Test";
 
 	@Inject
 	private static Company _company1;
