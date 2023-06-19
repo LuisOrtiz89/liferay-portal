@@ -14,6 +14,8 @@
 
 package com.liferay.portal.tools.db.partition.virtual.instance.migrator.util;
 
+import com.liferay.petra.string.StringBundler;
+
 import java.sql.Connection;
 
 import java.util.Collections;
@@ -28,7 +30,21 @@ public class Migrator {
 			Connection sourceConnection, Connection destinationConnection)
 		throws Exception {
 
-		String newCatalog = "lportal_123456";
+		long sourceCompanyId = DatabaseUtil.getCompanyId(sourceConnection);
+
+		if ((sourceCompanyId == 0) ||
+			!DatabaseUtil.checkCompanyIdEligible(
+				sourceCompanyId, destinationConnection)) {
+
+			throw new Exception(
+				StringBundler.concat(
+					"CompanyId ", sourceCompanyId,
+					" already exists in the target database. Migration is not ",
+					"possible"));
+		}
+
+		String newCatalog = DatabaseUtil.createCatalog(
+			sourceCompanyId, destinationConnection);
 
 		List<String> copiedTableNames = _copyTableStructures(
 			sourceConnection, destinationConnection, newCatalog);
