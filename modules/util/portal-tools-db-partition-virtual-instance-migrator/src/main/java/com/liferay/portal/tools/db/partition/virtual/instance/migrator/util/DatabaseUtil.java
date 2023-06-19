@@ -38,6 +38,24 @@ import java.util.regex.Pattern;
  * @author Luis Ortiz
  */
 public class DatabaseUtil {
+	public static boolean checkCompanyIdEligible(
+			long companyId, Connection connection)
+		throws SQLException {
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				"select companyId from Company where companyId = ?")) {
+
+			preparedStatement.setLong(1, companyId);
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				if (resultSet.next()) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
 
 	public static void copyTablesContent(
 			Connection sourceConnection, List<String> tableNames,
@@ -161,6 +179,31 @@ public class DatabaseUtil {
 		}
 
 		return copiedTableNames;
+	}
+
+	public static String createCatalog(long companyId, Connection connection)
+		throws SQLException {
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				_getCreateSchemaSQL(companyId, connection))) {
+
+			preparedStatement.executeUpdate();
+		}
+
+		return _getSchemaName(companyId);
+	}
+
+	public static long getCompanyId(Connection connection) throws SQLException {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				"select companyId from CompanyInfo");
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			if (resultSet.next()) {
+				return resultSet.getLong(1);
+			}
+		}
+
+		return 0;
 	}
 
 	public static List<String> getFailedServletContextNames(
@@ -323,6 +366,15 @@ public class DatabaseUtil {
 		return companyIds;
 	}
 
+	private static String _getCreateSchemaSQL(
+			long companyId, Connection connection)
+		throws SQLException {
+
+		return StringBundler.concat(
+			"create schema if not exists ", _getSchemaName(companyId),
+			" character set ", _getSessionCharsetEncoding(connection));
+	}
+
 	private static String _getHostFromConnection(Connection connection)
 		throws Exception {
 
@@ -393,6 +445,27 @@ public class DatabaseUtil {
 		}
 
 		return null;
+	}
+
+	private static String _getSchemaName(long companyId) {
+		return _schemaPrefix + companyId;
+	}
+
+	private static String _getSessionCharsetEncoding(Connection connection)
+		throws SQLException {
+
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				"select variable_value from " +
+					"performance_schema.session_variables where " +
+						"variable_name = 'character_set_client'");
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			if (resultSet.next()) {
+				return resultSet.getString("variable_value");
+			}
+
+			return "utf8";
+		}
 	}
 
 	private static void _populateParamsDynamically(
