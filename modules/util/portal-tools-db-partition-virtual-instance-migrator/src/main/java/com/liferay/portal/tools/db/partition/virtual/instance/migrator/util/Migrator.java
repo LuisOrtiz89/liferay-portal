@@ -15,7 +15,6 @@
 package com.liferay.portal.tools.db.partition.virtual.instance.migrator.util;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,31 +30,30 @@ public class Migrator {
 
 		String newCatalog = "lportal_123456";
 
-		List<String> copiedTables = _copyTableStructures(
+		List<String> copiedTableNames = _copyTableStructures(
 			sourceConnection, destinationConnection, newCatalog);
 
 		DatabaseUtil.copyTablesContent(
-			sourceConnection, destinationConnection, newCatalog, copiedTables);
+			sourceConnection, destinationConnection, newCatalog,
+			copiedTableNames);
 	}
 
 	private static List<String> _copyNoncontrolTableStructures(
 			Connection sourceConnection, Connection destinationConnection,
-			String destinationCatalog, List<String> exclusions)
+			String destinationCatalog, List<String> excludedTableNames)
 		throws Exception {
-
 		return DatabaseUtil.copyTableStructures(
 			sourceConnection, destinationConnection, destinationCatalog,
-			exclusions, false, false);
+			excludedTableNames, false, false);
 	}
 
 	private static List<String> _copyObjectTableStructures(
 			Connection sourceConnection, Connection destinationConnection,
-			String destinationCatalog, List<String> exclusions)
+			String destinationCatalog, List<String> excludedTableNames)
 		throws Exception {
-
 		return DatabaseUtil.copyTableStructures(
 			sourceConnection, destinationConnection, destinationCatalog,
-			exclusions, false, true);
+			excludedTableNames, false, true);
 	}
 
 	private static List<String> _copyTableStructures(
