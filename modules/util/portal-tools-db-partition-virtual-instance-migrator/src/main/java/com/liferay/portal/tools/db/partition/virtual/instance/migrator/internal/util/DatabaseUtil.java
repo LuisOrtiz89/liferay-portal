@@ -44,56 +44,56 @@ public class DatabaseUtil {
 
 	public static void copyTablesContent(
 			Connection sourceConnection, Connection destinationConnection,
-			String newCatalog, List<String> tableNames)
+			String targetCatalog, List<String> tableNames)
 		throws SQLException {
 
 		String currentCatalog = destinationConnection.getCatalog();
 
 		for (String tableName : tableNames) {
-			int count = 0;
+			int rowCount = 0;
 
-			try (PreparedStatement preparedStatement =
+			try (PreparedStatement preparedStatement1 =
 					sourceConnection.prepareStatement(
 						"select * from " + tableName)) {
 
-				preparedStatement.setFetchSize(_FETCH_SIZE);
+				preparedStatement1.setFetchSize(_FETCH_SIZE);
 
 				boolean autoCommit = destinationConnection.getAutoCommit();
 
-				try (ResultSet resultSet = preparedStatement.executeQuery()) {
-					destinationConnection.setCatalog(newCatalog);
+				try (ResultSet resultSet = preparedStatement1.executeQuery()) {
+					destinationConnection.setCatalog(targetCatalog);
 
 					String query = _getInsertRowQuery(tableName, resultSet);
 
 					destinationConnection.setAutoCommit(false);
 
-					PreparedStatement preparedStatement1 =
+					PreparedStatement preparedStatement2 =
 						destinationConnection.prepareStatement(query);
 
 					int batchCount = 0;
 
 					while (resultSet.next()) {
 						_populateParamsDynamically(
-							preparedStatement1, resultSet);
+							preparedStatement2, resultSet);
 
-						preparedStatement1.addBatch();
+						preparedStatement2.addBatch();
 
 						if (++batchCount >= _BATCH_SIZE) {
 							batchCount = 0;
 
-							int[] counts = preparedStatement1.executeBatch();
+							int[] rowCounts = preparedStatement2.executeBatch();
 
-							count += Arrays.stream(
-								counts
-							).sum();
+							for (int rows : rowCounts) {
+								rowCount += rows;
+							}
 						}
 					}
 
-					int[] counts = preparedStatement1.executeBatch();
+					int[] rowCounts = preparedStatement2.executeBatch();
 
-					count += Arrays.stream(
-						counts
-					).sum();
+					for (int rows : rowCounts) {
+						rowCount += rows;
+					}
 				}
 				finally {
 					destinationConnection.setCatalog(currentCatalog);
@@ -103,13 +103,13 @@ public class DatabaseUtil {
 
 			System.out.println(
 				StringBundler.concat(
-					"[INFO] Copied ", count, " rows for table ", tableName));
+					"[INFO] Copied ", rowCount, " rows for table ", tableName));
 		}
 	}
 
 	public static List<String> copyTableStructures(
 			Connection sourceConnection, Connection destinationConnection,
-			String destinationCatalog, List<String> exclusions,
+			String destinationCatalog, List<String> excludedTableNames,
 			boolean controlTables, boolean objectTables)
 		throws SQLException {
 
@@ -130,7 +130,7 @@ public class DatabaseUtil {
 		String query = "";
 
 		for (String tableName : tableNames) {
-			if (!exclusions.contains(tableName)) {
+			if (!excludedTableNames.contains(tableName)) {
 				if (local) {
 					query = _getLocalCreateTableSQL(
 						sourceConnection.getCatalog(), destinationCatalog,
@@ -408,22 +408,22 @@ public class DatabaseUtil {
 
 		ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
-		int nColumns = resultSetMetaData.getColumnCount();
+		int columns = resultSetMetaData.getColumnCount();
 
-		for (int count = 1; count <= nColumns; count++) {
+		for (int count = 1; count <= columns; count++) {
 			query += resultSetMetaData.getColumnName(count);
 
-			if (count < nColumns) {
+			if (count < columns) {
 				query += ", ";
 			}
 		}
 
 		query += ") values (";
 
-		for (int count = 1; count <= nColumns; count++) {
+		for (int count = 1; count <= columns; count++) {
 			query += "?";
 
-			if (count < nColumns) {
+			if (count < columns) {
 				query += ", ";
 			}
 		}
@@ -526,9 +526,9 @@ public class DatabaseUtil {
 
 		ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
-		int nColumns = resultSetMetaData.getColumnCount();
+		int columns = resultSetMetaData.getColumnCount();
 
-		for (int count = 1; count <= nColumns; count++) {
+		for (int count = 1; count <= columns; count++) {
 			preparedStatement.setObject(count, resultSet.getObject(count));
 		}
 	}
