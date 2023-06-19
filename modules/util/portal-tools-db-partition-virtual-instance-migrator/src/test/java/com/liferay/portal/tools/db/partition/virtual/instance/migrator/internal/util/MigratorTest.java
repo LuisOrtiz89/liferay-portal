@@ -52,10 +52,31 @@ public class MigratorTest {
 		Connection destinationConnection = Mockito.mock(Connection.class);
 
 		_databaseMockedStatic.when(
+			() -> DatabaseUtil.getCompanyId(sourceConnection)
+		).thenReturn(
+			_SOURCE_DATABASE_COMPANY_ID
+		);
+
+		_databaseMockedStatic.when(
+			() -> DatabaseUtil.checkCompanyIdEligible(
+				_SOURCE_DATABASE_COMPANY_ID, destinationConnection)
+		).thenReturn(
+			true
+		);
+
+		_databaseMockedStatic.when(
+			() -> DatabaseUtil.createCatalog(
+				_SOURCE_DATABASE_COMPANY_ID, destinationConnection)
+		).thenReturn(
+			_DESTINATION_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID
+		);
+
+		_databaseMockedStatic.when(
 			() -> DatabaseUtil.copyTableStructures(
 				Mockito.eq(destinationConnection),
 				Mockito.eq(destinationConnection),
-				Mockito.eq(_DESTINATION_CATALOG_NAME),
+				Mockito.eq(
+					_DESTINATION_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID),
 				Mockito.eq(Collections.emptyList()), Mockito.eq(false),
 				Mockito.eq(false))
 		).thenReturn(
@@ -65,7 +86,8 @@ public class MigratorTest {
 		_databaseMockedStatic.when(
 			() -> DatabaseUtil.copyTableStructures(
 				Mockito.eq(sourceConnection), Mockito.eq(destinationConnection),
-				Mockito.eq(_DESTINATION_CATALOG_NAME),
+				Mockito.eq(
+					_DESTINATION_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID),
 				Mockito.eq(Arrays.asList("Table1", "Table2")),
 				Mockito.eq(false), Mockito.eq(true))
 		).thenReturn(
@@ -92,14 +114,17 @@ public class MigratorTest {
 		Assert.assertEquals(sourceConnection, srcCaptureCaptor.getValue());
 		Assert.assertEquals(destinationConnection, dstCaptureCaptor.getValue());
 		Assert.assertEquals(
-			_DESTINATION_CATALOG_NAME, catalogCaptor.getValue());
+			_DESTINATION_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID,
+			catalogCaptor.getValue());
 
 		Assert.assertEquals(
 			Arrays.asList("Table1", "Table2", "Company", "Object_x_25000"),
 			valueCapture.getValue());
 	}
 
-	private static final String _DESTINATION_CATALOG_NAME = "lportal_123456";
+	private static final String _DESTINATION_CATALOG_PREFIX = "lportal_";
+
+	private static final long _SOURCE_DATABASE_COMPANY_ID = 123456;
 
 	private MockedStatic<DatabaseUtil> _databaseMockedStatic;
 
