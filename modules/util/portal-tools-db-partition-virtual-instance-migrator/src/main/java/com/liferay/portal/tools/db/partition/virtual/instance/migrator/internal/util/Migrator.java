@@ -14,8 +14,9 @@
 
 package com.liferay.portal.tools.db.partition.virtual.instance.migrator.internal.util;
 
+import com.liferay.petra.string.StringBundler;
+
 import java.sql.Connection;
-import java.sql.SQLException;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,9 +28,23 @@ public class Migrator {
 
 	public static void migrateDatabases(
 			Connection sourceConnection, Connection destinationConnection)
-		throws SQLException {
+		throws Exception {
 
-		String newCatalog = "lportal_123456";
+		long sourceCompanyId = DatabaseUtil.getCompanyId(sourceConnection);
+
+		if ((sourceCompanyId == 0) ||
+			!DatabaseUtil.checkCompanyIdEligible(
+				sourceCompanyId, destinationConnection)) {
+
+			throw new Exception(
+				StringBundler.concat(
+					"CompanyId ", sourceCompanyId,
+					" already exists in the target database. Migration is not ",
+					"possible"));
+		}
+
+		String newCatalog = DatabaseUtil.createCatalog(
+			sourceCompanyId, destinationConnection);
 
 		List<String> copiedTableNames = _copyTableStructures(
 			sourceConnection, destinationConnection, newCatalog);
@@ -42,7 +57,7 @@ public class Migrator {
 	private static List<String> _copyNoncontrolTableStructures(
 			Connection sourceConnection, Connection destinationConnection,
 			String destinationCatalog, List<String> excludedTableNames)
-		throws SQLException {
+		throws Exception {
 
 		return DatabaseUtil.copyTableStructures(
 			sourceConnection, destinationConnection, destinationCatalog,
@@ -52,7 +67,7 @@ public class Migrator {
 	private static List<String> _copyObjectTableStructures(
 			Connection sourceConnection, Connection destinationConnection,
 			String destinationCatalog, List<String> excludedTableNames)
-		throws SQLException {
+		throws Exception {
 
 		return DatabaseUtil.copyTableStructures(
 			sourceConnection, destinationConnection, destinationCatalog,
@@ -62,7 +77,7 @@ public class Migrator {
 	private static List<String> _copyTableStructures(
 			Connection sourceConnection, Connection destinationConnection,
 			String destinationCatalog)
-		throws SQLException {
+		throws Exception {
 
 		List<String> copiedTableNames = _copyNoncontrolTableStructures(
 			destinationConnection, destinationConnection, destinationCatalog,

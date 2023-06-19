@@ -15,7 +15,6 @@
 package com.liferay.portal.tools.db.partition.virtual.instance.migrator.internal.util;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +46,7 @@ public class MigratorTest {
 	}
 
 	@Test
-	public void testMigrateDatabase() throws SQLException {
+	public void testMigrateDatabase() throws Exception {
 		Connection sourceConnection = Mockito.mock(Connection.class);
 
 		Connection destinationConnection = Mockito.mock(Connection.class);
