@@ -34,7 +34,7 @@ public class Migrator {
 
 		if ((sourceCompanyId == 0) ||
 			!DatabaseUtil.checkCompanyIdEligible(
-				sourceCompanyId, destinationConnection)) {
+				sourceCompanyId, targetConnection)) {
 
 			throw new Exception(
 				StringBundler.concat(
@@ -44,7 +44,7 @@ public class Migrator {
 		}
 
 		String newCatalog = DatabaseUtil.createCatalog(
-			sourceCompanyId, destinationConnection);
+			sourceCompanyId, targetConnection);
 
 		List<String> copiedTableNames = _copyTableStructures(
 			sourceConnection, newCatalog, targetConnection);

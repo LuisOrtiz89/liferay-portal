@@ -51,10 +51,32 @@ public class MigratorTest {
 		Connection targetConnection = Mockito.mock(Connection.class);
 
 		_databaseMockedStatic.when(
+			() -> DatabaseUtil.getCompanyId(sourceConnection)
+		).thenReturn(
+			_SOURCE_DATABASE_COMPANY_ID
+		);
+
+		_databaseMockedStatic.when(
+			() -> DatabaseUtil.checkCompanyIdEligible(
+				_SOURCE_DATABASE_COMPANY_ID, targetConnection)
+		).thenReturn(
+			true
+		);
+
+		_databaseMockedStatic.when(
+			() -> DatabaseUtil.createCatalog(
+				_SOURCE_DATABASE_COMPANY_ID, targetConnection)
+		).thenReturn(
+			_TARGET_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID
+		);
+
+		_databaseMockedStatic.when(
 			() -> DatabaseUtil.copyTableStructures(
 				Mockito.eq(false),
 				Mockito.eq(Arrays.asList("Table1", "Table2")), Mockito.eq(true),
-				Mockito.eq(sourceConnection), Mockito.eq(_TARGET_CATALOG_NAME),
+				Mockito.eq(sourceConnection),
+				Mockito.eq(
+					_TARGET_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID),
 				Mockito.eq(targetConnection))
 		).thenReturn(
 			new ArrayList<>(Arrays.asList("Company", "Object_x_25000"))
@@ -64,7 +86,9 @@ public class MigratorTest {
 			() -> DatabaseUtil.copyTableStructures(
 				Mockito.eq(false), Mockito.eq(Collections.emptyList()),
 				Mockito.eq(false), Mockito.eq(targetConnection),
-				Mockito.eq(_TARGET_CATALOG_NAME), Mockito.eq(targetConnection))
+				Mockito.eq(
+					_TARGET_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID),
+				Mockito.eq(targetConnection))
 		).thenReturn(
 			new ArrayList<>(Arrays.asList("Table1", "Table2"))
 		);
@@ -86,9 +110,11 @@ public class MigratorTest {
 				catalogCaptor.capture(), targetConnectionCaptor.capture()),
 			Mockito.times(1));
 
-		Assert.assertEquals(_TARGET_CATALOG_NAME, catalogCaptor.getValue());
 		Assert.assertEquals(
 			sourceConnection, sourceConnectionCaptor.getValue());
+		Assert.assertEquals(
+			_TARGET_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID,
+			catalogCaptor.getValue());
 		Assert.assertEquals(
 			Arrays.asList("Table1", "Table2", "Company", "Object_x_25000"),
 			tableNamesCaptor.getValue());
@@ -96,7 +122,9 @@ public class MigratorTest {
 			targetConnection, targetConnectionCaptor.getValue());
 	}
 
-	private static final String _TARGET_CATALOG_NAME = "lportal_123456";
+	private static final long _SOURCE_DATABASE_COMPANY_ID = 123456;
+
+	private static final String _TARGET_CATALOG_PREFIX = "lportal_";
 
 	private MockedStatic<DatabaseUtil> _databaseMockedStatic;
 

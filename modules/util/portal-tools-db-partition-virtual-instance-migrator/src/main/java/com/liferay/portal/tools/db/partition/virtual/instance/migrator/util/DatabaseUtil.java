@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
  * @author Luis Ortiz
  */
 public class DatabaseUtil {
+
 	public static boolean checkCompanyIdEligible(
 			long companyId, Connection connection)
 		throws SQLException {
