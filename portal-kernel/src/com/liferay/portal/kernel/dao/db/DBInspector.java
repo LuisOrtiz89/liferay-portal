@@ -259,9 +259,18 @@ public class DBInspector {
 		throws Exception {
 
 		if (!isObjectTable(companyIds, tableName) &&
+			!isMasterPartitionTable(tableName) &&
 			(_controlTableNames.contains(StringUtil.toLowerCase(tableName)) ||
 			 !hasColumn(tableName, "companyId"))) {
 
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean isMasterPartitionTable(String tableName) {
+		if (_masterPartitionTables.contains(StringUtil.toLowerCase(tableName))) {
 			return true;
 		}
 
@@ -413,7 +422,8 @@ public class DBInspector {
 		"(^\\w+)", Pattern.CASE_INSENSITIVE);
 	private static final Set<String> _controlTableNames = new HashSet<>(
 		Arrays.asList("company", "virtualhost"));
-
+	private static final Set<String> _masterPartitionTables = new HashSet<>(
+		Arrays.asList("classname_"));
 	private final Connection _connection;
 
 }
