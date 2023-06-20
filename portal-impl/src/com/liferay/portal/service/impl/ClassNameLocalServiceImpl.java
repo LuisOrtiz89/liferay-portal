@@ -50,6 +50,9 @@ public class ClassNameLocalServiceImpl
 	@Override
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public ClassName addClassName(String value) {
+		long currentCompanyId = CompanyThreadLocal.getCompanyId();
+		AtomicReference<ClassName> currentClassName = new AtomicReference<>();
+
 		_companyLocalService.forEachCompanyId(
 			companyId -> {
 				ClassName className = classNamePersistence.fetchByValue(value);
@@ -63,9 +66,13 @@ public class ClassNameLocalServiceImpl
 
 					classNamePersistence.update(className);
 				}
+
+				if (companyId == currentCompanyId) {
+					currentClassName.set(className);
+				}
 			});
 
-		return getClassName(value);
+		return currentClassName.get();
 	}
 
 	@Override
