@@ -27,6 +27,9 @@ import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -34,10 +37,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author Sofía Mendoza Gutiérrez
@@ -64,16 +63,17 @@ public class ClassNameLocalServiceTest {
 
 	@Test
 	public void testAddClassName() {
-		_classNameLocalServiceImpl.addClassName(_CLASSNAME_VALUE);
+		_classNameLocalServiceImpl.addClassName(_CLASS_NAME_VALUE);
 
 		try {
 			_companyLocalService.forEachCompanyId(
 				companyId -> Assert.assertNotNull(
-					_classNameLocalServiceImpl.fetchClassName(_CLASSNAME_VALUE)));
+					_classNameLocalServiceImpl.fetchClassName(
+						_CLASS_NAME_VALUE)));
 		}
 		finally {
 			_classNameLocalServiceImpl.deleteClassName(
-				_classNameLocalServiceImpl.getClassName(_CLASSNAME_VALUE));
+				_classNameLocalServiceImpl.getClassName(_CLASS_NAME_VALUE));
 		}
 	}
 
@@ -91,11 +91,12 @@ public class ClassNameLocalServiceTest {
 
 			_companyLocalService.forEachCompanyId(
 				companyId -> Assert.assertNotNull(
-					_classNameLocalServiceImpl.fetchClassName(_CLASSNAME_VALUE)));
+					_classNameLocalServiceImpl.fetchClassName(
+						_CLASS_NAME_VALUE)));
 		}
 		finally {
 			_classNameLocalServiceImpl.deleteClassName(
-				_classNameLocalServiceImpl.getClassName(_CLASSNAME_VALUE));
+				_classNameLocalServiceImpl.getClassName(_CLASS_NAME_VALUE));
 
 			ReflectionTestUtil.setFieldValue(
 				modelHintsUtil, "_modelHints", originalModelHints);
@@ -104,17 +105,17 @@ public class ClassNameLocalServiceTest {
 
 	@Test
 	public void testDeleteClassName() {
-		_classNameLocalServiceImpl.addClassName(_CLASSNAME_VALUE);
+		_classNameLocalServiceImpl.addClassName(_CLASS_NAME_VALUE);
 
 		_classNameLocalServiceImpl.deleteClassName(
-			_classNameLocalServiceImpl.getClassName(_CLASSNAME_VALUE));
+			_classNameLocalServiceImpl.getClassName(_CLASS_NAME_VALUE));
 
 		_companyLocalService.forEachCompanyId(
 			companyId -> Assert.assertNull(
-				_classNameLocalServiceImpl.fetchClassName(_CLASSNAME_VALUE)));
+				_classNameLocalServiceImpl.fetchClassName(_CLASS_NAME_VALUE)));
 	}
 
-	private static final String _CLASSNAME_VALUE = "Test";
+	private static final String _CLASS_NAME_VALUE = "Test";
 
 	@Inject
 	private static Company _company1;
@@ -138,5 +139,7 @@ public class ClassNameLocalServiceTest {
 		public List<String> getModels() {
 			return Arrays.asList("Test");
 		}
+
 	}
+
 }

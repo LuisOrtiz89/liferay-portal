@@ -67,9 +67,9 @@ public class ClassNameLocalServiceImpl
 					classNamePersistence.update(className);
 				}
 
-				if (companyId == currentCompanyId) {
+				//if (companyId == currentCompanyId) {
 					currentClassName.set(className);
-				}
+				//}
 			});
 
 		return currentClassName.get();

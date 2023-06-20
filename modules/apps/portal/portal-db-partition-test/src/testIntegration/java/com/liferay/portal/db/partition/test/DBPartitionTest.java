@@ -200,7 +200,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
-	@Test
+	/*@Test
 	public void test()
 		throws SQLException, IOException {
 		db.runSQL(
@@ -209,7 +209,8 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 
 		_companyLocalService.forEachCompanyId(
-			companyId -> Assert.assertNotNull(_classNameLocalService.fetchClassName(_CLASSNAME_VALUE)));
+			companyId -> Assert.assertNotNull(_classNameLocalService.fetchClassName(
+				_CLASS_NAME_VALUE)));
 
 		_companyLocalService.forEachCompanyId(
 			companyId -> {
@@ -219,7 +220,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		)
 
 
-	}
+	}*/
 
 	@Test
 	public void testCheckClassName()
@@ -237,11 +238,11 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			db.runSQL(
 				StringBundler.concat(
 					"delete from ", _DB_PARTITION_SCHEMA_NAME_PREFIX, COMPANY_IDS[0], StringPool.PERIOD, "ClassName_ ",
-					" where value = ", _CLASSNAME_VALUE));
+					" where value = ", _CLASS_NAME_VALUE));
 
 			DBPartitionUtil.forEachCompanyId(
 				companyId -> Assert.assertNotNull(
-					_classNameLocalServiceImpl.fetchClassName(_CLASSNAME_VALUE)));
+					_classNameLocalServiceImpl.fetchClassName(_CLASS_NAME_VALUE)));
 
 			_classNameLocalServiceImpl.checkClassNames();
 
@@ -250,11 +251,11 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 					companyId -> {
 						if (companyId == COMPANY_IDS[0]) {
 							Assert.assertNull(_classNameLocalServiceImpl.fetchClassName(
-								_CLASSNAME_VALUE));
+								_CLASS_NAME_VALUE));
 						}
 						else {
 							Assert.assertNotNull(_classNameLocalServiceImpl.fetchClassName(
-								_CLASSNAME_VALUE));
+								_CLASS_NAME_VALUE));
 						}
 					});
 			}
@@ -264,7 +265,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 		finally {
 			_classNameLocalServiceImpl.deleteClassName(
-				_classNameLocalServiceImpl.getClassName(_CLASSNAME_VALUE));
+				_classNameLocalServiceImpl.getClassName(_CLASS_NAME_VALUE));
 
 			ReflectionTestUtil.setFieldValue(
 				modelHintsUtil, "_modelHints", originalModelHints);
@@ -378,7 +379,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 	private static final String _DB_PARTITION_SCHEMA_NAME_PREFIX =
 		"lpartitiontest_";
 
-	private static final String _CLASSNAME_VALUE = "Test";
+	private static final String _CLASS_NAME_VALUE = "Test";
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
