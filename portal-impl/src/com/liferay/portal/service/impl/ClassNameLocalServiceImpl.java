@@ -17,6 +17,7 @@ package com.liferay.portal.service.impl;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.cache.CacheRegistryItem;
 import com.liferay.portal.kernel.change.tracking.CTAware;
@@ -207,7 +208,7 @@ public class ClassNameLocalServiceImpl
 		new ConcurrentHashMap<>();
 
 	private static final boolean _DATABASE_PARTITION_ENABLED =
-		GetterUtil.getBoolean(PropsUtil.get("database.partition.enabled"));
+		DBPartitionUtil.isPartitionEnabled();
 	private static final ClassName _nullClassName = new ClassNameImpl();
 
 	@BeanReference(type = CompanyLocalService.class)
