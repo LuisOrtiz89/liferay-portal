@@ -62,51 +62,30 @@ public class DatabaseUtilTest {
 	}
 
 	@Test
-	public void testCopyLocalTableStructures() throws Exception {
-		_testCopyLocalTableStructures(
-			true, Arrays.asList("Table2"), false, false);
-		_testCopyLocalTableStructures(
-			true, Collections.emptyList(), true, true);
-		_testCopyLocalTableStructures(
-			true, Arrays.asList("Table1"), true, false);
-		_testCopyLocalTableStructures(
-			true, Arrays.asList("Table2"), false, true);
-		_testCopyLocalTableStructures(
-			false, Arrays.asList("Table2"), false, false);
-		_testCopyLocalTableStructures(
-			false, Collections.emptyList(), true, true);
-		_testCopyLocalTableStructures(
-			false, Arrays.asList("Table1"), true, false);
-		_testCopyLocalTableStructures(
-			false, Arrays.asList("Table2"), false, true);
-	}
-
-	@Test
 	public void testCopyTableContent() throws SQLException {
-		Connection destinationConnection = Mockito.mock(Connection.class);
+		Connection targetConnection = Mockito.mock(Connection.class);
 
 		List<String> tableNames = Arrays.asList(
 			"Table1", "Table2", "Company", "Object_x_25000");
 		List<Integer> numberOfColumns = Arrays.asList(4, 2, 10, 5);
 		List<Integer> numberOfRows = Arrays.asList(8, 12, 2, 9);
 
-		List<PreparedStatement> destinationPreparedStatements =
-			new ArrayList<>();
+		List<PreparedStatement> targetPreparedStatements = new ArrayList<>();
 
 		for (int count = 0; count < tableNames.size(); count++) {
 			int columns = numberOfColumns.get(count);
 			int rows = numberOfRows.get(count);
 			String tableName = tableNames.get(count);
 
-			_mockBrowseSourceTable(_sourceConnection, tableName, columns, rows);
-			destinationPreparedStatements.add(
-				_mockInsertDestinationData(
-					destinationConnection, tableName, columns, rows));
+			_mockBrowseSourceTable(columns, _sourceConnection, rows, tableName);
+			targetPreparedStatements.add(
+				_mockInsertTargetData(
+					columns, targetConnection, rows, tableName));
 		}
 
 		DatabaseUtil.copyTablesContent(
-			_sourceConnection, destinationConnection, _DESTINATION_CATALOG_NAME,
-			tableNames);
+			_sourceConnection, tableNames, _TARGET_CATALOG_NAME,
+			targetConnection);
 
 		String outputString = _testOutByteArrayOutputStream.toString();
 
@@ -115,8 +94,8 @@ public class DatabaseUtilTest {
 			int rows = numberOfRows.get(count);
 			String tableName = tableNames.get(count);
 
-			PreparedStatement preparedStatement =
-				destinationPreparedStatements.get(count);
+			PreparedStatement preparedStatement = targetPreparedStatements.get(
+				count);
 
 			Assert.assertTrue(
 				outputString.contains(
@@ -133,6 +112,18 @@ public class DatabaseUtilTest {
 				Mockito.anyInt(), Mockito.any()
 			);
 		}
+	}
+
+	@Test
+	public void testCopyTableStructures() throws Exception {
+		_testCopyTableStructures(false, Arrays.asList("Table2"), true, false);
+		_testCopyTableStructures(true, Collections.emptyList(), true, true);
+		_testCopyTableStructures(true, Arrays.asList("Table1"), true, false);
+		_testCopyTableStructures(false, Arrays.asList("Table2"), true, true);
+		_testCopyTableStructures(false, Arrays.asList("Table2"), false, false);
+		_testCopyTableStructures(true, Collections.emptyList(), false, true);
+		_testCopyTableStructures(true, Arrays.asList("Table1"), false, false);
+		_testCopyTableStructures(false, Arrays.asList("Table2"), false, true);
 	}
 
 	@Test
@@ -298,22 +289,22 @@ public class DatabaseUtilTest {
 	}
 
 	private void _assertCopiedTable(
-		String tableName, List<String> expectedTables, boolean local) {
+		List<String> expectedTables, boolean local, String tableName) {
 
-		String outputString = _testOutByteArrayOutputStream.toString();
+		String string = _testOutByteArrayOutputStream.toString();
 
 		if (expectedTables.contains(tableName)) {
 			if (local) {
 				Assert.assertTrue(
-					outputString.contains(
+					string.contains(
 						StringBundler.concat(
-							"create table if not exists ",
-							_DESTINATION_CATALOG_NAME, ".", tableName, " like ",
+							"create table if not exists ", _TARGET_CATALOG_NAME,
+							".", tableName, " like ",
 							_DEFAULT_SOURCE_CATALOG_NAME, ".", tableName)));
 			}
 			else {
 				Assert.assertTrue(
-					outputString.contains(
+					string.contains(
 						StringBundler.concat(
 							"Copied table structure for table ", tableName,
 							" from localhost:8000/",
@@ -323,12 +314,12 @@ public class DatabaseUtilTest {
 			}
 		}
 		else {
-			Assert.assertFalse(outputString.contains(tableName));
+			Assert.assertFalse(string.contains(tableName));
 		}
 	}
 
 	private void _mockBrowseSourceTable(
-			Connection connection, String tableName, int columns, int rows)
+			int columns, Connection connection, int rows, String tableName)
 		throws SQLException {
 
 		PreparedStatement preparedStatement = Mockito.mock(
@@ -371,6 +362,12 @@ public class DatabaseUtilTest {
 		}
 
 		Mockito.when(
+			resultSet.getObject(Mockito.anyInt())
+		).thenReturn(
+			new Object()
+		);
+
+		Mockito.when(
 			resultSet.next()
 		).thenAnswer(
 			new Answer() {
@@ -387,15 +384,9 @@ public class DatabaseUtilTest {
 
 			}
 		);
-
-		Mockito.when(
-			resultSet.getObject(Mockito.anyInt())
-		).thenReturn(
-			new Object()
-		);
 	}
 
-	private void _mockCatalog(Connection connection, String catalog)
+	private void _mockCatalog(String catalog, Connection connection)
 		throws Exception {
 
 		Mockito.when(
@@ -417,7 +408,7 @@ public class DatabaseUtilTest {
 		);
 
 		String url =
-			"jdbc:mysql://localhost:8000/" + _DEFAULT_DESTINATION_CATALOG_NAME;
+			"jdbc:mysql://localhost:8000/" + _DEFAULT_TARGET_CATALOG_NAME;
 
 		if (!local) {
 			url =
@@ -543,8 +534,8 @@ public class DatabaseUtilTest {
 		);
 	}
 
-	private PreparedStatement _mockInsertDestinationData(
-			Connection connection, String tableName, int columns, int rows)
+	private PreparedStatement _mockInsertTargetData(
+			int columns, Connection connection, int rows, String tableName)
 		throws SQLException {
 
 		PreparedStatement preparedStatement = Mockito.mock(
@@ -629,26 +620,25 @@ public class DatabaseUtilTest {
 		);
 	}
 
-	private void _testCopyLocalTableStructures(
-			boolean local, List<String> excludedTableNames,
-			boolean controlTables, boolean objectTables)
+	private void _testCopyTableStructures(
+			boolean controlTables, List<String> excludedTableNames,
+			boolean local, boolean objectTables)
 		throws Exception {
 
 		_testOutByteArrayOutputStream.reset();
 
 		_mockConnectionURL(_sourceConnection, _sourceDatabaseMetaData, true);
 
-		Connection destinationConnection = Mockito.mock(Connection.class);
-		DatabaseMetaData destinationDatabaseMetaData = Mockito.mock(
+		Connection targetConnection = Mockito.mock(Connection.class);
+		DatabaseMetaData targetDatabaseMetaData = Mockito.mock(
 			DatabaseMetaData.class);
 
-		_mockConnectionURL(
-			destinationConnection, destinationDatabaseMetaData, local);
+		_mockConnectionURL(targetConnection, targetDatabaseMetaData, local);
 
 		_mockGetPartitionedTableNames();
 
-		_mockCatalog(_sourceConnection, _DEFAULT_SOURCE_CATALOG_NAME);
-		_mockCatalog(destinationConnection, _DEFAULT_DESTINATION_CATALOG_NAME);
+		_mockCatalog(_DEFAULT_SOURCE_CATALOG_NAME, _sourceConnection);
+		_mockCatalog(_DEFAULT_TARGET_CATALOG_NAME, targetConnection);
 
 		_mockRemotePreparedStatement(_sourceConnection, "Company");
 		_mockRemotePreparedStatement(_sourceConnection, "Object_x_25000");
@@ -659,14 +649,14 @@ public class DatabaseUtilTest {
 			PreparedStatement.class);
 
 		Mockito.when(
-			destinationConnection.prepareStatement(Mockito.anyString())
+			targetConnection.prepareStatement(Mockito.anyString())
 		).thenReturn(
 			preparedStatement
 		);
 
 		List<String> copiedTables = DatabaseUtil.copyTableStructures(
-			_sourceConnection, destinationConnection, _DESTINATION_CATALOG_NAME,
-			excludedTableNames, controlTables, objectTables);
+			controlTables, excludedTableNames, objectTables, _sourceConnection,
+			_TARGET_CATALOG_NAME, targetConnection);
 
 		List<String> expectedTables = new ArrayList<>();
 
@@ -690,10 +680,10 @@ public class DatabaseUtilTest {
 			copiedTables.toString(), expectedTables.size(),
 			copiedTables.size());
 
-		_assertCopiedTable("Company", expectedTables, local);
-		_assertCopiedTable("Object_x_25000", expectedTables, local);
-		_assertCopiedTable("Table1", expectedTables, local);
-		_assertCopiedTable("Table2", expectedTables, local);
+		_assertCopiedTable(expectedTables, local, "Company");
+		_assertCopiedTable(expectedTables, local, "Object_x_25000");
+		_assertCopiedTable(expectedTables, local, "Table1");
+		_assertCopiedTable(expectedTables, local, "Table2");
 	}
 
 	private void _testGetFailedServletContextNames(
@@ -920,12 +910,12 @@ public class DatabaseUtilTest {
 			DatabaseUtil.isDefaultPartition(_sourceConnection));
 	}
 
-	private static final String _DEFAULT_DESTINATION_CATALOG_NAME = "lportal";
-
 	private static final String _DEFAULT_SOURCE_CATALOG_NAME =
 		"lpartition_11111";
 
-	private static final String _DESTINATION_CATALOG_NAME = "lpartition_123456";
+	private static final String _DEFAULT_TARGET_CATALOG_NAME = "lportal";
+
+	private static final String _TARGET_CATALOG_NAME = "lpartition_123456";
 
 	private final PrintStream _originalOut = System.out;
 	private final Connection _sourceConnection = Mockito.mock(Connection.class);
