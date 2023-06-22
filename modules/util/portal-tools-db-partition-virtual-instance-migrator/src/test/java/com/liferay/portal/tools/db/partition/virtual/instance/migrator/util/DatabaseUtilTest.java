@@ -63,12 +63,12 @@ public class DatabaseUtilTest {
 
 	@Test
 	public void testCopyTableContent() throws SQLException {
-		Connection targetConnection = Mockito.mock(Connection.class);
-
-		List<String> tableNames = Arrays.asList(
-			"Table1", "Table2", "Company", "Object_x_25000");
 		List<Integer> numberOfColumns = Arrays.asList(4, 2, 10, 5);
 		List<Integer> numberOfRows = Arrays.asList(8, 12, 2, 9);
+		List<String> tableNames = Arrays.asList(
+			"Table1", "Table2", "Company", "Object_x_25000");
+
+		Connection targetConnection = Mockito.mock(Connection.class);
 
 		List<PreparedStatement> targetPreparedStatements = new ArrayList<>();
 
@@ -87,7 +87,7 @@ public class DatabaseUtilTest {
 			_sourceConnection, tableNames, _TARGET_CATALOG_NAME,
 			targetConnection);
 
-		String outputString = _testOutByteArrayOutputStream.toString();
+		String string = _testOutByteArrayOutputStream.toString();
 
 		for (int count = 0; count < tableNames.size(); count++) {
 			int columns = numberOfColumns.get(count);
@@ -98,7 +98,7 @@ public class DatabaseUtilTest {
 				count);
 
 			Assert.assertTrue(
-				outputString.contains(
+				string.contains(
 					StringBundler.concat(
 						"Copied ", rows, " rows for table ", tableName)));
 
@@ -116,14 +116,14 @@ public class DatabaseUtilTest {
 
 	@Test
 	public void testCopyTableStructures() throws Exception {
-		_testCopyTableStructures(false, Arrays.asList("Table2"), true, false);
-		_testCopyTableStructures(true, Collections.emptyList(), true, true);
-		_testCopyTableStructures(true, Arrays.asList("Table1"), true, false);
-		_testCopyTableStructures(false, Arrays.asList("Table2"), true, true);
 		_testCopyTableStructures(false, Arrays.asList("Table2"), false, false);
-		_testCopyTableStructures(true, Collections.emptyList(), false, true);
-		_testCopyTableStructures(true, Arrays.asList("Table1"), false, false);
 		_testCopyTableStructures(false, Arrays.asList("Table2"), false, true);
+		_testCopyTableStructures(false, Arrays.asList("Table2"), true, false);
+		_testCopyTableStructures(false, Arrays.asList("Table2"), true, true);
+		_testCopyTableStructures(true, Collections.emptyList(), false, true);
+		_testCopyTableStructures(true, Collections.emptyList(), true, true);
+		_testCopyTableStructures(true, Arrays.asList("Table1"), false, false);
+		_testCopyTableStructures(true, Arrays.asList("Table1"), true, false);
 	}
 
 	@Test
@@ -324,13 +324,14 @@ public class DatabaseUtilTest {
 
 		PreparedStatement preparedStatement = Mockito.mock(
 			PreparedStatement.class);
-		ResultSet resultSet = Mockito.mock(ResultSet.class);
 
 		Mockito.when(
 			connection.prepareStatement("select * from " + tableName)
 		).thenReturn(
 			preparedStatement
 		);
+
+		ResultSet resultSet = Mockito.mock(ResultSet.class);
 
 		Mockito.when(
 			preparedStatement.executeQuery()
@@ -346,20 +347,6 @@ public class DatabaseUtilTest {
 		).thenReturn(
 			resultSetMetaData
 		);
-
-		Mockito.when(
-			resultSetMetaData.getColumnCount()
-		).thenReturn(
-			columns
-		);
-
-		for (int count = 1; count <= columns; count++) {
-			Mockito.when(
-				resultSetMetaData.getColumnName(count)
-			).thenReturn(
-				"Column" + count
-			);
-		}
 
 		Mockito.when(
 			resultSet.getObject(Mockito.anyInt())
@@ -384,6 +371,20 @@ public class DatabaseUtilTest {
 
 			}
 		);
+
+		Mockito.when(
+			resultSetMetaData.getColumnCount()
+		).thenReturn(
+			columns
+		);
+
+		for (int count = 1; count <= columns; count++) {
+			Mockito.when(
+				resultSetMetaData.getColumnName(count)
+			).thenReturn(
+				"Column" + count
+			);
+		}
 	}
 
 	private void _mockCatalog(String catalog, Connection connection)
@@ -538,9 +539,6 @@ public class DatabaseUtilTest {
 			int columns, Connection connection, int rows, String tableName)
 		throws SQLException {
 
-		PreparedStatement preparedStatement = Mockito.mock(
-			PreparedStatement.class);
-
 		String query = "insert into " + tableName + " (";
 
 		for (int count = 1; count <= columns; count++) {
@@ -562,6 +560,9 @@ public class DatabaseUtilTest {
 		}
 
 		query += ")";
+
+		PreparedStatement preparedStatement = Mockito.mock(
+			PreparedStatement.class);
 
 		Mockito.when(
 			connection.prepareStatement(query)
