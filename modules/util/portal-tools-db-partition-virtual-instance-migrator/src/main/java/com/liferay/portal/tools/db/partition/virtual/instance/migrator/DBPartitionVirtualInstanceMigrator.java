@@ -14,8 +14,8 @@
 
 package com.liferay.portal.tools.db.partition.virtual.instance.migrator;
 
-import com.liferay.portal.tools.db.partition.virtual.instance.migrator.util.Migrator;
 import com.liferay.portal.tools.db.partition.virtual.instance.migrator.util.DatabaseUtil;
+import com.liferay.portal.tools.db.partition.virtual.instance.migrator.util.Migrator;
 import com.liferay.portal.tools.db.partition.virtual.instance.migrator.util.Validator;
 
 import java.sql.Connection;
@@ -167,11 +167,11 @@ public class DBPartitionVirtualInstanceMigrator {
 				_exit(_LIFERAY_COMMON_EXIT_CODE_BAD);
 			}
 
-			System.out.println("All validations passed successfully. " +
-		   		"Migration will take place");
+			System.out.println(
+				"All validations passed successfully. Migration will take " +
+					"place");
 
-			Migrator.migrateDatabases(
-				_sourceConnection, _targetConnection);
+			Migrator.migrateDatabases(_sourceConnection, _targetConnection);
 		}
 		catch (ParseException parseException) {
 			System.err.println("Unable to parse command line properties:");
