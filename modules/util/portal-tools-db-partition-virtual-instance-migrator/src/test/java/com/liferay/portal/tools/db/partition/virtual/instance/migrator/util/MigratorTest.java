@@ -47,9 +47,21 @@ public class MigratorTest {
 
 	@Test
 	public void testMigrateDatabase() throws Exception {
+
 		Connection sourceConnection = Mockito.mock(Connection.class);
 
 		Connection targetConnection = Mockito.mock(Connection.class);
+
+		_databaseMockedStatic.when(
+			() -> DatabaseUtil.copyTableStructures(
+				Mockito.eq(false),
+				Mockito.eq(Arrays.asList("Table1", "Table2")), Mockito.eq(true),
+				Mockito.eq(sourceConnection),
+				Mockito.eq(_DESTINATION_CATALOG_NAME),
+				Mockito.eq(targetConnection))
+		).thenReturn(
+			new ArrayList<>(Arrays.asList("Company", "Object_x_25000"))
+		);
 
 		_databaseMockedStatic.when(
 			() -> DatabaseUtil.copyTableStructures(
@@ -61,42 +73,32 @@ public class MigratorTest {
 			new ArrayList<>(Arrays.asList("Table1", "Table2"))
 		);
 
-		_databaseMockedStatic.when(
-			() -> DatabaseUtil.copyTableStructures(
-				Mockito.eq(false),
-				Mockito.eq(Arrays.asList("Table1", "Table2")),
-				Mockito.eq(true), Mockito.eq(sourceConnection),
-				Mockito.eq(_DESTINATION_CATALOG_NAME),
-				Mockito.eq(targetConnection))
-		).thenReturn(
-			new ArrayList<>(Arrays.asList("Company", "Object_x_25000"))
-		);
-
 		Migrator.migrateDatabases(sourceConnection, targetConnection);
 
-		ArgumentCaptor<List<String>> valueCapture = ArgumentCaptor.forClass(
-			List.class);
-		ArgumentCaptor<Connection> srcCaptureCaptor = ArgumentCaptor.forClass(
-			Connection.class);
-		ArgumentCaptor<Connection> dstCaptureCaptor = ArgumentCaptor.forClass(
-			Connection.class);
 		ArgumentCaptor<String> catalogCaptor = ArgumentCaptor.forClass(
 			String.class);
+		ArgumentCaptor<Connection> sourceConnectionCaptor =
+			ArgumentCaptor.forClass(Connection.class);
+		ArgumentCaptor<List<String>> tableNamesCaptor = ArgumentCaptor.forClass(
+			List.class);
+		ArgumentCaptor<Connection> targetConnectionCaptor =
+			ArgumentCaptor.forClass(Connection.class);
 
 		_databaseMockedStatic.verify(
 			() -> DatabaseUtil.copyTablesContent(
-				srcCaptureCaptor.capture(), valueCapture.capture(),
-				catalogCaptor.capture(), dstCaptureCaptor.capture()),
+				sourceConnectionCaptor.capture(), tableNamesCaptor.capture(),
+				catalogCaptor.capture(), targetConnectionCaptor.capture()),
 			Mockito.times(1));
 
-		Assert.assertEquals(sourceConnection, srcCaptureCaptor.getValue());
-		Assert.assertEquals(targetConnection, dstCaptureCaptor.getValue());
 		Assert.assertEquals(
 			_DESTINATION_CATALOG_NAME, catalogCaptor.getValue());
-
+		Assert.assertEquals(
+			sourceConnection, sourceConnectionCaptor.getValue());
 		Assert.assertEquals(
 			Arrays.asList("Table1", "Table2", "Company", "Object_x_25000"),
-			valueCapture.getValue());
+			tableNamesCaptor.getValue());
+		Assert.assertEquals(
+			targetConnection, targetConnectionCaptor.getValue());
 	}
 
 	private static final String _DESTINATION_CATALOG_NAME = "lportal_123456";
