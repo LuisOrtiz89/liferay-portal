@@ -59,11 +59,11 @@ public class DatabaseUtil {
 	}
 
 	public static void copyTablesContent(
-			Connection sourceConnection, Connection destinationConnection,
-			String targetCatalog, List<String> tableNames)
+			Connection sourceConnection, List<String> tableNames,
+			String targetCatalog, Connection targetConnection)
 		throws SQLException {
 
-		String currentCatalog = destinationConnection.getCatalog();
+		String currentCatalog = targetConnection.getCatalog();
 
 		for (String tableName : tableNames) {
 			int rowCount = 0;
@@ -74,17 +74,17 @@ public class DatabaseUtil {
 
 				preparedStatement1.setFetchSize(_FETCH_SIZE);
 
-				boolean autoCommit = destinationConnection.getAutoCommit();
+				boolean autoCommit = targetConnection.getAutoCommit();
 
 				try (ResultSet resultSet = preparedStatement1.executeQuery()) {
-					destinationConnection.setCatalog(targetCatalog);
+					targetConnection.setCatalog(targetCatalog);
 
-					String query = _getInsertRowQuery(tableName, resultSet);
+					String query = _getInsertRowQuery(resultSet, tableName);
 
-					destinationConnection.setAutoCommit(false);
+					targetConnection.setAutoCommit(false);
 
 					PreparedStatement preparedStatement2 =
-						destinationConnection.prepareStatement(query);
+						targetConnection.prepareStatement(query);
 
 					int batchCount = 0;
 
@@ -112,8 +112,8 @@ public class DatabaseUtil {
 					}
 				}
 				finally {
-					destinationConnection.setCatalog(currentCatalog);
-					destinationConnection.setAutoCommit(autoCommit);
+					targetConnection.setCatalog(currentCatalog);
+					targetConnection.setAutoCommit(autoCommit);
 				}
 			}
 
@@ -124,20 +124,19 @@ public class DatabaseUtil {
 	}
 
 	public static List<String> copyTableStructures(
-			Connection sourceConnection, Connection destinationConnection,
-			String destinationCatalog, List<String> excludedTableNames,
-			boolean controlTables, boolean objectTables)
+			boolean controlTables, List<String> excludedTableNames,
+			boolean objectTables, Connection sourceConnection,
+			String targetCatalog, Connection targetConnection)
 		throws Exception {
 
-		boolean local = _sameHostDatabases(
-			sourceConnection, destinationConnection);
+		boolean local = _sameHostDatabases(sourceConnection, targetConnection);
 
 		List<String> tableNames = getPartitionedTableNames(
 			sourceConnection, controlTables, objectTables);
 
 		List<String> copiedTableNames = new ArrayList<>();
 
-		String defaultCatalog = destinationConnection.getCatalog();
+		String defaultCatalog = targetConnection.getCatalog();
 
 		String sourceDatabaseURL =
 			_getHostFromConnection(sourceConnection) + "/" +
@@ -149,8 +148,8 @@ public class DatabaseUtil {
 			if (!excludedTableNames.contains(tableName)) {
 				if (local) {
 					query = _getLocalCreateTableSQL(
-						sourceConnection.getCatalog(), destinationCatalog,
-						tableName);
+						sourceConnection.getCatalog(), tableName,
+						targetCatalog);
 				}
 				else {
 					query = _getRemoteCreateTableSQL(
@@ -158,10 +157,10 @@ public class DatabaseUtil {
 				}
 
 				try {
-					destinationConnection.setCatalog(destinationCatalog);
+					targetConnection.setCatalog(targetCatalog);
 
 					try (PreparedStatement preparedStatement =
-							destinationConnection.prepareStatement(query)) {
+							targetConnection.prepareStatement(query)) {
 
 						preparedStatement.executeUpdate();
 
@@ -175,7 +174,7 @@ public class DatabaseUtil {
 					}
 				}
 				finally {
-					destinationConnection.setCatalog(defaultCatalog);
+					targetConnection.setCatalog(defaultCatalog);
 				}
 			}
 		}
@@ -237,13 +236,13 @@ public class DatabaseUtil {
 		DBInspector dbInspector = new DBInspector(connection);
 
 		for (String tableName : dbInspector.getTableNames(null)) {
-			if (dbInspector.isObjectTable(companyIds, tableName) &&
-				!objectTables) {
+			if (dbInspector.isControlTable(companyIds, tableName) &&
+				!controlTables) {
 
 				continue;
 			}
-			else if (dbInspector.isControlTable(companyIds, tableName) &&
-					 !controlTables) {
+			else if (dbInspector.isObjectTable(companyIds, tableName) &&
+					 !objectTables) {
 
 				continue;
 			}
@@ -394,7 +393,7 @@ public class DatabaseUtil {
 	}
 
 	private static String _getInsertRowQuery(
-			String tableName, ResultSet resultSet)
+			ResultSet resultSet, String tableName)
 		throws SQLException {
 
 		String query = "insert into " + tableName + " (";
@@ -425,12 +424,11 @@ public class DatabaseUtil {
 	}
 
 	private static String _getLocalCreateTableSQL(
-		String sourceCatalog, String destinationCatalog, String tableName) {
+		String sourceCatalog, String tableName, String targetCatalog) {
 
 		return StringBundler.concat(
-			"create table if not exists ", destinationCatalog,
-			StringPool.PERIOD, tableName, " like ", sourceCatalog,
-			StringPool.PERIOD, tableName);
+			"create table if not exists ", targetCatalog, StringPool.PERIOD,
+			tableName, " like ", sourceCatalog, StringPool.PERIOD, tableName);
 	}
 
 	private static String _getRemoteCreateTableSQL(
@@ -485,13 +483,13 @@ public class DatabaseUtil {
 	}
 
 	private static boolean _sameHostDatabases(
-			Connection sourceConnection, Connection destinationConnection)
+			Connection sourceConnection, Connection targetConnection)
 		throws Exception {
 
 		String sourceURL = _getHostFromConnection(sourceConnection);
-		String destinationURL = _getHostFromConnection(destinationConnection);
+		String targetURL = _getHostFromConnection(targetConnection);
 
-		if (!sourceURL.equals(destinationURL)) {
+		if (!sourceURL.equals(targetURL)) {
 			return false;
 		}
 

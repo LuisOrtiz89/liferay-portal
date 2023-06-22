@@ -27,14 +27,14 @@ import java.util.List;
 public class Migrator {
 
 	public static void migrateDatabases(
-			Connection sourceConnection, Connection destinationConnection)
+			Connection sourceConnection, Connection targetConnection)
 		throws Exception {
 
 		long sourceCompanyId = DatabaseUtil.getCompanyId(sourceConnection);
 
 		if ((sourceCompanyId == 0) ||
 			!DatabaseUtil.checkCompanyIdEligible(
-				sourceCompanyId, destinationConnection)) {
+				sourceCompanyId, targetConnection)) {
 
 			throw new Exception(
 				StringBundler.concat(
@@ -44,49 +44,48 @@ public class Migrator {
 		}
 
 		String newCatalog = DatabaseUtil.createCatalog(
-			sourceCompanyId, destinationConnection);
+			sourceCompanyId, targetConnection);
 
 		List<String> copiedTableNames = _copyTableStructures(
-			sourceConnection, destinationConnection, newCatalog);
+			sourceConnection, newCatalog, targetConnection);
 
 		DatabaseUtil.copyTablesContent(
-			sourceConnection, destinationConnection, newCatalog,
-			copiedTableNames);
+			sourceConnection, copiedTableNames, newCatalog, targetConnection);
 	}
 
 	private static List<String> _copyNoncontrolTableStructures(
-			Connection sourceConnection, Connection destinationConnection,
-			String destinationCatalog, List<String> excludedTableNames)
+			List<String> excludedTableNames, Connection sourceConnection,
+			String targetCatalog, Connection targetConnection)
 		throws Exception {
 
 		return DatabaseUtil.copyTableStructures(
-			sourceConnection, destinationConnection, destinationCatalog,
-			excludedTableNames, false, false);
+			false, excludedTableNames, false, sourceConnection, targetCatalog,
+			targetConnection);
 	}
 
 	private static List<String> _copyObjectTableStructures(
-			Connection sourceConnection, Connection destinationConnection,
-			String destinationCatalog, List<String> excludedTableNames)
+			List<String> excludedTableNames, Connection sourceConnection,
+			String targetCatalog, Connection targetConnection)
 		throws Exception {
 
 		return DatabaseUtil.copyTableStructures(
-			sourceConnection, destinationConnection, destinationCatalog,
-			excludedTableNames, false, true);
+			false, excludedTableNames, true, sourceConnection, targetCatalog,
+			targetConnection);
 	}
 
 	private static List<String> _copyTableStructures(
-			Connection sourceConnection, Connection destinationConnection,
-			String destinationCatalog)
+			Connection sourceConnection, String targetCatalog,
+			Connection targetConnection)
 		throws Exception {
 
 		List<String> copiedTableNames = _copyNoncontrolTableStructures(
-			destinationConnection, destinationConnection, destinationCatalog,
-			Collections.emptyList());
+			Collections.emptyList(), targetConnection, targetCatalog,
+			targetConnection);
 
 		copiedTableNames.addAll(
 			_copyObjectTableStructures(
-				sourceConnection, destinationConnection, destinationCatalog,
-				copiedTableNames));
+				copiedTableNames, sourceConnection, targetCatalog,
+				targetConnection));
 
 		return copiedTableNames;
 	}
