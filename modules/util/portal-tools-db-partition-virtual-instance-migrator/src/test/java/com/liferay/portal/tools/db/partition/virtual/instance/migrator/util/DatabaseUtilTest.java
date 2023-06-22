@@ -157,8 +157,9 @@ public class DatabaseUtilTest {
 
 	@Test
 	public void testGetPartitionedTableNames() throws Exception {
-		_testGetPartitionedTableNames(true, true,
-			(tableNames) -> {
+		_testGetPartitionedTableNames(
+			true, true,
+			tableNames -> {
 				Assert.assertTrue(tableNames.size() == 4);
 
 				Assert.assertTrue(tableNames.contains("Company"));
@@ -166,8 +167,9 @@ public class DatabaseUtilTest {
 				Assert.assertTrue(tableNames.contains("Table1"));
 				Assert.assertTrue(tableNames.contains("Table2"));
 			});
-		_testGetPartitionedTableNames(false, false,
-			(tableNames) -> {
+		_testGetPartitionedTableNames(
+			false, false,
+			tableNames -> {
 				Assert.assertTrue(tableNames.size() == 2);
 
 				Assert.assertFalse(tableNames.contains("Company"));
@@ -175,8 +177,9 @@ public class DatabaseUtilTest {
 				Assert.assertTrue(tableNames.contains("Table1"));
 				Assert.assertTrue(tableNames.contains("Table2"));
 			});
-		_testGetPartitionedTableNames(true, false,
-			(tableNames) -> {
+		_testGetPartitionedTableNames(
+			true, false,
+			tableNames -> {
 				Assert.assertTrue(tableNames.size() == 3);
 
 				Assert.assertFalse(tableNames.contains("Object_x_25000"));
@@ -184,8 +187,9 @@ public class DatabaseUtilTest {
 				Assert.assertTrue(tableNames.contains("Table1"));
 				Assert.assertTrue(tableNames.contains("Table2"));
 			});
-		_testGetPartitionedTableNames(false, true,
-			(tableNames) -> {
+		_testGetPartitionedTableNames(
+			false, true,
+			tableNames -> {
 				Assert.assertTrue(tableNames.size() == 3);
 
 				Assert.assertFalse(tableNames.contains("Company"));
@@ -205,7 +209,7 @@ public class DatabaseUtilTest {
 		Mockito.when(
 			_sourceConnection.prepareStatement(
 				"select servletContextName, schemaVersion, verified from " +
-				"Release_")
+					"Release_")
 		).thenReturn(
 			_sourcePreparedStatement
 		);
@@ -324,7 +328,7 @@ public class DatabaseUtilTest {
 	}
 
 	private void _mockBrowseSourceTable(
-		Connection connection, String tableName, int columns, int rows)
+			Connection connection, String tableName, int columns, int rows)
 		throws SQLException {
 
 		PreparedStatement preparedStatement = Mockito.mock(
@@ -392,7 +396,7 @@ public class DatabaseUtilTest {
 	}
 
 	private void _mockCatalog(Connection connection, String catalog)
-		throws SQLException {
+		throws Exception {
 
 		Mockito.when(
 			connection.getCatalog()
@@ -404,7 +408,7 @@ public class DatabaseUtilTest {
 	private void _mockConnectionURL(
 			Connection connection, DatabaseMetaData databaseMetaData,
 			boolean local)
-		throws SQLException {
+		throws Exception {
 
 		Mockito.when(
 			connection.getMetaData()
@@ -540,7 +544,7 @@ public class DatabaseUtilTest {
 	}
 
 	private PreparedStatement _mockInsertDestinationData(
-		Connection connection, String tableName, int columns, int rows)
+			Connection connection, String tableName, int columns, int rows)
 		throws SQLException {
 
 		PreparedStatement preparedStatement = Mockito.mock(
@@ -590,8 +594,8 @@ public class DatabaseUtilTest {
 	}
 
 	private void _mockRemotePreparedStatement(
-		Connection connection, String tableName)
-		throws SQLException {
+			Connection connection, String tableName)
+		throws Exception {
 
 		PreparedStatement preparedStatement = Mockito.mock(
 			PreparedStatement.class);
@@ -626,9 +630,10 @@ public class DatabaseUtilTest {
 	}
 
 	private void _testCopyLocalTableStructures(
-		boolean local, List<String> excludedTableNames,
-		boolean controlTables, boolean objectTables)
+			boolean local, List<String> excludedTableNames,
+			boolean controlTables, boolean objectTables)
 		throws Exception {
+
 		_testOutByteArrayOutputStream.reset();
 
 		_mockConnectionURL(_sourceConnection, _sourceDatabaseMetaData, true);
@@ -691,15 +696,8 @@ public class DatabaseUtilTest {
 		_assertCopiedTable("Table2", expectedTables, local);
 	}
 
-	private void _testGetPartitionedTableNames(boolean controlTables, boolean objectTables, Consumer<List<String>> consumer) throws Exception {
-		_mockGetPartitionedTableNames();
-
-		consumer.accept(DatabaseUtil.getPartitionedTableNames(
-			_sourceConnection, controlTables, objectTables));
-	}
-
 	private void _testGetFailedServletContextNames(
-		Consumer<List<String>> consumer, boolean state)
+			Consumer<List<String>> consumer, boolean state)
 		throws SQLException {
 
 		Mockito.when(
@@ -742,18 +740,31 @@ public class DatabaseUtilTest {
 			);
 		}
 
-		consumer.accept(DatabaseUtil.getFailedServletContextNames(_sourceConnection));
+		consumer.accept(
+			DatabaseUtil.getFailedServletContextNames(_sourceConnection));
+	}
+
+	private void _testGetPartitionedTableNames(
+			boolean controlTables, boolean objectTables,
+			Consumer<List<String>> consumer)
+		throws Exception {
+
+		_mockGetPartitionedTableNames();
+
+		consumer.accept(
+			DatabaseUtil.getPartitionedTableNames(
+				_sourceConnection, controlTables, objectTables));
 	}
 
 	private void _testGetReleasesMap(
-		BiConsumer<Release, Map<String, Release>> biConsumer,
-		Release release)
+			BiConsumer<Release, Map<String, Release>> biConsumer,
+			Release release)
 		throws SQLException {
 
 		Mockito.when(
 			_sourceConnection.prepareStatement(
 				"select servletContextName, schemaVersion, verified from " +
-				"Release_")
+					"Release_")
 		).thenReturn(
 			_sourcePreparedStatement
 		);
@@ -801,7 +812,8 @@ public class DatabaseUtilTest {
 			);
 		}
 
-		biConsumer.accept(release, DatabaseUtil.getReleasesMap(_sourceConnection));
+		biConsumer.accept(
+			release, DatabaseUtil.getReleasesMap(_sourceConnection));
 	}
 
 	private void _testHasSingleCompanyInfo(boolean singleCompanyInfo)
@@ -833,7 +845,8 @@ public class DatabaseUtilTest {
 		);
 
 		Assert.assertEquals(
-			singleCompanyInfo, DatabaseUtil.hasSingleCompanyInfo(_sourceConnection));
+			singleCompanyInfo,
+			DatabaseUtil.hasSingleCompanyInfo(_sourceConnection));
 	}
 
 	private void _testHasWebId(boolean hasWebId) throws SQLException {
@@ -903,7 +916,8 @@ public class DatabaseUtilTest {
 		);
 
 		Assert.assertEquals(
-			defaultPartition, DatabaseUtil.isDefaultPartition(_sourceConnection));
+			defaultPartition,
+			DatabaseUtil.isDefaultPartition(_sourceConnection));
 	}
 
 	private static final String _DEFAULT_DESTINATION_CATALOG_NAME = "lportal";

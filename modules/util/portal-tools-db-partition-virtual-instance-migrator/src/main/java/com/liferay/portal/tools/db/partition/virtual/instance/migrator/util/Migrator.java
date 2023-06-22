@@ -42,6 +42,7 @@ public class Migrator {
 			Connection sourceConnection, Connection destinationConnection,
 			String destinationCatalog, List<String> excludedTableNames)
 		throws Exception {
+
 		return DatabaseUtil.copyTableStructures(
 			sourceConnection, destinationConnection, destinationCatalog,
 			excludedTableNames, false, false);
@@ -51,6 +52,7 @@ public class Migrator {
 			Connection sourceConnection, Connection destinationConnection,
 			String destinationCatalog, List<String> excludedTableNames)
 		throws Exception {
+
 		return DatabaseUtil.copyTableStructures(
 			sourceConnection, destinationConnection, destinationCatalog,
 			excludedTableNames, false, true);
