@@ -47,14 +47,7 @@ public class MigratorTest {
 
 	@Test
 	public void testMigrateDatabase() throws Exception {
-		Connection sourceConnection = Mockito.mock(Connection.class);
 		Connection targetConnection = Mockito.mock(Connection.class);
-
-		_databaseMockedStatic.when(
-			() -> DatabaseUtil.getCompanyId(sourceConnection)
-		).thenReturn(
-			_SOURCE_DATABASE_COMPANY_ID
-		);
 
 		_databaseMockedStatic.when(
 			() -> DatabaseUtil.checkCompanyIdEligible(
@@ -63,12 +56,7 @@ public class MigratorTest {
 			true
 		);
 
-		_databaseMockedStatic.when(
-			() -> DatabaseUtil.createCatalog(
-				_SOURCE_DATABASE_COMPANY_ID, targetConnection)
-		).thenReturn(
-			_TARGET_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID
-		);
+		Connection sourceConnection = Mockito.mock(Connection.class);
 
 		_databaseMockedStatic.when(
 			() -> DatabaseUtil.copyTableStructures(
@@ -93,6 +81,19 @@ public class MigratorTest {
 			new ArrayList<>(Arrays.asList("Table1", "Table2"))
 		);
 
+		_databaseMockedStatic.when(
+			() -> DatabaseUtil.createCatalog(
+				_SOURCE_DATABASE_COMPANY_ID, targetConnection)
+		).thenReturn(
+			_TARGET_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID
+		);
+
+		_databaseMockedStatic.when(
+			() -> DatabaseUtil.getCompanyId(sourceConnection)
+		).thenReturn(
+			_SOURCE_DATABASE_COMPANY_ID
+		);
+
 		Migrator.migrateDatabases(sourceConnection, targetConnection);
 
 		ArgumentCaptor<String> catalogCaptor = ArgumentCaptor.forClass(
@@ -111,10 +112,10 @@ public class MigratorTest {
 			Mockito.times(1));
 
 		Assert.assertEquals(
-			sourceConnection, sourceConnectionCaptor.getValue());
-		Assert.assertEquals(
 			_TARGET_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID,
 			catalogCaptor.getValue());
+		Assert.assertEquals(
+			sourceConnection, sourceConnectionCaptor.getValue());
 		Assert.assertEquals(
 			Arrays.asList("Table1", "Table2", "Company", "Object_x_25000"),
 			tableNamesCaptor.getValue());
