@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
  * @author Luis Ortiz
  */
 public class DatabaseUtil {
+
 	public static void copyTablesContent(
 			Connection sourceConnection, List<String> tableNames,
 			String targetCatalog, Connection targetConnection)
@@ -57,11 +58,11 @@ public class DatabaseUtil {
 				boolean autoCommit = targetConnection.getAutoCommit();
 
 				try (ResultSet resultSet = preparedStatement1.executeQuery()) {
-					targetConnection.setCatalog(targetCatalog);
-
 					String query = _getInsertRowQuery(resultSet, tableName);
 
 					targetConnection.setAutoCommit(false);
+
+					targetConnection.setCatalog(targetCatalog);
 
 					PreparedStatement preparedStatement2 =
 						targetConnection.prepareStatement(query);
@@ -92,8 +93,8 @@ public class DatabaseUtil {
 					}
 				}
 				finally {
-					targetConnection.setCatalog(currentCatalog);
 					targetConnection.setAutoCommit(autoCommit);
+					targetConnection.setCatalog(currentCatalog);
 				}
 			}
 
@@ -109,23 +110,23 @@ public class DatabaseUtil {
 			String targetCatalog, Connection targetConnection)
 		throws Exception {
 
-		boolean local = _sameHostDatabases(sourceConnection, targetConnection);
-
-		List<String> tableNames = getPartitionedTableNames(
-			sourceConnection, controlTables, objectTables);
-
 		List<String> copiedTableNames = new ArrayList<>();
 
 		String defaultCatalog = targetConnection.getCatalog();
+
+		boolean local = _sameHostDatabases(sourceConnection, targetConnection);
 
 		String sourceDatabaseURL =
 			_getHostFromConnection(sourceConnection) + "/" +
 				sourceConnection.getCatalog();
 
-		String query = "";
+		List<String> tableNames = getPartitionedTableNames(
+			sourceConnection, controlTables, objectTables);
 
 		for (String tableName : tableNames) {
 			if (!excludedTableNames.contains(tableName)) {
+				String query = "";
+
 				if (local) {
 					query = _getLocalCreateTableSQL(
 						sourceConnection.getCatalog(), tableName,
