@@ -28,7 +28,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +38,7 @@ import java.util.regex.Pattern;
  * @author Luis Ortiz
  */
 public class DatabaseUtil {
+
 	public static boolean checkCompanyIdEligible(
 			long companyId, Connection connection)
 		throws SQLException {
@@ -141,7 +141,7 @@ public class DatabaseUtil {
 
 		String sourceDatabaseURL =
 			_getHostFromConnection(sourceConnection) + "/" +
-			sourceConnection.getCatalog();
+				sourceConnection.getCatalog();
 
 		String query = "";
 
@@ -161,7 +161,7 @@ public class DatabaseUtil {
 					destinationConnection.setCatalog(destinationCatalog);
 
 					try (PreparedStatement preparedStatement =
-							 destinationConnection.prepareStatement(query)) {
+							destinationConnection.prepareStatement(query)) {
 
 						preparedStatement.executeUpdate();
 
@@ -226,8 +226,8 @@ public class DatabaseUtil {
 		return failedServletContextNames;
 	}
 
-	public static List<String> getPartitionedTableNames(Connection connection,
-			boolean controlTables, boolean objectTables)
+	public static List<String> getPartitionedTableNames(
+			Connection connection, boolean controlTables, boolean objectTables)
 		throws Exception {
 
 		List<String> partitionedTableNames = new ArrayList<>();
@@ -237,7 +237,9 @@ public class DatabaseUtil {
 		DBInspector dbInspector = new DBInspector(connection);
 
 		for (String tableName : dbInspector.getTableNames(null)) {
-			if (dbInspector.isObjectTable(companyIds, tableName) && !objectTables) {
+			if (dbInspector.isObjectTable(companyIds, tableName) &&
+				!objectTables) {
+
 				continue;
 			}
 			else if (dbInspector.isControlTable(companyIds, tableName) &&
@@ -376,7 +378,7 @@ public class DatabaseUtil {
 	}
 
 	private static String _getHostFromConnection(Connection connection)
-		throws SQLException {
+		throws Exception {
 
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
 
@@ -433,10 +435,10 @@ public class DatabaseUtil {
 
 	private static String _getRemoteCreateTableSQL(
 			Connection connection, String tableName)
-		throws SQLException {
+		throws Exception {
 
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
-			"show create table " + tableName)) {
+				"show create table " + tableName)) {
 
 			try (ResultSet resultSet = preparedStatement.executeQuery()) {
 				if (resultSet.next()) {
@@ -484,7 +486,7 @@ public class DatabaseUtil {
 
 	private static boolean _sameHostDatabases(
 			Connection sourceConnection, Connection destinationConnection)
-		throws SQLException {
+		throws Exception {
 
 		String sourceURL = _getHostFromConnection(sourceConnection);
 		String destinationURL = _getHostFromConnection(destinationConnection);
@@ -502,7 +504,6 @@ public class DatabaseUtil {
 
 	private static final Pattern _jdbcHostPattern = Pattern.compile(
 		"jdbc:mysql://([^\\?]*)/([^\\?]*)(\\?([^\\?]*))?");
-
 	private static String _schemaPrefix = "lpartition_";
 
 }
