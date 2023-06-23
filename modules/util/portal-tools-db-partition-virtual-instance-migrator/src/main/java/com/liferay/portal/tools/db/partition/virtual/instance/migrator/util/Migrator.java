@@ -43,6 +43,8 @@ public class Migrator {
 					"possible"));
 		}
 
+		_migrateControlTables(sourceConnection, targetConnection);
+
 		String newCatalog = DatabaseUtil.createCatalog(
 			sourceCompanyId, targetConnection);
 
@@ -88,6 +90,22 @@ public class Migrator {
 				targetConnection));
 
 		return copiedTableNames;
+	}
+
+	private static void _migrateCompanyTable(
+			Connection sourceConnection, Connection targetConnection)
+		throws Exception {
+
+		DatabaseUtil.copyTableRecordsByCompanyId(
+			DatabaseUtil.getCompanyId(sourceConnection), sourceConnection,
+			"Company", targetConnection);
+	}
+
+	private static void _migrateControlTables(
+			Connection sourceConnection, Connection targetConnection)
+		throws Exception {
+
+		_migrateCompanyTable(sourceConnection, targetConnection);
 	}
 
 }

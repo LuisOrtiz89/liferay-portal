@@ -58,64 +58,31 @@ public class DatabaseUtil {
 		return true;
 	}
 
+	public static void copyTableRecordsByCompanyId(
+			long companyId, Connection sourceConnection, String tableName,
+			Connection targetConnection)
+		throws SQLException {
+
+		int rowCount = _copyTableRecords(
+			StringBundler.concat(
+				"select * from ", tableName, " where companyId=", companyId),
+			sourceConnection, tableName, null, targetConnection);
+
+		System.out.println(
+			StringBundler.concat(
+				"[INFO] Copied ", rowCount, " rows for table ", tableName,
+				" with companyId ", companyId));
+	}
+
 	public static void copyTablesContent(
 			Connection sourceConnection, List<String> tableNames,
 			String targetCatalog, Connection targetConnection)
 		throws SQLException {
 
-		String currentCatalog = targetConnection.getCatalog();
-
 		for (String tableName : tableNames) {
-			int rowCount = 0;
-
-			try (PreparedStatement preparedStatement1 =
-					sourceConnection.prepareStatement(
-						"select * from " + tableName)) {
-
-				preparedStatement1.setFetchSize(_FETCH_SIZE);
-
-				boolean autoCommit = targetConnection.getAutoCommit();
-
-				try (ResultSet resultSet = preparedStatement1.executeQuery()) {
-					String query = _getInsertRowQuery(resultSet, tableName);
-
-					targetConnection.setAutoCommit(false);
-
-					targetConnection.setCatalog(targetCatalog);
-
-					PreparedStatement preparedStatement2 =
-						targetConnection.prepareStatement(query);
-
-					int batchCount = 0;
-
-					while (resultSet.next()) {
-						_populateParamsDynamically(
-							preparedStatement2, resultSet);
-
-						preparedStatement2.addBatch();
-
-						if (++batchCount >= _BATCH_SIZE) {
-							batchCount = 0;
-
-							int[] rowCounts = preparedStatement2.executeBatch();
-
-							for (int rows : rowCounts) {
-								rowCount += rows;
-							}
-						}
-					}
-
-					int[] rowCounts = preparedStatement2.executeBatch();
-
-					for (int rows : rowCounts) {
-						rowCount += rows;
-					}
-				}
-				finally {
-					targetConnection.setAutoCommit(autoCommit);
-					targetConnection.setCatalog(currentCatalog);
-				}
-			}
+			int rowCount = _copyTableRecords(
+				"select * from " + tableName, sourceConnection, tableName,
+				targetCatalog, targetConnection);
 
 			System.out.println(
 				StringBundler.concat(
@@ -348,6 +315,70 @@ public class DatabaseUtil {
 
 	public static void setSchemaPrefix(String schemaPrefix) {
 		_schemaPrefix = schemaPrefix;
+	}
+
+	private static int _copyTableRecords(
+			String selectQuery, Connection sourceConnection, String tableName,
+			String targetCatalog, Connection targetConnection)
+		throws SQLException {
+
+		int rowCount = 0;
+
+		String currentCatalog = targetConnection.getCatalog();
+
+		try (PreparedStatement preparedStatement1 =
+				sourceConnection.prepareStatement(selectQuery)) {
+
+			preparedStatement1.setFetchSize(_FETCH_SIZE);
+
+			boolean autoCommit = targetConnection.getAutoCommit();
+
+			try (ResultSet resultSet = preparedStatement1.executeQuery()) {
+				String insertQuery = _getInsertRowQuery(resultSet, tableName);
+
+				targetConnection.setAutoCommit(false);
+
+				if (targetCatalog != null) {
+					targetConnection.setCatalog(targetCatalog);
+				}
+
+				PreparedStatement preparedStatement2 =
+					targetConnection.prepareStatement(insertQuery);
+
+				int batchCount = 0;
+
+				while (resultSet.next()) {
+					_populateParamsDynamically(preparedStatement2, resultSet);
+
+					preparedStatement2.addBatch();
+
+					if (++batchCount >= _BATCH_SIZE) {
+						batchCount = 0;
+
+						int[] rowCounts = preparedStatement2.executeBatch();
+
+						for (int rows : rowCounts) {
+							rowCount += rows;
+						}
+					}
+				}
+
+				int[] rowCounts = preparedStatement2.executeBatch();
+
+				for (int rows : rowCounts) {
+					rowCount += rows;
+				}
+			}
+			finally {
+				targetConnection.setAutoCommit(autoCommit);
+
+				if (targetCatalog != null) {
+					targetConnection.setCatalog(currentCatalog);
+				}
+			}
+		}
+
+		return rowCount;
 	}
 
 	private static List<Long> _getCompanyIds(Connection connection)
