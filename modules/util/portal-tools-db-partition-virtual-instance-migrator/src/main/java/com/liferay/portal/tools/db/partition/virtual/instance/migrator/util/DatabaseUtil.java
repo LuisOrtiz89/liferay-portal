@@ -162,6 +162,42 @@ public class DatabaseUtil {
 		return _getSchemaName(companyId);
 	}
 
+	public static List<String> createControlTableViews(
+			String catalog, Connection connection)
+		throws Exception {
+
+		List<String> tableNames = getPartitionedTableNames(
+			connection, true, false, false);
+
+		String defaultCatalog = connection.getCatalog();
+
+		for (String tableName : tableNames) {
+			try {
+				connection.setCatalog(catalog);
+
+				String query = _getCreateViewSQL(
+					defaultCatalog, catalog, tableName);
+
+				try (PreparedStatement preparedStatement =
+						connection.prepareStatement(query)) {
+
+					preparedStatement.executeUpdate();
+
+					System.out.println(
+						StringBundler.concat(
+							"[INFO] Created view for table ", tableName,
+							" from ", connection, " by using the script \"",
+							query, "\""));
+				}
+			}
+			finally {
+				connection.setCatalog(defaultCatalog);
+			}
+		}
+
+		return tableNames;
+	}
+
 	public static long getCompanyId(Connection connection) throws SQLException {
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				"select companyId from CompanyInfo");
@@ -205,14 +241,18 @@ public class DatabaseUtil {
 		DBInspector dbInspector = new DBInspector(connection);
 
 		for (String tableName : dbInspector.getTableNames(null)) {
-			if (dbInspector.isControlTable(companyIds, tableName) &&
-				!controlTables) {
+			if (dbInspector.isControlTable(companyIds, tableName)) {
+				if (controlTables) {
+					partitionedTableNames.add(tableName);
+				}
 
 				continue;
 			}
 
-			if (dbInspector.isObjectTable(companyIds, tableName) &&
-				!objectTables) {
+			if (dbInspector.isObjectTable(companyIds, tableName)) {
+				if (objectTables) {
+					partitionedTableNames.add(tableName);
+				}
 
 				continue;
 			}
@@ -410,6 +450,15 @@ public class DatabaseUtil {
 		return StringBundler.concat(
 			"create schema if not exists ", _getSchemaName(companyId),
 			" character set ", _getSessionCharsetEncoding(connection));
+	}
+
+	private static String _getCreateViewSQL(
+		String sourceCatalog, String targetCatalog, String viewName) {
+
+		return StringBundler.concat(
+			"create or replace view ", targetCatalog, StringPool.PERIOD,
+			viewName, " as select * from ", sourceCatalog, StringPool.PERIOD,
+			viewName);
 	}
 
 	private static String _getHostFromConnection(Connection connection)
