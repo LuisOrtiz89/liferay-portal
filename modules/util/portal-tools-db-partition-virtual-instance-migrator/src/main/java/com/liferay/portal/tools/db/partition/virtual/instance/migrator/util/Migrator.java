@@ -61,8 +61,8 @@ public class Migrator {
 		throws Exception {
 
 		return DatabaseUtil.copyTableStructures(
-			false, excludedTableNames, false, sourceConnection, targetCatalog,
-			targetConnection);
+			false, excludedTableNames, false, true, sourceConnection,
+			targetCatalog, targetConnection);
 	}
 
 	private static List<String> _copyObjectTableStructures(
@@ -71,8 +71,8 @@ public class Migrator {
 		throws Exception {
 
 		return DatabaseUtil.copyTableStructures(
-			false, excludedTableNames, true, sourceConnection, targetCatalog,
-			targetConnection);
+			false, excludedTableNames, true, false, sourceConnection,
+			targetCatalog, targetConnection);
 	}
 
 	private static List<String> _copyTableStructures(

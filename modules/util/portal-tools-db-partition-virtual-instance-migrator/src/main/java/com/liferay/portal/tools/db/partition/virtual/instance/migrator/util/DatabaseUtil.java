@@ -92,8 +92,9 @@ public class DatabaseUtil {
 
 	public static List<String> copyTableStructures(
 			boolean controlTables, List<String> excludedTableNames,
-			boolean objectTables, Connection sourceConnection,
-			String targetCatalog, Connection targetConnection)
+			boolean objectTables, boolean regularTables,
+			Connection sourceConnection, String targetCatalog,
+			Connection targetConnection)
 		throws Exception {
 
 		List<String> copiedTableNames = new ArrayList<>();
@@ -107,7 +108,7 @@ public class DatabaseUtil {
 				sourceConnection.getCatalog();
 
 		List<String> tableNames = getPartitionedTableNames(
-			sourceConnection, controlTables, objectTables);
+			sourceConnection, controlTables, objectTables, regularTables);
 
 		for (String tableName : tableNames) {
 			if (!excludedTableNames.contains(tableName)) {
@@ -193,7 +194,8 @@ public class DatabaseUtil {
 	}
 
 	public static List<String> getPartitionedTableNames(
-			Connection connection, boolean controlTables, boolean objectTables)
+			Connection connection, boolean controlTables, boolean objectTables,
+			boolean regularTables)
 		throws Exception {
 
 		List<String> partitionedTableNames = new ArrayList<>();
@@ -208,13 +210,16 @@ public class DatabaseUtil {
 
 				continue;
 			}
-			else if (dbInspector.isObjectTable(companyIds, tableName) &&
-					 !objectTables) {
+
+			if (dbInspector.isObjectTable(companyIds, tableName) &&
+				!objectTables) {
 
 				continue;
 			}
 
-			partitionedTableNames.add(tableName);
+			if (regularTables) {
+				partitionedTableNames.add(tableName);
+			}
 		}
 
 		return partitionedTableNames;

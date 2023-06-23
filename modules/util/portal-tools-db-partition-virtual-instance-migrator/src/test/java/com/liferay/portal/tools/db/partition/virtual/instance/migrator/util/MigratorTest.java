@@ -62,7 +62,7 @@ public class MigratorTest {
 			() -> DatabaseUtil.copyTableStructures(
 				Mockito.eq(false),
 				Mockito.eq(Arrays.asList("Table1", "Table2")), Mockito.eq(true),
-				Mockito.eq(sourceConnection),
+				Mockito.eq(false), Mockito.eq(sourceConnection),
 				Mockito.eq(
 					_TARGET_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID),
 				Mockito.eq(targetConnection))
@@ -73,7 +73,8 @@ public class MigratorTest {
 		_databaseMockedStatic.when(
 			() -> DatabaseUtil.copyTableStructures(
 				Mockito.eq(false), Mockito.eq(Collections.emptyList()),
-				Mockito.eq(false), Mockito.eq(targetConnection),
+				Mockito.eq(false), Mockito.eq(true),
+				Mockito.eq(targetConnection),
 				Mockito.eq(
 					_TARGET_CATALOG_PREFIX + _SOURCE_DATABASE_COMPANY_ID),
 				Mockito.eq(targetConnection))

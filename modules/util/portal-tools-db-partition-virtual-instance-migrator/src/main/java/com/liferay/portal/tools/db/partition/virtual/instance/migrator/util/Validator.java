@@ -50,10 +50,10 @@ public class Validator {
 
 		List<String> sourcePartitionedTableNames =
 			DatabaseUtil.getPartitionedTableNames(
-				sourceConnection, false, false);
+				sourceConnection, false, false, true);
 		List<String> targetPartitionedTableNames =
 			DatabaseUtil.getPartitionedTableNames(
-				targetConnection, false, false);
+				targetConnection, false, false, true);
 
 		for (String sourcePartitionedTableName : sourcePartitionedTableNames) {
 			if (targetPartitionedTableNames.contains(

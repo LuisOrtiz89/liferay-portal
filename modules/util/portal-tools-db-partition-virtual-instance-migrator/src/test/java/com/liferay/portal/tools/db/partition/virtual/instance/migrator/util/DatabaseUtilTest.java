@@ -116,14 +116,22 @@ public class DatabaseUtilTest {
 
 	@Test
 	public void testCopyTableStructures() throws Exception {
-		_testCopyTableStructures(false, Arrays.asList("Table2"), false, false);
-		_testCopyTableStructures(false, Arrays.asList("Table2"), false, true);
-		_testCopyTableStructures(false, Arrays.asList("Table2"), true, false);
-		_testCopyTableStructures(false, Arrays.asList("Table2"), true, true);
-		_testCopyTableStructures(true, Collections.emptyList(), false, true);
-		_testCopyTableStructures(true, Collections.emptyList(), true, true);
-		_testCopyTableStructures(true, Arrays.asList("Table1"), false, false);
-		_testCopyTableStructures(true, Arrays.asList("Table1"), true, false);
+		_testCopyTableStructures(
+			false, Arrays.asList("Table2"), false, false, true);
+		_testCopyTableStructures(
+			false, Arrays.asList("Table2"), false, true, true);
+		_testCopyTableStructures(
+			false, Arrays.asList("Table2"), true, false, true);
+		_testCopyTableStructures(
+			false, Arrays.asList("Table2"), true, true, true);
+		_testCopyTableStructures(
+			true, Collections.emptyList(), false, true, true);
+		_testCopyTableStructures(
+			true, Collections.emptyList(), true, true, true);
+		_testCopyTableStructures(
+			true, Arrays.asList("Table1"), false, false, true);
+		_testCopyTableStructures(
+			true, Arrays.asList("Table1"), true, false, true);
 	}
 
 	@Test
@@ -149,7 +157,7 @@ public class DatabaseUtilTest {
 	@Test
 	public void testGetPartitionedTableNames() throws Exception {
 		_testGetPartitionedTableNames(
-			true, true,
+			true, true, true,
 			tableNames -> {
 				Assert.assertTrue(tableNames.size() == 4);
 
@@ -159,7 +167,7 @@ public class DatabaseUtilTest {
 				Assert.assertTrue(tableNames.contains("Table2"));
 			});
 		_testGetPartitionedTableNames(
-			false, false,
+			false, false, true,
 			tableNames -> {
 				Assert.assertTrue(tableNames.size() == 2);
 
@@ -169,7 +177,7 @@ public class DatabaseUtilTest {
 				Assert.assertTrue(tableNames.contains("Table2"));
 			});
 		_testGetPartitionedTableNames(
-			true, false,
+			true, false, true,
 			tableNames -> {
 				Assert.assertTrue(tableNames.size() == 3);
 
@@ -179,7 +187,7 @@ public class DatabaseUtilTest {
 				Assert.assertTrue(tableNames.contains("Table2"));
 			});
 		_testGetPartitionedTableNames(
-			false, true,
+			false, true, true,
 			tableNames -> {
 				Assert.assertTrue(tableNames.size() == 3);
 
@@ -623,7 +631,7 @@ public class DatabaseUtilTest {
 
 	private void _testCopyTableStructures(
 			boolean controlTables, List<String> excludedTableNames,
-			boolean local, boolean objectTables)
+			boolean local, boolean objectTables, boolean regularTables)
 		throws Exception {
 
 		_testOutByteArrayOutputStream.reset();
@@ -656,8 +664,8 @@ public class DatabaseUtilTest {
 		);
 
 		List<String> copiedTables = DatabaseUtil.copyTableStructures(
-			controlTables, excludedTableNames, objectTables, _sourceConnection,
-			_TARGET_CATALOG_NAME, targetConnection);
+			controlTables, excludedTableNames, objectTables, regularTables,
+			_sourceConnection, _TARGET_CATALOG_NAME, targetConnection);
 
 		List<String> expectedTables = new ArrayList<>();
 
@@ -736,7 +744,7 @@ public class DatabaseUtilTest {
 	}
 
 	private void _testGetPartitionedTableNames(
-			boolean controlTables, boolean objectTables,
+			boolean controlTables, boolean objectTables, boolean regularTables,
 			Consumer<List<String>> consumer)
 		throws Exception {
 
@@ -744,7 +752,7 @@ public class DatabaseUtilTest {
 
 		consumer.accept(
 			DatabaseUtil.getPartitionedTableNames(
-				_sourceConnection, controlTables, objectTables));
+				_sourceConnection, controlTables, objectTables, regularTables));
 	}
 
 	private void _testGetReleasesMap(
