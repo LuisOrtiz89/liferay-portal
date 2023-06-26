@@ -109,6 +109,17 @@ public class Migrator {
 		DatabaseUtil.createControlTableViews(newCatalog, targetConnection);
 
 		_migrateCompanyTable(sourceConnection, targetConnection);
+
+		_migrateVirtualHostTable(sourceConnection, targetConnection);
+	}
+
+	private static void _migrateVirtualHostTable(
+			Connection sourceConnection, Connection targetConnection)
+		throws Exception {
+
+		DatabaseUtil.copyTableRecordsByCompanyId(
+			DatabaseUtil.getCompanyId(sourceConnection), sourceConnection,
+			"VirtualHost", targetConnection);
 	}
 
 }
