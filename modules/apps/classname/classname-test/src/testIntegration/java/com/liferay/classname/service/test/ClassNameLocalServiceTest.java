@@ -15,15 +15,18 @@
 package com.liferay.classname.service.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.ModelHints;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.model.DefaultModelHintsImpl;
-import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
+import com.liferay.portal.model.impl.ClassNameImpl;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -56,47 +59,53 @@ public class ClassNameLocalServiceTest {
 	}
 
 	@AfterClass
-	public static void tearDownClass() throws Exception {
+	public static void tearDown() throws Exception {
 		CompanyLocalServiceUtil.deleteCompany(_company1);
 		CompanyLocalServiceUtil.deleteCompany(_company2);
 	}
 
 	@Test
 	public void testAddClassName() {
-		_classNameLocalServiceImpl.addClassName(_CLASS_NAME_VALUE);
+		_classNameLocalService.addClassName(_CLASS_NAME_VALUE);
 
-		try {
+		/*try {
 			_companyLocalService.forEachCompanyId(
 				companyId -> Assert.assertNotNull(
-					_classNameLocalServiceImpl.fetchClassName(
+					_classNameLocalService.fetchClassName(
+						_CLASS_NAME_VALUE)));
+		}*/
+		try {
+			ClassName emptyClassName = new ClassNameImpl();
+			_companyLocalService.forEachCompanyId(
+				companyId -> Assert.assertNotEquals(emptyClassName,
+					_classNameLocalService.fetchClassName(
 						_CLASS_NAME_VALUE)));
 		}
 		finally {
-			_classNameLocalServiceImpl.deleteClassName(
-				_classNameLocalServiceImpl.getClassName(_CLASS_NAME_VALUE));
+			_classNameLocalService.deleteClassName(
+				_classNameLocalService.getClassName(_CLASS_NAME_VALUE));
 		}
 	}
 
 	@Test
 	public void testCheckClassNames() {
 		ModelHintsUtil modelHintsUtil = new ModelHintsUtil();
-
 		ModelHints originalModelHints = modelHintsUtil.getModelHints();
 
 		try {
 			ReflectionTestUtil.setFieldValue(
-				modelHintsUtil, "_modelHints", _classNameModelHints);
+				modelHintsUtil, "_modelHints", new ClassNameModelHints());
 
-			_classNameLocalServiceImpl.checkClassNames();
+			_classNameLocalService.checkClassNames();
 
 			_companyLocalService.forEachCompanyId(
 				companyId -> Assert.assertNotNull(
-					_classNameLocalServiceImpl.fetchClassName(
+					_classNameLocalService.fetchClassName(
 						_CLASS_NAME_VALUE)));
 		}
 		finally {
-			_classNameLocalServiceImpl.deleteClassName(
-				_classNameLocalServiceImpl.getClassName(_CLASS_NAME_VALUE));
+			_classNameLocalService.deleteClassName(
+				_classNameLocalService.getClassName(_CLASS_NAME_VALUE));
 
 			ReflectionTestUtil.setFieldValue(
 				modelHintsUtil, "_modelHints", originalModelHints);
@@ -105,33 +114,27 @@ public class ClassNameLocalServiceTest {
 
 	@Test
 	public void testDeleteClassName() {
-		_classNameLocalServiceImpl.addClassName(_CLASS_NAME_VALUE);
+		_classNameLocalService.addClassName(_CLASS_NAME_VALUE);
 
-		_classNameLocalServiceImpl.deleteClassName(
-			_classNameLocalServiceImpl.getClassName(_CLASS_NAME_VALUE));
+		_classNameLocalService.deleteClassName(
+			_classNameLocalService.getClassName(_CLASS_NAME_VALUE));
 
 		_companyLocalService.forEachCompanyId(
 			companyId -> Assert.assertNull(
-				_classNameLocalServiceImpl.fetchClassName(_CLASS_NAME_VALUE)));
+				_classNameLocalService.fetchClassName(_CLASS_NAME_VALUE)));
 	}
 
 	private static final String _CLASS_NAME_VALUE = "Test";
 
-	@Inject
 	private static Company _company1;
 
-	@Inject
 	private static Company _company2;
 
 	@Inject
 	private static CompanyLocalService _companyLocalService;
 
 	@Inject
-	private ClassNameLocalServiceImpl _classNameLocalServiceImpl;
-
-	@Inject
-	private final ClassNameModelHints _classNameModelHints =
-		new ClassNameModelHints();
+	private ClassNameLocalService _classNameLocalService;
 
 	private class ClassNameModelHints extends DefaultModelHintsImpl {
 

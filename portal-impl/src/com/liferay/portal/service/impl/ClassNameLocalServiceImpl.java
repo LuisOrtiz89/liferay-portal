@@ -68,9 +68,9 @@ public class ClassNameLocalServiceImpl
 					classNamePersistence.update(className);
 				}
 
-				//if (companyId == currentCompanyId) {
+				if (companyId == currentCompanyId) {
 					currentClassName.set(className);
-				//}
+				}
 			});
 
 		return currentClassName.get();
@@ -103,13 +103,13 @@ public class ClassNameLocalServiceImpl
 
 		_companyLocalService.forEachCompanyId(
 			companyId -> {
-				_classNames.remove(_getCompoundValue(className.getValue()));
+				ClassName actualClassName = _classNames.remove(_getCompoundValue(className.getValue()));
 
 				if (companyId == defaultCompanyId) {
 					defaultClassName.set(className);
 				}
 
-				classNamePersistence.remove(className); });
+				classNamePersistence.remove(actualClassName); });
 
 		return defaultClassName.get();
 	}

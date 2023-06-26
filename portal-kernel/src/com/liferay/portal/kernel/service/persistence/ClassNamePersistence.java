@@ -108,7 +108,7 @@ public interface ClassNamePersistence extends BasePersistence<ClassName> {
 	 * Removes the class name with the primary key from the database. Also notifies the appropriate model listeners.
 	 *
 	 * @param classNameId the primary key of the class name
-	 * @return the class name that was removed
+	 * @return the class name that was rmoved
 	 * @throws NoSuchClassNameException if a class name with the primary key could not be found
 	 */
 	public ClassName remove(long classNameId) throws NoSuchClassNameException;

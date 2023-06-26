@@ -20,9 +20,11 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.model.ModelHints;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -30,21 +32,19 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.model.DefaultModelHintsImpl;
-import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
 import com.liferay.portal.service.impl.CompanyLocalServiceImpl;
 import com.liferay.portal.spring.aop.AopInvocationHandler;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.util.PortalInstances;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -140,21 +140,36 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	@Test
 	public void testDeleteClassName() throws Exception {
-		DBPartitionUtil.forEachCompanyId(
-			companyId -> db.runSQL(
-				StringBundler.concat(
-					"alter table ", TEST_CONTROL_TABLE_NAME, " add column ",
-					TEST_CONTROL_TABLE_NEW_COLUMN, " bigint")));
-
-
-
-		createIndex(TEST_CONTROL_TABLE_NAME);
+		AtomicReference<Boolean> firstCompany = new AtomicReference<>(true);
 
 		DBPartitionUtil.forEachCompanyId(
-			companyId -> dropIndex(TEST_CONTROL_TABLE_NAME));
+			companyId -> {
+				if (!firstCompany.get()) {
+					db.runSQL(
+						StringBundler.concat(
+							"insert into ", _DB_PARTITION_SCHEMA_NAME_PREFIX,
+							companyId, StringPool.PERIOD, "ClassName_ ",
+							"(mvccVersion, classNameId, value) values (0, 2, ",
+							_CLASS_NAME_VALUE, ")"));
+				}
+				else {
+					db.runSQL(
+						StringBundler.concat(
+							"insert into ", _DB_PARTITION_SCHEMA_NAME_PREFIX,
+							companyId, StringPool.PERIOD, "ClassName_ ",
+							"(mvccVersion, classNameId, value) values (0, 1, ",
+							_CLASS_NAME_VALUE, ")"));
+					firstCompany.set(false);
+				}
+			});
 
-		Assert.assertTrue(
-			!dbInspector.hasIndex(TEST_CONTROL_TABLE_NAME, TEST_INDEX_NAME));
+		_classNameLocalService.deleteClassName(_classNameLocalService
+			.getClassName(_CLASS_NAME_VALUE));
+
+		DBPartitionUtil.forEachCompanyId(
+		companyId -> Assert.assertNull(
+			_classNameLocalService.fetchClassName(
+				_CLASS_NAME_VALUE)));
 	}
 
 	@Test
@@ -233,7 +248,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			ReflectionTestUtil.setFieldValue(
 				modelHintsUtil, "_modelHints", _classNameModelHints);
 
-			_classNameLocalServiceImpl.addClassName(_classNameModelHints.getModels().get(0));
+			_classNameLocalService.addClassName(_classNameModelHints.getModels().get(0));
 
 			db.runSQL(
 				StringBundler.concat(
@@ -242,19 +257,19 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 			DBPartitionUtil.forEachCompanyId(
 				companyId -> Assert.assertNotNull(
-					_classNameLocalServiceImpl.fetchClassName(_CLASS_NAME_VALUE)));
+					_classNameLocalService.fetchClassName(_CLASS_NAME_VALUE)));
 
-			_classNameLocalServiceImpl.checkClassNames();
+			_classNameLocalService.checkClassNames();
 
 			try {
 				_companyLocalService.forEachCompanyId(
 					companyId -> {
 						if (companyId == COMPANY_IDS[0]) {
-							Assert.assertNull(_classNameLocalServiceImpl.fetchClassName(
+							Assert.assertNull(_classNameLocalService.fetchClassName(
 								_CLASS_NAME_VALUE));
 						}
 						else {
-							Assert.assertNotNull(_classNameLocalServiceImpl.fetchClassName(
+							Assert.assertNotNull(_classNameLocalService.fetchClassName(
 								_CLASS_NAME_VALUE));
 						}
 					});
@@ -264,8 +279,8 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			}
 		}
 		finally {
-			_classNameLocalServiceImpl.deleteClassName(
-				_classNameLocalServiceImpl.getClassName(_CLASS_NAME_VALUE));
+			_classNameLocalService.deleteClassName(
+				_classNameLocalService.getClassName(_CLASS_NAME_VALUE));
 
 			ReflectionTestUtil.setFieldValue(
 				modelHintsUtil, "_modelHints", originalModelHints);
@@ -385,7 +400,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 	private CompanyLocalService _companyLocalService;
 
 	@Inject
-	private ClassNameLocalServiceImpl _classNameLocalServiceImpl;
+	private ClassNameLocalService _classNameLocalService;
 
 	@Inject
 	private final ClassNameModelHints _classNameModelHints =
