@@ -18,7 +18,6 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.DBPartitionUtil;
-import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.cache.CacheRegistryItem;
 import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.log.Log;
@@ -26,7 +25,6 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
-import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.Validator;
@@ -48,27 +46,35 @@ public class ClassNameLocalServiceImpl
 	@Override
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public ClassName addClassName(String value) {
-		long currentCompanyId = CompanyThreadLocal.getCompanyId();
 		AtomicReference<ClassName> currentClassName = new AtomicReference<>();
+		long currentCompanyId = CompanyThreadLocal.getCompanyId();
 
-		_companyLocalService.forEachCompanyId(
-			companyId -> {
-				ClassName className = classNamePersistence.fetchByValue(value);
+		try {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					ClassName className = classNamePersistence.fetchByValue(
+						value);
 
-				if (className == null) {
-					long classNameId = counterLocalService.increment();
+					if (className == null) {
+						long classNameId = counterLocalService.increment();
 
-					className = classNamePersistence.create(classNameId);
+						className = classNamePersistence.create(classNameId);
 
-					className.setValue(value);
+						className.setValue(value);
 
-					classNamePersistence.update(className);
-				}
+						className = classNamePersistence.update(className);
+					}
 
-				if (companyId == currentCompanyId) {
-					currentClassName.set(className);
-				}
-			});
+					if ((companyId == null) ||
+						(companyId == currentCompanyId)) {
+
+						currentClassName.set(className);
+					}
+				});
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
 
 		return currentClassName.get();
 	}
@@ -76,40 +82,53 @@ public class ClassNameLocalServiceImpl
 	@Override
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public void checkClassNames() {
+		try {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					List<ClassName> classNames = classNamePersistence.findAll();
 
-		_companyLocalService.forEachCompanyId(
-			companyId ->
-			{
-				List<ClassName> classNames = classNamePersistence.findAll();
+					for (ClassName className : classNames) {
+						_classNames.put(
+							_getCompoundValue(className.getValue()), className);
+					}
 
-				for (ClassName className : classNames) {
-					_classNames.put(_getCompoundValue(className.getValue()), className);
-				}
+					List<String> models = ModelHintsUtil.getModels();
 
-				List<String> models = ModelHintsUtil.getModels();
-
-				for (String model : models) {
-					getClassName(model);
-				}
-			});
+					for (String model : models) {
+						getClassName(model);
+					}
+				});
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 	@Override
 	public ClassName deleteClassName(ClassName className) {
-		long defaultCompanyId = CompanyThreadLocal.getCompanyId();
-		AtomicReference<ClassName> defaultClassName = new AtomicReference<>();
+		AtomicReference<ClassName> currentClassName = new AtomicReference<>();
+		long currentCompanyId = CompanyThreadLocal.getCompanyId();
 
-		_companyLocalService.forEachCompanyId(
-			companyId -> {
-				_classNames.remove(_getCompoundValue(className.getValue()));
+		try {
+			DBPartitionUtil.forEachCompanyId(
+				companyId -> {
+					ClassName className1 = _classNames.remove(
+						_getCompoundValue(className.getValue()));
 
-				if (companyId == defaultCompanyId) {
-					defaultClassName.set(className);
-				}
+					if ((companyId == null) ||
+						(companyId == currentCompanyId)) {
 
-				classNamePersistence.remove(className); });
+						currentClassName.set(className);
+					}
 
-		return defaultClassName.get();
+					classNamePersistence.remove(className1);
+				});
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
+
+		return currentClassName.get();
 	}
 
 	@Override
@@ -182,14 +201,6 @@ public class ClassNameLocalServiceImpl
 		return className.getClassNameId();
 	}
 
-	private String _getCompoundValue(String value) {
-		if (DBPartitionUtil.isPartitionEnabled()) {
-			return StringBundler.concat(value, StringPool.AT,
-				CompanyThreadLocal.getCompanyId());
-		}
-		return value;
-	}
-
 	@Override
 	public String getRegistryName() {
 		return ClassNameLocalServiceImpl.class.getName();
@@ -200,15 +211,20 @@ public class ClassNameLocalServiceImpl
 		_classNames.clear();
 	}
 
+	private String _getCompoundValue(String value) {
+		if (DBPartitionUtil.isPartitionEnabled()) {
+			return StringBundler.concat(
+				value, StringPool.AT, CompanyThreadLocal.getCompanyId());
+		}
+
+		return value;
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		ClassNameLocalServiceImpl.class);
 
 	private static final Map<String, ClassName> _classNames =
 		new ConcurrentHashMap<>();
-
 	private static final ClassName _nullClassName = new ClassNameImpl();
-
-	@BeanReference(type = CompanyLocalService.class)
-	private CompanyLocalService _companyLocalService;
 
 }
