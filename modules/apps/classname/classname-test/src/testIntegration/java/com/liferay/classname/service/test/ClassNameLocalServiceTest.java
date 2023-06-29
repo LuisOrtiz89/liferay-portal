@@ -25,7 +25,7 @@ import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.model.DefaultModelHintsImpl;
-import com.liferay.portal.model.impl.ClassNameImpl;
+import com.liferay.portal.service.impl.ClassNameLocalServiceImpl;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -55,6 +55,9 @@ public class ClassNameLocalServiceTest {
 	public static void setUpClass() throws Exception {
 		_company1 = CompanyTestUtil.addCompany();
 		_company2 = CompanyTestUtil.addCompany();
+
+		_emptyClassName = ReflectionTestUtil.getFieldValue(
+			ClassNameLocalServiceImpl.class, "_nullClassName");
 	}
 
 	@AfterClass
@@ -67,18 +70,10 @@ public class ClassNameLocalServiceTest {
 	public void testAddClassName() {
 		_classNameLocalService.addClassName(_CLASS_NAME_VALUE);
 
-		/*try {
-			_companyLocalService.forEachCompanyId(
-				companyId -> Assert.assertNotNull(
-					_classNameLocalService.fetchClassName(
-						_CLASS_NAME_VALUE)));
-		}*/
 		try {
-			ClassName emptyClassName = new ClassNameImpl();
-
 			_companyLocalService.forEachCompanyId(
 				companyId -> Assert.assertNotEquals(
-					emptyClassName,
+					_emptyClassName,
 					_classNameLocalService.fetchClassName(_CLASS_NAME_VALUE)));
 		}
 		finally {
@@ -94,21 +89,20 @@ public class ClassNameLocalServiceTest {
 		ModelHints originalModelHints = modelHintsUtil.getModelHints();
 
 		try {
-			ReflectionTestUtil.setFieldValue(
-				modelHintsUtil, "_modelHints", new ClassNameModelHints());
+			modelHintsUtil.setModelHints(new ClassNameModelHints());
 
 			_classNameLocalService.checkClassNames();
 
 			_companyLocalService.forEachCompanyId(
-				companyId -> Assert.assertNotNull(
+				companyId -> Assert.assertNotEquals(
+					_emptyClassName,
 					_classNameLocalService.fetchClassName(_CLASS_NAME_VALUE)));
 		}
 		finally {
 			_classNameLocalService.deleteClassName(
 				_classNameLocalService.getClassName(_CLASS_NAME_VALUE));
 
-			ReflectionTestUtil.setFieldValue(
-				modelHintsUtil, "_modelHints", originalModelHints);
+			modelHintsUtil.setModelHints(originalModelHints);
 		}
 	}
 
@@ -119,15 +113,16 @@ public class ClassNameLocalServiceTest {
 		_classNameLocalService.deleteClassName(
 			_classNameLocalService.getClassName(_CLASS_NAME_VALUE));
 
-		ClassName emptyClassName = new ClassNameImpl();
-
 		_companyLocalService.forEachCompanyId(
 			companyId -> Assert.assertEquals(
-				emptyClassName,
+				_emptyClassName,
 				_classNameLocalService.fetchClassName(_CLASS_NAME_VALUE)));
 	}
 
-	private static final String _CLASS_NAME_VALUE = "Test";
+	private static final String _CLASS_NAME_VALUE = "class.name.test";
+
+	@Inject
+	private static ClassNameLocalService _classNameLocalService;
 
 	private static Company _company1;
 	private static Company _company2;
@@ -135,14 +130,13 @@ public class ClassNameLocalServiceTest {
 	@Inject
 	private static CompanyLocalService _companyLocalService;
 
-	@Inject
-	private ClassNameLocalService _classNameLocalService;
+	private static ClassName _emptyClassName;
 
 	private class ClassNameModelHints extends DefaultModelHintsImpl {
 
 		@Override
 		public List<String> getModels() {
-			return Arrays.asList("Test");
+			return Arrays.asList(_CLASS_NAME_VALUE);
 		}
 
 	}
