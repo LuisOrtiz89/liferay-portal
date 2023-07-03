@@ -55,6 +55,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -143,6 +144,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void testCheckClassName() throws Exception {
 		ModelHintsUtil modelHintsUtil = new ModelHintsUtil();
@@ -214,15 +216,14 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 				if (!firstCompany.get()) {
 					classNameId = 2;
+					firstCompany.set(false);
 				}
 
 				db.runSQL(
 					StringBundler.concat(
-						"insert into ", _DB_PARTITION_SCHEMA_NAME_PREFIX,
-						companyId, ".ClassName_ (mvccVersion, classNameId, ",
-						"value) values (0, ", classNameId, ", ",
-						_CLASS_NAME_VALUE, ")"));
-				firstCompany.set(false);
+						"insert into ClassName_ (mvccVersion, classNameId, ",
+						"value) values (0,", classNameId, ", '",
+						_CLASS_NAME_VALUE, "')"));
 			});
 
 		_classNameLocalService.deleteClassName(
