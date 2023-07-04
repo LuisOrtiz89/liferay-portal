@@ -14,6 +14,7 @@
 
 package com.liferay.portal.upgrade.v7_4_x;
 
+import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.upgrade.BaseExternalReferenceCodeUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeProcess;
@@ -319,6 +320,12 @@ public class PortalUpgradeProcessRegistryImpl
 				}
 
 			});
+
+		upgradeVersionTreeMap.put(
+			new Version(26, 4, 1), new UpgradeDBPartitionDLFileEntryType());
+
+		upgradeVersionTreeMap.put(
+			new Version(26, 5, 0), new UpgradeClassName());
 	}
 
 }
