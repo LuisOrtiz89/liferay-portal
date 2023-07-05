@@ -14,7 +14,6 @@
 
 package com.liferay.portal.upgrade.v7_4_x;
 
-import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.upgrade.BaseExternalReferenceCodeUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeProcess;
