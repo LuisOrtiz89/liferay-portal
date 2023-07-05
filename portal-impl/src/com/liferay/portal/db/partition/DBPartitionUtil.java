@@ -188,6 +188,24 @@ public class DBPartitionUtil {
 		return _dropDBPartition(companyId);
 	}
 
+	public static void replaceViewByTable(
+			String tableName, Connection connection)
+		throws Exception {
+
+		try (Statement statement = connection.createStatement()) {
+			if (getCurrentCompanyId() != _defaultCompanyId) {
+				_getDropViewSQL(getCurrentCompanyId(), tableName);
+
+				_getCreateTableSQL(getCurrentCompanyId(), tableName);
+
+				_copyData(
+					tableName, _defaultSchemaName,
+					_getSchemaName(getCurrentCompanyId()), statement,
+					StringPool.BLANK);
+			}
+		}
+	}
+
 	public static void setDefaultCompanyId(Connection connection)
 		throws SQLException {
 
@@ -528,24 +546,6 @@ public class DBPartitionUtil {
 		}
 
 		return _DATABASE_PARTITION_SCHEMA_NAME_PREFIX + companyId;
-	}
-
-	public static void replaceViewByTable(String tableName, Connection connection)
-		throws Exception {
-
-		try (Statement statement = connection.createStatement()) {
-
-			if (getCurrentCompanyId() != _defaultCompanyId) {
-
-				_getDropViewSQL(getCurrentCompanyId(), tableName);
-
-				_getCreateTableSQL(getCurrentCompanyId(), tableName);
-
-				_copyData(tableName, _defaultSchemaName,
-					_getSchemaName(getCurrentCompanyId()),
-					statement, StringPool.BLANK);
-			}
-		}
 	}
 
 	private static String _getSessionCharsetEncoding() {
