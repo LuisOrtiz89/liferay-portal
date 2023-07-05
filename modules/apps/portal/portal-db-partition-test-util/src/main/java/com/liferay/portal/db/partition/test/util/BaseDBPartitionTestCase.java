@@ -186,10 +186,10 @@ public abstract class BaseDBPartitionTestCase {
 		ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_SCHEMA_NAME_PREFIX",
 			_DATABASE_PARTITION_SCHEMA_NAME_PREFIX);
-		ReflectionTestUtil.setFieldValue(
+		/*ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_THREAD_POOL_ENABLED",
 			true);
-
+*/
 		DBPartitionUtil.setDefaultCompanyId(portal.getDefaultCompanyId());
 
 		DataSource dbPartitionDataSource = _wrapDataSource(
