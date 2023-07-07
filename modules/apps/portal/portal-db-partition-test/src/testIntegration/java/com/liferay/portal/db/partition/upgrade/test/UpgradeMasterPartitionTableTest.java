@@ -14,11 +14,12 @@
 
 package com.liferay.portal.db.partition.upgrade.test;
 
+import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
-import com.liferay.portal.upgrade.v7_4_x.UpgradeClassName;
+import com.liferay.portal.upgrade.v7_4_x.UpgradeMasterPartitionTable;
 
 import java.sql.Statement;
 
@@ -26,19 +27,17 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
+import org.junit.runner.RunWith;
 
 /**
  * @author Sofía Mendoza Gutiérrez
  */
-
-public class UpgradeClassNameTest extends BaseDBPartitionTestCase {
+@RunWith(Arquillian.class)
+public class UpgradeMasterPartitionTableTest extends BaseDBPartitionTestCase {
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
 		enableDBPartition();
-
-		createTable(TEST_TABLE_NAME);
 
 		addDBPartitions();
 
@@ -51,8 +50,6 @@ public class UpgradeClassNameTest extends BaseDBPartitionTestCase {
 
 		removeDBPartitions(false);
 
-		dropTable(TEST_TABLE_NAME);
-
 		disableDBPartition();
 	}
 
@@ -62,22 +59,18 @@ public class UpgradeClassNameTest extends BaseDBPartitionTestCase {
 
 		_createViewSQL(TEST_TABLE_NAME);
 
-		UpgradeProcess upgradeProcess = new UpgradeClassName();
+		UpgradeProcess upgradeProcess = new UpgradeMasterPartitionTable(
+			TEST_TABLE_NAME);
 
 		upgradeProcess.upgrade();
 
-		boolean exists = true;
-
-		try (Statement statement = connection.createStatement()) {
-			_defaultSchemaName = connection.getCatalog();
-
-			exists = statement.execute(
+		Assert.assertTrue(
+			dbInspector.hasTable(
 				StringBundler.concat(
-					"select * from ", getSchemaName(COMPANY_IDS[0]),
-					StringPool.PERIOD, TEST_TABLE_NAME));
-		}
+					getSchemaName(COMPANY_IDS[0]), StringPool.PERIOD,
+					TEST_TABLE_NAME)));
 
-		Assert.assertFalse(exists);
+		dropTable(TEST_TABLE_NAME);
 	}
 
 	private void _createViewSQL(String viewName) throws Exception {
@@ -93,4 +86,5 @@ public class UpgradeClassNameTest extends BaseDBPartitionTestCase {
 	}
 
 	private static String _defaultSchemaName;
+
 }
