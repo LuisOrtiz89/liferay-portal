@@ -20,14 +20,16 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 /**
  * @author Sofía Mendoza Gutiérrez
  */
+public class UpgradeMasterPartitionTable extends UpgradeProcess {
 
-public class UpgradeClassName extends UpgradeProcess {
+	public UpgradeMasterPartitionTable(String tableName) {
+		_TABLE_NAME = tableName;
+	}
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		DBPartitionUtil.replaceViewByTable(tableName, connection);
+		DBPartitionUtil.replaceViewByTable(_TABLE_NAME, connection);
 	}
 
-	private static final String tableName = "ClassName_";
-
+	private static String _TABLE_NAME;
 }
