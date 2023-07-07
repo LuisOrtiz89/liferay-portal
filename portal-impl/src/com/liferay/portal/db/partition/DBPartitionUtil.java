@@ -194,9 +194,11 @@ public class DBPartitionUtil {
 
 		try (Statement statement = connection.createStatement()) {
 			if (getCurrentCompanyId() != _defaultCompanyId) {
-				_getDropViewSQL(getCurrentCompanyId(), tableName);
+				statement.execute(
+					_getDropViewSQL(getCurrentCompanyId(), tableName));
 
-				_getCreateTableSQL(getCurrentCompanyId(), tableName);
+				statement.execute(
+					_getCreateTableSQL(getCurrentCompanyId(), tableName));
 
 				_copyData(
 					tableName, _defaultSchemaName,

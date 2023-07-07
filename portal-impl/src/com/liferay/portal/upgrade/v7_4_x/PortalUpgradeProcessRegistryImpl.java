@@ -324,7 +324,8 @@ public class PortalUpgradeProcessRegistryImpl
 			new Version(26, 4, 1), new UpgradeDBPartitionDLFileEntryType());
 
 		upgradeVersionTreeMap.put(
-			new Version(26, 5, 0), new UpgradeClassName());
+			new Version(26, 5, 0),
+			new UpgradeMasterPartitionTable("ClassName_"));
 	}
 
 }
