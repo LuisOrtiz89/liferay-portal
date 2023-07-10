@@ -136,14 +136,14 @@ public abstract class BaseDBPartitionTestCase {
 	protected static void disableDBPartition() {
 		DataAccess.cleanUp(connection);
 
-		if (_dbPartitionEnabled) {
+		if (_dbPartitionEnabledTest) {
 			return;
 		}
 
 		ReflectionTestUtil.setFieldValue(
 			DBInitUtil.class, "_dataSource", _currentDataSource);
 		ReflectionTestUtil.setFieldValue(
-			DBPartitionUtil.class, "_DATABASE_PARTITION_ENABLED", false);
+			DBPartitionUtil.class, "_databasePartitionEnabledTest", false);
 		ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_SCHEMA_NAME_PREFIX",
 			StringPool.BLANK);
@@ -174,15 +174,14 @@ public abstract class BaseDBPartitionTestCase {
 	protected static void enableDBPartition() throws Exception {
 		CompanyThreadLocal.setCompanyId(PortalInstances.getDefaultCompanyId());
 
-		_dbPartitionEnabled = GetterUtil.getBoolean(
-			_props.get("database.partition.enabled"));
+		_dbPartitionEnabledTest = DBPartitionUtil.isPartitionEnabled();
 
-		if (_dbPartitionEnabled) {
+		if (_dbPartitionEnabledTest) {
 			return;
 		}
 
 		ReflectionTestUtil.setFieldValue(
-			DBPartitionUtil.class, "_DATABASE_PARTITION_ENABLED", true);
+			DBPartitionUtil.class, "_databasePartitionEnabledTest", true);
 		ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_SCHEMA_NAME_PREFIX",
 			_DATABASE_PARTITION_SCHEMA_NAME_PREFIX);
@@ -225,7 +224,7 @@ public abstract class BaseDBPartitionTestCase {
 	}
 
 	protected static String getSchemaName(long companyId) {
-		if (_dbPartitionEnabled) {
+		if (_dbPartitionEnabledTest) {
 			return (String)ReflectionTestUtil.getFieldValue(
 				DBPartitionUtil.class,
 				"_DATABASE_PARTITION_SCHEMA_NAME_PREFIX") + companyId;
@@ -385,7 +384,7 @@ public abstract class BaseDBPartitionTestCase {
 
 	private static final DataSource _currentDataSource =
 		ReflectionTestUtil.getFieldValue(DBInitUtil.class, "_dataSource");
-	private static boolean _dbPartitionEnabled;
+	private static boolean _dbPartitionEnabledTest;
 	private static LazyConnectionDataSourceProxy _lazyConnectionDataSourceProxy;
 
 	@Inject

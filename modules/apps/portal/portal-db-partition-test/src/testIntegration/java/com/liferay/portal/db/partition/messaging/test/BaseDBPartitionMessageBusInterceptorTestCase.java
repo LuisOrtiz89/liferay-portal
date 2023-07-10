@@ -223,9 +223,9 @@ public abstract class BaseDBPartitionMessageBusInterceptorTestCase
 	public void testSendMessageWithCompanyInDeletionProcess()
 		throws InterruptedException {
 
-		boolean databasePartitionEnabled =
+		boolean databasePartitionEnabledTest =
 			ReflectionTestUtil.getAndSetFieldValue(
-				DBPartitionUtil.class, "_DATABASE_PARTITION_ENABLED", true);
+				DBPartitionUtil.class, "_databasePartitionEnabledTest", true);
 
 		try (SafeCloseable safeCloseable =
 				PortalInstances.setCompanyInDeletionProcess(
@@ -240,8 +240,8 @@ public abstract class BaseDBPartitionMessageBusInterceptorTestCase
 		}
 		finally {
 			ReflectionTestUtil.setFieldValue(
-				DBPartitionUtil.class, "_DATABASE_PARTITION_ENABLED",
-				databasePartitionEnabled);
+				DBPartitionUtil.class, "_databasePartitionEnabledTest",
+				databasePartitionEnabledTest);
 		}
 	}
 
