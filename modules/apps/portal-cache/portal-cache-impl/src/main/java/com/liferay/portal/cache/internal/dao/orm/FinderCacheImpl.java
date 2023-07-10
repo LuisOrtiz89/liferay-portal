@@ -19,6 +19,7 @@ import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory
 import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.petra.lang.HashUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.cache.CacheRegistryItem;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
 import com.liferay.portal.kernel.cache.MultiVMPool;
@@ -470,8 +471,7 @@ public class FinderCacheImpl
 
 	@Activate
 	protected void activate(BundleContext bundleContext) {
-		_dbPartitionEnabled = GetterUtil.getBoolean(
-			_props.get("database.partition.enabled"));
+		_dbPartitionEnabled = DBPartitionUtil.isPartitionEnabled();
 
 		_valueObjectFinderCacheEnabled = GetterUtil.getBoolean(
 			_props.get(PropsKeys.VALUE_OBJECT_FINDER_CACHE_ENABLED));

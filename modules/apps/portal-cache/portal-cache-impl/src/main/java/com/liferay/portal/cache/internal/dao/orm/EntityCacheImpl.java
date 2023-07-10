@@ -18,6 +18,7 @@ import com.liferay.osgi.util.service.Snapshot;
 import com.liferay.petra.lang.CentralizedThreadLocal;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.cache.CacheRegistryItem;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
 import com.liferay.portal.kernel.cache.MultiVMPool;
@@ -262,8 +263,7 @@ public class EntityCacheImpl
 
 	@Activate
 	protected void activate() {
-		_dbPartitionEnabled = GetterUtil.getBoolean(
-			_props.get("database.partition.enabled"));
+		_dbPartitionEnabled = DBPartitionUtil.isPartitionEnabled();
 		_valueObjectEntityCacheEnabled = GetterUtil.getBoolean(
 			_props.get(PropsKeys.VALUE_OBJECT_ENTITY_CACHE_ENABLED));
 		_valueObjectMVCCEntityCacheEnabled = GetterUtil.getBoolean(
