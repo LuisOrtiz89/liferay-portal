@@ -28,7 +28,7 @@ public class UpgradeMasterPartitionTable extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		DBPartitionUtil.replaceViewByTable(_TABLE_NAME, connection);
+		DBPartitionUtil.replaceViewByTable(connection, _TABLE_NAME);
 	}
 
 	private static String _TABLE_NAME;
