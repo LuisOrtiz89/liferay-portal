@@ -201,11 +201,9 @@ public class DBPartitionUtil {
 			long companyId = getCurrentCompanyId();
 
 			if (companyId != _defaultCompanyId) {
-				statement.execute(
-					_getDropViewSQL(companyId, tableName));
+				statement.execute(_getDropViewSQL(companyId, tableName));
 
-				statement.execute(
-					_getCreateTableSQL(companyId, tableName));
+				statement.execute(_getCreateTableSQL(companyId, tableName));
 
 				_copyData(
 					tableName, _defaultSchemaName, _getSchemaName(companyId),
