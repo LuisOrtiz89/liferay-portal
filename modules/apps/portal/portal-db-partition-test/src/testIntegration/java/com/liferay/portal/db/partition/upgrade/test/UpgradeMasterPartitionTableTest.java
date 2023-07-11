@@ -17,6 +17,7 @@ package com.liferay.portal.db.partition.upgrade.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.upgrade.v7_4_x.UpgradeMasterPartitionTable;
@@ -64,11 +65,9 @@ public class UpgradeMasterPartitionTableTest extends BaseDBPartitionTestCase {
 
 		upgradeProcess.upgrade();
 
-		Assert.assertTrue(
-			dbInspector.hasTable(
-				StringBundler.concat(
-					getSchemaName(COMPANY_IDS[0]), StringPool.PERIOD,
-					TEST_TABLE_NAME)));
+		DBPartitionUtil.forEachCompanyId(
+			companyId -> Assert.assertTrue(
+				dbInspector.hasTable(TEST_TABLE_NAME)));
 
 		dropTable(TEST_TABLE_NAME);
 	}
