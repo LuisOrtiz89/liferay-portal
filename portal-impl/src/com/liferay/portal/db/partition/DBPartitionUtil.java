@@ -194,21 +194,22 @@ public class DBPartitionUtil {
 	}
 
 	public static void replaceViewByTable(
-			String tableName, Connection connection)
+			Connection connection, String tableName)
 		throws Exception {
 
 		try (Statement statement = connection.createStatement()) {
-			if (getCurrentCompanyId() != _defaultCompanyId) {
+			long companyId = getCurrentCompanyId();
+
+			if (companyId != _defaultCompanyId) {
 				statement.execute(
-					_getDropViewSQL(getCurrentCompanyId(), tableName));
+					_getDropViewSQL(companyId, tableName));
 
 				statement.execute(
-					_getCreateTableSQL(getCurrentCompanyId(), tableName));
+					_getCreateTableSQL(companyId, tableName));
 
 				_copyData(
-					tableName, _defaultSchemaName,
-					_getSchemaName(getCurrentCompanyId()), statement,
-					StringPool.BLANK);
+					tableName, _defaultSchemaName, _getSchemaName(companyId),
+					statement, StringPool.BLANK);
 			}
 		}
 	}
