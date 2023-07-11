@@ -31,6 +31,6 @@ public class UpgradeMasterPartitionTable extends UpgradeProcess {
 		DBPartitionUtil.replaceViewByTable(connection, _tableName);
 	}
 
-	private static String _tableName;
+	private final String _tableName;
 
 }
