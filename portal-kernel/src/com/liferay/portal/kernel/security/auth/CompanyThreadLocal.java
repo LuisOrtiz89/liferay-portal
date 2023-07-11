@@ -84,6 +84,8 @@ public class CompanyThreadLocal {
 		return () -> {
 			_locked.set(false);
 
+			_syncLastDBPartitionSessionState();
+
 			safeCloseable.close();
 		};
 	}
