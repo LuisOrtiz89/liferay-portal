@@ -225,6 +225,8 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 				firstCompany.set(false);
 			});
 
+		_classNameLocalService.checkClassNames();
+
 		_classNameLocalService.deleteClassName(
 			_classNameLocalService.getClassName(_CLASS_NAME_VALUE));
 
