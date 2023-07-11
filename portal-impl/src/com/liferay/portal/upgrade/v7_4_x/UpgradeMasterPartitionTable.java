@@ -23,13 +23,14 @@ import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 public class UpgradeMasterPartitionTable extends UpgradeProcess {
 
 	public UpgradeMasterPartitionTable(String tableName) {
-		_TABLE_NAME = tableName;
+		_tableName = tableName;
 	}
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		DBPartitionUtil.replaceViewByTable(connection, _TABLE_NAME);
+		DBPartitionUtil.replaceViewByTable(connection, _tableName);
 	}
 
-	private static String _TABLE_NAME;
+	private static String _tableName;
+
 }
