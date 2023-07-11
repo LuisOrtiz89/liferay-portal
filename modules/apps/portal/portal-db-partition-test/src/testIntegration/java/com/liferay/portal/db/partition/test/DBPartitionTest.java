@@ -15,6 +15,7 @@
 package com.liferay.portal.db.partition.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.DBPartitionUtil;
@@ -211,15 +212,14 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 				if (!firstCompany.get()) {
 					classNameId = 2;
+					firstCompany.set(false);
 				}
 
 				db.runSQL(
 					StringBundler.concat(
-						"insert into ", _DB_PARTITION_SCHEMA_NAME_PREFIX,
-						companyId, ".ClassName_ (mvccVersion, classNameId, ",
-						"value) values (0, ", classNameId, ", ",
-						_CLASS_NAME_VALUE, ")"));
-				firstCompany.set(false);
+						"insert into ClassName_ (mvccVersion, classNameId, ",
+						"value) values (0,", classNameId, ", '",
+						_CLASS_NAME_VALUE, "')"));
 			});
 
 		_classNameLocalService.checkClassNames();
@@ -393,12 +393,6 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
-
-	@Inject
-	private CounterLocalService _counterLocalService;
-
-	@Inject
-	private ResourcePermissionLocalService _resourcePermissionLocalService;
 
 	private class ClassNameModelHints extends DefaultModelHintsImpl {
 
