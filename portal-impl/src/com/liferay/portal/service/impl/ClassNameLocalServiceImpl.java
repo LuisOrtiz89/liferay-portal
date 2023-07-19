@@ -11,6 +11,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.cache.CacheRegistryItem;
 import com.liferay.portal.kernel.change.tracking.CTAware;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ClassName;
@@ -41,7 +42,14 @@ public class ClassNameLocalServiceImpl
 		AtomicReference<ClassName> currentClassName = new AtomicReference<>();
 		long currentCompanyId = CompanyThreadLocal.getCompanyId();
 
+		SafeCloseable safeCloseable = null;
+
 		try {
+			if (!DBPartition.isPartitionEnabled()) {
+				safeCloseable = CompanyThreadLocal.setWithSafeCloseable(
+					currentCompanyId);
+			}
+
 			_companyLocalService.forEachCompanyId(
 				companyId -> {
 					ClassName className = classNamePersistence.fetchByValue(
@@ -65,6 +73,11 @@ public class ClassNameLocalServiceImpl
 		catch (Exception exception) {
 			throw new RuntimeException(exception);
 		}
+		finally {
+			if (safeCloseable != null) {
+				safeCloseable.close();
+			}
+		}
 
 		return currentClassName.get();
 	}
@@ -72,7 +85,14 @@ public class ClassNameLocalServiceImpl
 	@Override
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public void checkClassNames() {
+		SafeCloseable safeCloseable = null;
+
 		try {
+			if (!DBPartition.isPartitionEnabled()) {
+				safeCloseable = CompanyThreadLocal.setWithSafeCloseable(
+					CompanyThreadLocal.getCompanyId());
+			}
+
 			_companyLocalService.forEachCompanyId(
 				companyId -> {
 					List<ClassName> classNames = classNamePersistence.findAll();
@@ -92,6 +112,11 @@ public class ClassNameLocalServiceImpl
 		catch (Exception exception) {
 			throw new RuntimeException(exception);
 		}
+		finally {
+			if (safeCloseable != null) {
+				safeCloseable.close();
+			}
+		}
 	}
 
 	@Override
@@ -99,14 +124,21 @@ public class ClassNameLocalServiceImpl
 		AtomicReference<ClassName> currentClassName = new AtomicReference<>();
 		long currentCompanyId = CompanyThreadLocal.getCompanyId();
 
+		SafeCloseable safeCloseable = null;
+
 		try {
+			if (!DBPartition.isPartitionEnabled()) {
+				safeCloseable = CompanyThreadLocal.setWithSafeCloseable(
+					CompanyThreadLocal.getCompanyId());
+			}
+
 			_companyLocalService.forEachCompanyId(
 				companyId -> {
 					ClassName className1 = _classNames.remove(
 						_getCompoundValue(className.getValue()));
 
 					if (companyId == currentCompanyId) {
-						currentClassName.set(className);
+						currentClassName.set(className1);
 					}
 
 					if (className1 != null) {
@@ -116,6 +148,11 @@ public class ClassNameLocalServiceImpl
 		}
 		catch (Exception exception) {
 			throw new RuntimeException(exception);
+		}
+		finally {
+			if (safeCloseable != null) {
+				safeCloseable.close();
+			}
 		}
 
 		return currentClassName.get();
@@ -202,7 +239,7 @@ public class ClassNameLocalServiceImpl
 	}
 
 	private String _getCompoundValue(String value) {
-		if (DBPartitionUtil.isPartitionEnabled()) {
+		if (DBPartition.isPartitionEnabled()) {
 			return StringBundler.concat(
 				value, StringPool.AT, CompanyThreadLocal.getCompanyId());
 		}
