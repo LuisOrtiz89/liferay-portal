@@ -11,6 +11,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.kernel.cache.CacheRegistryItem;
 import com.liferay.portal.kernel.change.tracking.CTAware;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ClassName;
@@ -203,7 +204,7 @@ public class ClassNameLocalServiceImpl
 	}
 
 	private String _getCompoundValue(String value) {
-		if (DBPartitionUtil.isPartitionEnabled()) {
+		if (DBPartition.isPartitionEnabled()) {
 			return StringBundler.concat(
 				value, StringPool.AT, CompanyThreadLocal.getCompanyId());
 		}
