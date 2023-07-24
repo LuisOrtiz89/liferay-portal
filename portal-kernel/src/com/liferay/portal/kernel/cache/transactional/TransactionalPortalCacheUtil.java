@@ -16,12 +16,15 @@ package com.liferay.portal.kernel.cache.transactional;
 
 import com.liferay.petra.concurrent.ConcurrentReferenceValueHashMap;
 import com.liferay.petra.lang.CentralizedThreadLocal;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.memory.FinalizeManager;
 import com.liferay.portal.kernel.cache.PortalCache;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.SkipReplicationThreadLocal;
 import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
+import com.liferay.portal.kernel.db.partition.DBPartition;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionAttribute;
 import com.liferay.portal.kernel.transaction.TransactionDefinition;
@@ -312,7 +315,18 @@ public class TransactionalPortalCacheUtil {
 
 		@Override
 		public void put(Serializable key, ValueEntry valueEntry) {
-			ValueEntry oldValueEntry = super._uncommittedMap.put(
+			Long companyId = 0L;
+
+			if (_portalCache.isSharded()) {
+				companyId = CompanyThreadLocal.getCompanyId();
+			}
+
+			Map<Serializable, ValueEntry> map =
+				super._uncommittedMap.computeIfAbsent(
+					companyId,
+					keyMap -> new HashMap<Serializable, ValueEntry>());
+
+			ValueEntry oldValueEntry = map.put(
 				key, valueEntry);
 
 			if (oldValueEntry != null) {
@@ -351,7 +365,19 @@ public class TransactionalPortalCacheUtil {
 		}
 
 		public ValueEntry get(Serializable key) {
-			ValueEntry valueEntry = _uncommittedMap.get(key);
+			Long companyId = 0L;
+
+			if (_portalCache.isSharded()) {
+				companyId = CompanyThreadLocal.getCompanyId();
+			}
+
+			Map<Serializable, ValueEntry> map = _uncommittedMap.get(companyId);
+
+			ValueEntry valueEntry = null;
+
+			if (map != null) {
+				valueEntry = map.get(key);
+			}
 
 			if ((valueEntry == null) && _removeAll) {
 				valueEntry = _NULL_HOLDER_VALUE_ENTRY;
@@ -361,7 +387,18 @@ public class TransactionalPortalCacheUtil {
 		}
 
 		public void put(Serializable key, ValueEntry valueEntry) {
-			ValueEntry oldValueEntry = _uncommittedMap.put(key, valueEntry);
+			Long companyId = 0L;
+
+			if (_portalCache.isSharded()) {
+				companyId = CompanyThreadLocal.getCompanyId();
+			}
+
+			Map<Serializable, ValueEntry> map =
+				_uncommittedMap.computeIfAbsent(
+					companyId,
+					keyMap -> new HashMap<Serializable, ValueEntry>());
+
+			ValueEntry oldValueEntry = map.put(key, valueEntry);
 
 			if (oldValueEntry != null) {
 				oldValueEntry.merge(valueEntry);
@@ -393,16 +430,45 @@ public class TransactionalPortalCacheUtil {
 				}
 			}
 
-			for (Map.Entry<? extends Serializable, ValueEntry> entry :
-					_uncommittedMap.entrySet()) {
+			for(Map.Entry<Long, Map<Serializable, ValueEntry>> value : _uncommittedMap.entrySet()) {
 
-				ValueEntry valueEntry = entry.getValue();
+				Long companyId = value.getKey();
 
-				if (commitByRemove) {
-					valueEntry.commitToByRemove(_portalCache, entry.getKey());
+				if (companyId != 0) {
+					try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
+						companyId)) {
+
+						for (Map.Entry<? extends Serializable, ValueEntry> entry :
+							value.getValue().entrySet()) {
+
+							ValueEntry valueEntry = entry.getValue();
+
+							if (commitByRemove) {
+								valueEntry.commitToByRemove(
+									_portalCache, entry.getKey());
+							}
+							else {
+								valueEntry.commitTo(
+									_portalCache, entry.getKey());
+							}
+						}
+					}
 				}
 				else {
-					valueEntry.commitTo(_portalCache, entry.getKey());
+					for (Map.Entry<? extends Serializable, ValueEntry> entry :
+						value.getValue().entrySet()) {
+
+						ValueEntry valueEntry = entry.getValue();
+
+						if (commitByRemove) {
+							valueEntry.commitToByRemove(
+								_portalCache, entry.getKey());
+						}
+						else {
+							valueEntry.commitTo(
+								_portalCache, entry.getKey());
+						}
+					}
 				}
 			}
 		}
@@ -411,15 +477,18 @@ public class TransactionalPortalCacheUtil {
 			if (readOnly) {
 				_removeAll = false;
 
-				Collection<ValueEntry> valueEntries = _uncommittedMap.values();
+				for(Map<Serializable, ValueEntry> value : _uncommittedMap.values()) {
+					Collection<ValueEntry> valueEntries =
+						value.values();
 
-				Iterator<ValueEntry> iterator = valueEntries.iterator();
+					Iterator<ValueEntry> iterator = valueEntries.iterator();
 
-				while (iterator.hasNext()) {
-					ValueEntry valueEntry = iterator.next();
+					while (iterator.hasNext()) {
+						ValueEntry valueEntry = iterator.next();
 
-					if (valueEntry.isRemove()) {
-						iterator.remove();
+						if (valueEntry.isRemove()) {
+							iterator.remove();
+						}
 					}
 				}
 			}
@@ -439,11 +508,11 @@ public class TransactionalPortalCacheUtil {
 			_portalCache = portalCache;
 		}
 
-		private final PortalCache<Serializable, Object> _portalCache;
+		protected final PortalCache<Serializable, Object> _portalCache;
 		private boolean _removeAll;
 		private boolean _skipReplicator = true;
-		private final Map<Serializable, ValueEntry> _uncommittedMap =
-			new HashMap<>();
+		//private final Map<Serializable, ValueEntry> _uncommittedMap = new HashMap<>();
+		private final Map<Long, Map<Serializable, ValueEntry>> _uncommittedMap = new HashMap<>();
 
 	}
 
