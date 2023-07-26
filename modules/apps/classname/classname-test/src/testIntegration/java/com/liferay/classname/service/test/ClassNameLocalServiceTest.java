@@ -110,6 +110,8 @@ public class ClassNameLocalServiceTest {
 	public void testDeleteClassName() {
 		_classNameLocalService.addClassName(_CLASS_NAME_VALUE);
 
+		_classNameLocalService.checkClassNames();
+
 		_classNameLocalService.deleteClassName(
 			_classNameLocalService.getClassName(_CLASS_NAME_VALUE));
 
