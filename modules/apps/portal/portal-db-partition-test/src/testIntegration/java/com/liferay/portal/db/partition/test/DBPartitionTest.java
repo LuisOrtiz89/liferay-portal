@@ -215,8 +215,8 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 	public void testDeleteClassName() throws Exception {
 		AtomicReference<Boolean> firstCompany = new AtomicReference<>(true);
 
-		_classNameLocalService.addClassName(_CLASS_NAME_VALUE);
-		 /*DBPartitionUtil.forEachCompanyId(
+		//_classNameLocalService.addClassName(_CLASS_NAME_VALUE);
+		 DBPartitionUtil.forEachCompanyId(
 			companyId -> {
 				long classNameId = 1;
 
@@ -230,7 +230,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 						"insert into ClassName_ (mvccVersion, classNameId, ",
 						"value) values (0,", classNameId, ", '",
 						_CLASS_NAME_VALUE, "')"));
-			});*/
+			});
 
 		_classNameLocalService.checkClassNames();
 
