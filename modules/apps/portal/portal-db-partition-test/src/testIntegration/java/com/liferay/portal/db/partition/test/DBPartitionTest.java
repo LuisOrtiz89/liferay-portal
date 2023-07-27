@@ -133,7 +133,6 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
-	@Ignore
 	@Test
 	public void testCheckClassName() throws Exception {
 		ModelHintsUtil modelHintsUtil = new ModelHintsUtil();
