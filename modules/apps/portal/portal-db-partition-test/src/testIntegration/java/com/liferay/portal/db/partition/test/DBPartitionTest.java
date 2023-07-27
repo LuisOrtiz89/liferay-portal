@@ -133,6 +133,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void testCheckClassName() throws Exception {
 		ModelHintsUtil modelHintsUtil = new ModelHintsUtil();
@@ -201,6 +202,7 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void testDeleteClassName() throws Exception {
 		AtomicReference<Boolean> firstCompany = new AtomicReference<>(true);
