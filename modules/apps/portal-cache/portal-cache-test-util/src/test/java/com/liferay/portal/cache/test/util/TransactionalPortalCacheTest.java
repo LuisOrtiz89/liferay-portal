@@ -5,6 +5,7 @@
 
 package com.liferay.portal.cache.test.util;
 
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.cache.MVCCPortalCache;
@@ -13,6 +14,7 @@ import com.liferay.portal.kernel.cache.PortalCache;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.transactional.TransactionalPortalCacheUtil;
 import com.liferay.portal.kernel.model.MVCCModel;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -23,6 +25,8 @@ import com.liferay.portal.kernel.transaction.TransactionAttribute;
 import com.liferay.portal.kernel.transaction.TransactionLifecycleListener;
 import com.liferay.portal.kernel.transaction.TransactionStatus;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
+
+import java.lang.reflect.InvocationTargetException;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +39,9 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 /**
  * @author Shuyang Zhou
@@ -72,429 +79,87 @@ public class TransactionalPortalCacheTest {
 	@Before
 	public void setUp() {
 		_portalCache = new TestPortalCache<>("Test Portal Cache");
+		_shardedPortalCache = new TestShardedPortalCache<>(
+			"Test Sharded Portal Cache");
 
 		_testCacheListener = new TestPortalCacheListener<>();
 		_testCacheReplicator = new TestPortalCacheReplicator<>();
 
 		_portalCache.registerPortalCacheListener(_testCacheListener);
 		_portalCache.registerPortalCacheListener(_testCacheReplicator);
+
+		_testShardedCacheListener = new TestPortalCacheListener<>();
+		_testShardedCacheReplicator = new TestPortalCacheReplicator<>();
+
+		_shardedPortalCache.registerPortalCacheListener(
+			_testShardedCacheListener);
+		_shardedPortalCache.registerPortalCacheListener(
+			_testShardedCacheReplicator);
+
+		_companyThreadLocalMockedStatic.when(
+			CompanyThreadLocal::getCompanyId
+		).thenReturn(
+			_TEST_COMPANY_ID
+		);
+		_companyThreadLocalMockedStatic.when(
+			() -> CompanyThreadLocal.lock(_TEST_COMPANY_ID)
+		).thenReturn(
+			Mockito.mock(SafeCloseable.class)
+		);
 	}
 
 	@Test
 	public void testConcurrentTransactionForMVCCPortalCache() throws Exception {
-		_setEnableTransactionalCache(true);
-
-		TransactionalPortalCache<String, String> transactionalPortalCache =
-			new TransactionalPortalCache<>(_portalCache, true);
-
-		// Two read only transactions do put
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, _VALUE_1, true, _KEY_2, _VALUE_2,
-			true, false);
-
-		_testCacheListener.assertPut(_KEY_1, _VALUE_1);
-		_testCacheListener.assertPut(_KEY_2, _VALUE_2);
-		_testCacheListener.assertActionsCount(2);
-
-		_testCacheReplicator.assertPut(_KEY_1, _VALUE_1);
-		_testCacheReplicator.assertPut(_KEY_2, _VALUE_2);
-		_testCacheReplicator.assertActionsCount(2);
-
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_2));
-
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
-
-		// Two read only transactions do remove
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, null, true, _KEY_2, null, true,
-			false);
-
-		_testCacheListener.assertActionsCount(0);
-		_testCacheReplicator.assertActionsCount(0);
-
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_2));
-
-		// One read only transaction and one write transaction do put
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, _VALUE_2, true, _KEY_2, _VALUE_1,
-			false, false);
-
-		_testCacheListener.assertUpdated(_KEY_1, _VALUE_2);
-		_testCacheListener.assertUpdated(_KEY_2, _VALUE_1);
-		_testCacheListener.assertActionsCount(2);
-
-		_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_2);
-		_testCacheReplicator.assertUpdated(_KEY_2, _VALUE_1);
-		_testCacheReplicator.assertActionsCount(2);
-
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_2));
-
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
-
-		// One write transaction and one read only transaction do put
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, _VALUE_1, false, _KEY_2, _VALUE_2,
-			true, false);
-
-		_testCacheListener.assertUpdated(_KEY_1, _VALUE_1);
-		_testCacheListener.assertUpdated(_KEY_2, _VALUE_2);
-		_testCacheListener.assertActionsCount(2);
-
-		_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_1);
-		_testCacheListener.assertUpdated(_KEY_2, _VALUE_2);
-		_testCacheReplicator.assertActionsCount(2);
-
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_2));
-
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
-
-		// Two write transactions do put
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, _VALUE_2, false, _KEY_2, _VALUE_1,
-			false, false);
-
-		_testCacheListener.assertUpdated(_KEY_1, _VALUE_2);
-		_testCacheListener.assertUpdated(_KEY_2, _VALUE_1);
-		_testCacheListener.assertActionsCount(2);
-
-		_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_2);
-		_testCacheReplicator.assertUpdated(_KEY_2, _VALUE_1);
-		_testCacheReplicator.assertActionsCount(2);
-
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_2));
-
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
-
-		// Two write transactions do remove without replicator
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, null, false, _KEY_2, null, false,
-			true);
-
-		_testCacheListener.assertRemoved(_KEY_1, _VALUE_2);
-		_testCacheListener.assertRemoved(_KEY_2, _VALUE_1);
-		_testCacheListener.assertActionsCount(2);
-
-		_testCacheReplicator.assertActionsCount(0);
-
-		Assert.assertNull(_portalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_2));
+		_setupAndTestConcurrentTransactionForMVCCPortalCache(
+			_portalCache, _testCacheListener, _testCacheReplicator);
+		_setupAndTestConcurrentTransactionForMVCCPortalCache(
+			_shardedPortalCache, _testShardedCacheListener,
+			_testShardedCacheReplicator);
 	}
 
 	@Test
 	public void testConcurrentTransactionForNonmvccPortalCache()
 		throws Exception {
 
-		_setEnableTransactionalCache(true);
-
-		TransactionalPortalCache<String, String> transactionalPortalCache =
-			new TransactionalPortalCache<>(_portalCache, false);
-
-		// Two read only transactions do put
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, _VALUE_1, true, _KEY_2, _VALUE_2,
-			true, false);
-
-		_testCacheListener.assertPut(_KEY_1, _VALUE_1);
-		_testCacheListener.assertPut(_KEY_2, _VALUE_2);
-		_testCacheListener.assertActionsCount(2);
-
-		_testCacheReplicator.assertPut(_KEY_1, _VALUE_1);
-		_testCacheReplicator.assertPut(_KEY_2, _VALUE_2);
-		_testCacheReplicator.assertActionsCount(2);
-
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_2));
-
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
-
-		// Two read only transactions do remove
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, null, true, _KEY_2, null, true,
-			false);
-
-		_testCacheListener.assertActionsCount(0);
-		_testCacheReplicator.assertActionsCount(0);
-
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_2));
-
-		// One read only transaction and one write transaction do put
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, _VALUE_2, true, _KEY_2, _VALUE_1,
-			false, false);
-
-		_testCacheListener.assertUpdated(_KEY_1, _VALUE_2);
-		_testCacheListener.assertUpdated(_KEY_2, _VALUE_1);
-		_testCacheListener.assertActionsCount(2);
-
-		_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_2);
-		_testCacheReplicator.assertUpdated(_KEY_2, _VALUE_1);
-		_testCacheReplicator.assertActionsCount(2);
-
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_2));
-
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
-
-		// One write transaction and one read only transaction do put
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, _VALUE_1, false, _KEY_2, _VALUE_2,
-			true, false);
-
-		_testCacheListener.assertUpdated(_KEY_1, _VALUE_1);
-		_testCacheListener.assertActionsCount(1);
-
-		_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_1);
-		_testCacheReplicator.assertActionsCount(1);
-
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_2));
-
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
-
-		// Two write transactions do put
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, _VALUE_2, false, _KEY_2, _VALUE_2,
-			false, false);
-
-		_testCacheListener.assertUpdated(_KEY_1, _VALUE_2);
-		_testCacheListener.assertRemoved(_KEY_2, _VALUE_1);
-		_testCacheListener.assertActionsCount(2);
-
-		_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_2);
-		_testCacheReplicator.assertRemoved(_KEY_2, _VALUE_1);
-		_testCacheReplicator.assertActionsCount(2);
-
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_2));
-
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
-
-		// Two write transactions do remove without replicator
-
-		_invokeTransactionalPortalCacheConcurrently(
-			transactionalPortalCache, _KEY_1, null, false, _KEY_2, null, false,
-			true);
-
-		_testCacheListener.assertRemoved(_KEY_1, _VALUE_2);
-		_testCacheListener.assertRemoved(_KEY_2, null);
-		_testCacheListener.assertActionsCount(2);
-
-		_testCacheReplicator.assertActionsCount(0);
-
-		Assert.assertNull(_portalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_2));
+		_setupAndTestConcurrentTransactionForNonmvccPortalCache(
+			_portalCache, _testCacheListener, _testCacheReplicator);
+		_setupAndTestConcurrentTransactionForNonmvccPortalCache(
+			_shardedPortalCache, _testShardedCacheListener,
+			_testShardedCacheReplicator);
 	}
 
 	@Test
 	public void testMisc() {
-
-		// For code coverage
-
-		new TransactionalPortalCacheUtil();
-
-		_setEnableTransactionalCache(true);
-
-		TransactionalPortalCacheUtil.begin();
-
-		TransactionalPortalCache<String, String> transactionalPortalCache =
-			new TransactionalPortalCache(_portalCache, false);
-
-		TransactionalPortalCacheUtil.put(
-			transactionalPortalCache, _KEY_1, _VALUE_1, 0, false);
-
-		TransactionalPortalCacheUtil.removeAll(transactionalPortalCache, false);
-
-		TransactionalPortalCacheUtil.commit(false);
-
-		TransactionLifecycleListener transactionLifecycleListener =
-			TransactionalPortalCacheUtil.TRANSACTION_LIFECYCLE_LISTENER;
-
-		_setEnableTransactionalCache(false);
-
-		transactionLifecycleListener.created(null, null);
-
-		transactionLifecycleListener.committed(null, null);
-
-		transactionLifecycleListener.rollbacked(null, null, null);
+		_setupAndTestMisc(_portalCache);
+		_setupAndTestMisc(_shardedPortalCache);
 	}
 
 	@Test
 	public void testNoneTransactionalCache() {
-		_setEnableTransactionalCache(false);
-
-		Assert.assertFalse(
-			"TransactionalPortalCacheUtil should be disabled",
-			TransactionalPortalCacheUtil.isEnabled());
-
-		// MVCC portal cache when transactional cache is disabled
-
-		_testNoneTransactionalPortalCache(
-			new TransactionalPortalCache<>(_portalCache, true));
-
-		// Non MVCC portal cache when transactional cache is disabled
-
-		_testNoneTransactionalPortalCache(
-			new TransactionalPortalCache<>(_portalCache, false));
-
-		// MVCC portal cache when not used in transaction
-
-		_setEnableTransactionalCache(true);
-
-		Assert.assertFalse(
-			"TransactionalPortalCacheUtil should be disabled",
-			TransactionalPortalCacheUtil.isEnabled());
-
-		_testNoneTransactionalPortalCache(
-			new TransactionalPortalCache<>(_portalCache, true));
-
-		// Non MVCC portal cache when not used in transaction
-
-		_testNoneTransactionalPortalCache(
-			new TransactionalPortalCache<>(_portalCache, false));
+		_setupAndTestNoneTransactionalCache(
+			_portalCache, _testCacheListener, _testCacheReplicator);
+		_setupAndTestNoneTransactionalCache(
+			_shardedPortalCache, _testShardedCacheListener,
+			_testShardedCacheReplicator);
 	}
 
 	@Test
-	public void testTransactionalCache() {
-		_setEnableTransactionalCache(true);
+	public void testTransactionalCache()
+		throws ClassNotFoundException, IllegalAccessException,
+			   InvocationTargetException, NoSuchMethodException {
 
-		// MVCC portal cache without ttl
-
-		_testTransactionalPortalCache(
-			new TransactionalPortalCache<>(_portalCache, true), false, true);
-
-		// Non MVCC portal cache without ttl
-
-		_testTransactionalPortalCache(
-			new TransactionalPortalCache<>(_portalCache, false), false, false);
-
-		// MVCC portal cache with ttl
-
-		_testTransactionalPortalCache(
-			new TransactionalPortalCache<>(_portalCache, true), true, true);
-
-		// Non MVCC portal cache with ttl
-
-		_testTransactionalPortalCache(
-			new TransactionalPortalCache<>(_portalCache, false), true, false);
+		_setupAndTestTransactionalCache(
+			_portalCache, _testCacheListener, _testCacheReplicator);
+		_setupAndTestTransactionalCache(
+			_shardedPortalCache, _testShardedCacheListener,
+			_testShardedCacheReplicator);
 	}
 
 	@Test
 	public void testTransactionalCacheWithParameterValidation() {
-		_setEnableTransactionalCache(true);
-
-		TransactionalPortalCache<String, String> transactionalPortalCache =
-			new TransactionalPortalCache<>(_portalCache, true);
-
-		_portalCache.put(_KEY_1, _VALUE_1);
-
-		TransactionalPortalCacheUtil.begin();
-
-		// Get
-
-		Assert.assertEquals(_VALUE_1, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
-
-		// Get with null key
-
-		try {
-			transactionalPortalCache.get(null);
-
-			Assert.fail("Should throw NullPointerException");
-		}
-		catch (NullPointerException nullPointerException) {
-			Assert.assertEquals(
-				"Key is null", nullPointerException.getMessage());
-		}
-
-		// Put
-
-		transactionalPortalCache.put(_KEY_1, _VALUE_2);
-
-		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
-
-		// Put with null key
-
-		try {
-			transactionalPortalCache.put(null, _VALUE_1);
-
-			Assert.fail("Should throw NullPointerException");
-		}
-		catch (NullPointerException nullPointerException) {
-			Assert.assertEquals(
-				"Key is null", nullPointerException.getMessage());
-		}
-
-		// Put with null value
-
-		try {
-			transactionalPortalCache.put(_KEY_1, null);
-
-			Assert.fail("Should throw NullPointerException");
-		}
-		catch (NullPointerException nullPointerException) {
-			Assert.assertEquals(
-				"Value is null", nullPointerException.getMessage());
-		}
-
-		// Put with negative ttl
-
-		try {
-			transactionalPortalCache.put(_KEY_1, _VALUE_1, -1);
-
-			Assert.fail("Should throw IllegalArgumentException");
-		}
-		catch (IllegalArgumentException illegalArgumentException) {
-			Assert.assertEquals(
-				"Time to live is negative",
-				illegalArgumentException.getMessage());
-		}
-
-		// Remove
-
-		transactionalPortalCache.remove(_KEY_1);
-
-		Assert.assertNull(transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
-
-		// Remove with null key
-
-		try {
-			transactionalPortalCache.remove(null);
-
-			Assert.fail("Should throw NullPointerException");
-		}
-		catch (NullPointerException nullPointerException) {
-			Assert.assertEquals(
-				"Key is null", nullPointerException.getMessage());
-		}
-
-		TransactionalPortalCacheUtil.commit(false);
+		_setupAndTestTransactionalCacheWithParameterValidation(_portalCache);
+		_setupAndTestTransactionalCacheWithParameterValidation(
+			_shardedPortalCache);
 	}
 
 	@Test
@@ -592,7 +257,7 @@ public class TransactionalPortalCacheTest {
 
 		TransactionAttribute transactionAttribute = builder.build();
 
-		TransactionStatus transactionStatus = new TestTrasactionStatus(
+		TransactionStatus transactionStatus = new TestTransactionStatus(
 			false, false, false);
 
 		transactionLifecycleListener.created(
@@ -690,40 +355,482 @@ public class TransactionalPortalCacheTest {
 			enabled);
 	}
 
+	private void _setupAndTestConcurrentTransactionForMVCCPortalCache(
+			PortalCache<String, String> portalCache,
+			TestPortalCacheListener<String, String> testPortalCacheListener,
+			TestPortalCacheReplicator<String, String> testPortalCacheReplicator)
+		throws Exception {
+
+		_setEnableTransactionalCache(true);
+
+		TransactionalPortalCache<String, String> transactionalPortalCache =
+			new TransactionalPortalCache<>(portalCache, true);
+
+		// Two read only transactions do put
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, _VALUE_1, true, _KEY_2, _VALUE_2,
+			true, false);
+
+		testPortalCacheListener.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertPut(_KEY_2, _VALUE_2);
+		testPortalCacheListener.assertActionsCount(2);
+
+		testPortalCacheReplicator.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheReplicator.assertPut(_KEY_2, _VALUE_2);
+		testPortalCacheReplicator.assertActionsCount(2);
+
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_2));
+
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
+
+		// Two read only transactions do remove
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, null, true, _KEY_2, null, true,
+			false);
+
+		testPortalCacheListener.assertActionsCount(0);
+		testPortalCacheReplicator.assertActionsCount(0);
+
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_2));
+
+		// One read only transaction and one write transaction do put
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, _VALUE_2, true, _KEY_2, _VALUE_1,
+			false, false);
+
+		testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_2);
+		testPortalCacheListener.assertUpdated(_KEY_2, _VALUE_1);
+		testPortalCacheListener.assertActionsCount(2);
+
+		testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_2);
+		testPortalCacheReplicator.assertUpdated(_KEY_2, _VALUE_1);
+		testPortalCacheReplicator.assertActionsCount(2);
+
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_2));
+
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
+
+		// One write transaction and one read only transaction do put
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, _VALUE_1, false, _KEY_2, _VALUE_2,
+			true, false);
+
+		testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertUpdated(_KEY_2, _VALUE_2);
+		testPortalCacheListener.assertActionsCount(2);
+
+		testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertUpdated(_KEY_2, _VALUE_2);
+		testPortalCacheReplicator.assertActionsCount(2);
+
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_2));
+
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
+
+		// Two write transactions do put
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, _VALUE_2, false, _KEY_2, _VALUE_1,
+			false, false);
+
+		testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_2);
+		testPortalCacheListener.assertUpdated(_KEY_2, _VALUE_1);
+		testPortalCacheListener.assertActionsCount(2);
+
+		testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_2);
+		testPortalCacheReplicator.assertUpdated(_KEY_2, _VALUE_1);
+		testPortalCacheReplicator.assertActionsCount(2);
+
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_2));
+
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
+
+		// Two write transactions do remove without replicator
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, null, false, _KEY_2, null, false,
+			true);
+
+		testPortalCacheListener.assertRemoved(_KEY_1, _VALUE_2);
+		testPortalCacheListener.assertRemoved(_KEY_2, _VALUE_1);
+		testPortalCacheListener.assertActionsCount(2);
+
+		testPortalCacheReplicator.assertActionsCount(0);
+
+		Assert.assertNull(portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_2));
+	}
+
+	private void _setupAndTestConcurrentTransactionForNonmvccPortalCache(
+			PortalCache<String, String> portalCache,
+			TestPortalCacheListener<String, String> testPortalCacheListener,
+			TestPortalCacheReplicator<String, String> testPortalCacheReplicator)
+		throws Exception {
+
+		_setEnableTransactionalCache(true);
+
+		TransactionalPortalCache<String, String> transactionalPortalCache =
+			new TransactionalPortalCache<>(portalCache, false);
+
+		// Two read only transactions do put
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, _VALUE_1, true, _KEY_2, _VALUE_2,
+			true, false);
+
+		testPortalCacheListener.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertPut(_KEY_2, _VALUE_2);
+		testPortalCacheListener.assertActionsCount(2);
+
+		testPortalCacheReplicator.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheReplicator.assertPut(_KEY_2, _VALUE_2);
+		testPortalCacheReplicator.assertActionsCount(2);
+
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_2));
+
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
+
+		// Two read only transactions do remove
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, null, true, _KEY_2, null, true,
+			false);
+
+		testPortalCacheListener.assertActionsCount(0);
+		testPortalCacheReplicator.assertActionsCount(0);
+
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_2));
+
+		// One read only transaction and one write transaction do put
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, _VALUE_2, true, _KEY_2, _VALUE_1,
+			false, false);
+
+		testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_2);
+		testPortalCacheListener.assertUpdated(_KEY_2, _VALUE_1);
+		testPortalCacheListener.assertActionsCount(2);
+
+		testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_2);
+		testPortalCacheReplicator.assertUpdated(_KEY_2, _VALUE_1);
+		testPortalCacheReplicator.assertActionsCount(2);
+
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_2));
+
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
+
+		// One write transaction and one read only transaction do put
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, _VALUE_1, false, _KEY_2, _VALUE_2,
+			true, false);
+
+		testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertActionsCount(1);
+
+		testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_1);
+		testPortalCacheReplicator.assertActionsCount(1);
+
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_2));
+
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
+
+		// Two write transactions do put
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, _VALUE_2, false, _KEY_2, _VALUE_2,
+			false, false);
+
+		testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_2);
+		testPortalCacheListener.assertRemoved(_KEY_2, _VALUE_1);
+		testPortalCacheListener.assertActionsCount(2);
+
+		testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_2);
+		testPortalCacheReplicator.assertRemoved(_KEY_2, _VALUE_1);
+		testPortalCacheReplicator.assertActionsCount(2);
+
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_2));
+
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
+
+		// Two write transactions do remove without replicator
+
+		_invokeTransactionalPortalCacheConcurrently(
+			transactionalPortalCache, _KEY_1, null, false, _KEY_2, null, false,
+			true);
+
+		testPortalCacheListener.assertRemoved(_KEY_1, _VALUE_2);
+		testPortalCacheListener.assertRemoved(_KEY_2, null);
+		testPortalCacheListener.assertActionsCount(2);
+
+		testPortalCacheReplicator.assertActionsCount(0);
+
+		Assert.assertNull(portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_2));
+	}
+
+	private void _setupAndTestMisc(PortalCache<String, String> portalCache) {
+
+		// For code coverage
+
+		new TransactionalPortalCacheUtil();
+
+		_setEnableTransactionalCache(true);
+
+		TransactionalPortalCacheUtil.begin();
+
+		TransactionalPortalCache<String, String> transactionalPortalCache =
+			new TransactionalPortalCache(portalCache, false);
+
+		TransactionalPortalCacheUtil.put(
+			transactionalPortalCache, _KEY_1, _VALUE_1, 0, false);
+
+		TransactionalPortalCacheUtil.removeAll(transactionalPortalCache, false);
+
+		TransactionalPortalCacheUtil.commit(false);
+
+		TransactionLifecycleListener transactionLifecycleListener =
+			TransactionalPortalCacheUtil.TRANSACTION_LIFECYCLE_LISTENER;
+
+		_setEnableTransactionalCache(false);
+
+		transactionLifecycleListener.created(null, null);
+
+		transactionLifecycleListener.committed(null, null);
+
+		transactionLifecycleListener.rollbacked(null, null, null);
+	}
+
+	private void _setupAndTestNoneTransactionalCache(
+		PortalCache<String, String> portalCache,
+		TestPortalCacheListener<String, String> testPortalCacheListener,
+		TestPortalCacheReplicator<String, String> testPortalCacheReplicator) {
+
+		_setEnableTransactionalCache(false);
+
+		Assert.assertFalse(
+			"TransactionalPortalCacheUtil should be disabled",
+			TransactionalPortalCacheUtil.isEnabled());
+
+		// MVCC portal cache when transactional cache is disabled
+
+		_testNoneTransactionalPortalCache(
+			portalCache, testPortalCacheListener, testPortalCacheReplicator,
+			new TransactionalPortalCache<>(portalCache, true));
+
+		// Non MVCC portal cache when transactional cache is disabled
+
+		_testNoneTransactionalPortalCache(
+			portalCache, testPortalCacheListener, testPortalCacheReplicator,
+			new TransactionalPortalCache<>(portalCache, false));
+
+		// MVCC portal cache when not used in transaction
+
+		_setEnableTransactionalCache(true);
+
+		Assert.assertFalse(
+			"TransactionalPortalCacheUtil should be disabled",
+			TransactionalPortalCacheUtil.isEnabled());
+
+		_testNoneTransactionalPortalCache(
+			portalCache, testPortalCacheListener, testPortalCacheReplicator,
+			new TransactionalPortalCache<>(portalCache, true));
+
+		// Non MVCC portal cache when not used in transaction
+
+		_testNoneTransactionalPortalCache(
+			portalCache, testPortalCacheListener, testPortalCacheReplicator,
+			new TransactionalPortalCache<>(portalCache, false));
+	}
+
+	private void _setupAndTestTransactionalCache(
+			PortalCache<String, String> portalCache,
+			TestPortalCacheListener<String, String> testPortalCacheListener,
+			TestPortalCacheReplicator<String, String> testPortalCacheReplicator)
+		throws ClassNotFoundException, IllegalAccessException,
+			   InvocationTargetException, NoSuchMethodException {
+
+		_setEnableTransactionalCache(true);
+
+		// MVCC portal cache without ttl
+
+		_testTransactionalPortalCache(
+			portalCache, testPortalCacheListener, testPortalCacheReplicator,
+			new TransactionalPortalCache<>(portalCache, true), false, true);
+
+		// Non MVCC portal cache without ttl
+
+		_testTransactionalPortalCache(
+			portalCache, testPortalCacheListener, testPortalCacheReplicator,
+			new TransactionalPortalCache<>(portalCache, false), false, false);
+
+		// MVCC portal cache with ttl
+
+		_testTransactionalPortalCache(
+			portalCache, testPortalCacheListener, testPortalCacheReplicator,
+			new TransactionalPortalCache<>(portalCache, true), true, true);
+
+		// Non MVCC portal cache with ttl
+
+		_testTransactionalPortalCache(
+			portalCache, testPortalCacheListener, testPortalCacheReplicator,
+			new TransactionalPortalCache<>(portalCache, false), true, false);
+	}
+
+	private void _setupAndTestTransactionalCacheWithParameterValidation(
+		PortalCache<String, String> portalCache) {
+
+		_setEnableTransactionalCache(true);
+
+		TransactionalPortalCache<String, String> transactionalPortalCache =
+			new TransactionalPortalCache<>(portalCache, true);
+
+		portalCache.put(_KEY_1, _VALUE_1);
+
+		TransactionalPortalCacheUtil.begin();
+
+		// Get
+
+		Assert.assertEquals(_VALUE_1, transactionalPortalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
+
+		// Get with null key
+
+		try {
+			transactionalPortalCache.get(null);
+
+			Assert.fail("Should throw NullPointerException");
+		}
+		catch (NullPointerException nullPointerException) {
+			Assert.assertEquals(
+				"Key is null", nullPointerException.getMessage());
+		}
+
+		// Put
+
+		transactionalPortalCache.put(_KEY_1, _VALUE_2);
+
+		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
+
+		// Put with null key
+
+		try {
+			transactionalPortalCache.put(null, _VALUE_1);
+
+			Assert.fail("Should throw NullPointerException");
+		}
+		catch (NullPointerException nullPointerException) {
+			Assert.assertEquals(
+				"Key is null", nullPointerException.getMessage());
+		}
+
+		// Put with null value
+
+		try {
+			transactionalPortalCache.put(_KEY_1, null);
+
+			Assert.fail("Should throw NullPointerException");
+		}
+		catch (NullPointerException nullPointerException) {
+			Assert.assertEquals(
+				"Value is null", nullPointerException.getMessage());
+		}
+
+		// Put with negative ttl
+
+		try {
+			transactionalPortalCache.put(_KEY_1, _VALUE_1, -1);
+
+			Assert.fail("Should throw IllegalArgumentException");
+		}
+		catch (IllegalArgumentException illegalArgumentException) {
+			Assert.assertEquals(
+				"Time to live is negative",
+				illegalArgumentException.getMessage());
+		}
+
+		// Remove
+
+		transactionalPortalCache.remove(_KEY_1);
+
+		Assert.assertNull(transactionalPortalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
+
+		// Remove with null key
+
+		try {
+			transactionalPortalCache.remove(null);
+
+			Assert.fail("Should throw NullPointerException");
+		}
+		catch (NullPointerException nullPointerException) {
+			Assert.assertEquals(
+				"Key is null", nullPointerException.getMessage());
+		}
+
+		TransactionalPortalCacheUtil.commit(false);
+	}
+
 	private void _testNoneTransactionalPortalCache(
+		PortalCache<String, String> portalCache,
+		TestPortalCacheListener<String, String> testPortalCacheListener,
+		TestPortalCacheReplicator<String, String> testPortalCacheReplicator,
 		TransactionalPortalCache<String, String> transactionalPortalCache) {
 
 		// Put 1
 
 		transactionalPortalCache.put(_KEY_1, _VALUE_1);
 
-		_testCacheListener.assertPut(_KEY_1, _VALUE_1);
-		_testCacheListener.assertActionsCount(1);
+		testPortalCacheListener.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertActionsCount(1);
 
-		_testCacheReplicator.assertPut(_KEY_1, _VALUE_1);
-		_testCacheReplicator.assertActionsCount(1);
+		testPortalCacheReplicator.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheReplicator.assertActionsCount(1);
 
 		Assert.assertEquals(_VALUE_1, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 
 		// Put 2
 
 		transactionalPortalCache.put(_KEY_1, _VALUE_2, 10);
 
-		_testCacheListener.assertUpdated(_KEY_1, _VALUE_2, 10);
-		_testCacheListener.assertActionsCount(1);
+		testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_2, 10);
+		testPortalCacheListener.assertActionsCount(1);
 
-		_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_2, 10);
-		_testCacheReplicator.assertActionsCount(1);
+		testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_2, 10);
+		testPortalCacheReplicator.assertActionsCount(1);
 
 		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 
 		// Put 3
 
@@ -743,46 +850,46 @@ public class TransactionalPortalCacheTest {
 		PortalCacheHelperUtil.putWithoutReplicator(
 			transactionalPortalCache, _KEY_1, _VALUE_1);
 
-		_testCacheListener.assertUpdated(_KEY_1, _VALUE_1);
-		_testCacheListener.assertActionsCount(1);
+		testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertActionsCount(1);
 
-		_testCacheReplicator.assertActionsCount(0);
+		testPortalCacheReplicator.assertActionsCount(0);
 
 		Assert.assertEquals(_VALUE_1, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
+		testPortalCacheListener.reset();
 
 		// Put 5
 
 		PortalCacheHelperUtil.putWithoutReplicator(
 			transactionalPortalCache, _KEY_1, _VALUE_2, 10);
 
-		_testCacheListener.assertUpdated(_KEY_1, _VALUE_2, 10);
-		_testCacheListener.assertActionsCount(1);
+		testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_2, 10);
+		testPortalCacheListener.assertActionsCount(1);
 
-		_testCacheReplicator.assertActionsCount(0);
+		testPortalCacheReplicator.assertActionsCount(0);
 
 		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
+		testPortalCacheListener.reset();
 
 		// Remove 1
 
 		transactionalPortalCache.remove(_KEY_1);
 
-		_testCacheListener.assertRemoved(_KEY_1, _VALUE_2);
-		_testCacheListener.assertActionsCount(1);
+		testPortalCacheListener.assertRemoved(_KEY_1, _VALUE_2);
+		testPortalCacheListener.assertActionsCount(1);
 
-		_testCacheReplicator.assertRemoved(_KEY_1, _VALUE_2);
-		_testCacheReplicator.assertActionsCount(1);
+		testPortalCacheReplicator.assertRemoved(_KEY_1, _VALUE_2);
+		testPortalCacheReplicator.assertActionsCount(1);
 
 		Assert.assertNull(transactionalPortalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 
 		// Remove 2
 
@@ -791,16 +898,16 @@ public class TransactionalPortalCacheTest {
 		PortalCacheHelperUtil.removeWithoutReplicator(
 			transactionalPortalCache, _KEY_1);
 
-		_testCacheListener.assertPut(_KEY_1, _VALUE_1);
-		_testCacheListener.assertRemoved(_KEY_1, _VALUE_1);
-		_testCacheListener.assertActionsCount(2);
+		testPortalCacheListener.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertRemoved(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertActionsCount(2);
 
-		_testCacheReplicator.assertActionsCount(0);
+		testPortalCacheReplicator.assertActionsCount(0);
 
 		Assert.assertNull(transactionalPortalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
+		testPortalCacheListener.reset();
 
 		// Remove all 1
 
@@ -809,23 +916,23 @@ public class TransactionalPortalCacheTest {
 
 		transactionalPortalCache.removeAll();
 
-		_testCacheListener.assertPut(_KEY_1, _VALUE_1);
-		_testCacheListener.assertPut(_KEY_2, _VALUE_2);
-		_testCacheListener.assertRemoveAll();
-		_testCacheListener.assertActionsCount(3);
+		testPortalCacheListener.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertPut(_KEY_2, _VALUE_2);
+		testPortalCacheListener.assertRemoveAll();
+		testPortalCacheListener.assertActionsCount(3);
 
-		_testCacheReplicator.assertPut(_KEY_1, _VALUE_1);
-		_testCacheReplicator.assertPut(_KEY_2, _VALUE_2);
-		_testCacheReplicator.assertRemoveAll();
-		_testCacheReplicator.assertActionsCount(3);
+		testPortalCacheReplicator.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheReplicator.assertPut(_KEY_2, _VALUE_2);
+		testPortalCacheReplicator.assertRemoveAll();
+		testPortalCacheReplicator.assertActionsCount(3);
 
 		Assert.assertNull(transactionalPortalCache.get(_KEY_1));
 		Assert.assertNull(transactionalPortalCache.get(_KEY_2));
-		Assert.assertNull(_portalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_2));
+		Assert.assertNull(portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_2));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 
 		// Remove all 2
 
@@ -835,27 +942,32 @@ public class TransactionalPortalCacheTest {
 		PortalCacheHelperUtil.removeAllWithoutReplicator(
 			transactionalPortalCache);
 
-		_testCacheListener.assertPut(_KEY_1, _VALUE_1);
-		_testCacheListener.assertPut(_KEY_2, _VALUE_2);
-		_testCacheListener.assertRemoveAll();
-		_testCacheListener.assertActionsCount(3);
+		testPortalCacheListener.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheListener.assertPut(_KEY_2, _VALUE_2);
+		testPortalCacheListener.assertRemoveAll();
+		testPortalCacheListener.assertActionsCount(3);
 
-		_testCacheReplicator.assertPut(_KEY_1, _VALUE_1);
-		_testCacheReplicator.assertPut(_KEY_2, _VALUE_2);
-		_testCacheReplicator.assertActionsCount(2);
+		testPortalCacheReplicator.assertPut(_KEY_1, _VALUE_1);
+		testPortalCacheReplicator.assertPut(_KEY_2, _VALUE_2);
+		testPortalCacheReplicator.assertActionsCount(2);
 
 		Assert.assertNull(transactionalPortalCache.get(_KEY_1));
 		Assert.assertNull(transactionalPortalCache.get(_KEY_2));
-		Assert.assertNull(_portalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_2));
+		Assert.assertNull(portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_2));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 	}
 
 	private void _testTransactionalPortalCache(
-		TransactionalPortalCache<String, String> transactionalPortalCache,
-		boolean ttl, boolean mvcc) {
+			PortalCache<String, String> portalCache,
+			TestPortalCacheListener<String, String> testPortalCacheListener,
+			TestPortalCacheReplicator<String, String> testPortalCacheReplicator,
+			TransactionalPortalCache<String, String> transactionalPortalCache,
+			boolean ttl, boolean mvcc)
+		throws ClassNotFoundException, IllegalAccessException,
+			   InvocationTargetException, NoSuchMethodException {
 
 		// Rollback
 
@@ -870,15 +982,15 @@ public class TransactionalPortalCacheTest {
 
 		Assert.assertEquals(_VALUE_1, transactionalPortalCache.get(_KEY_1));
 		Assert.assertNull(transactionalPortalCache.get(_KEY_2));
-		Assert.assertNull(_portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_1));
 
 		TransactionalPortalCacheUtil.rollback();
 
-		_testCacheListener.assertActionsCount(0);
-		_testCacheReplicator.assertActionsCount(0);
+		testPortalCacheListener.assertActionsCount(0);
+		testPortalCacheReplicator.assertActionsCount(0);
 
 		Assert.assertNull(transactionalPortalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_1));
 
 		// Commit 1
 
@@ -898,33 +1010,33 @@ public class TransactionalPortalCacheTest {
 		}
 
 		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_1));
 
 		TransactionalPortalCacheUtil.commit(false);
 
 		if (ttl) {
-			_testCacheListener.assertPut(_KEY_1, _VALUE_2, 10);
+			testPortalCacheListener.assertPut(_KEY_1, _VALUE_2, 10);
 		}
 		else {
-			_testCacheListener.assertPut(_KEY_1, _VALUE_2);
+			testPortalCacheListener.assertPut(_KEY_1, _VALUE_2);
 		}
 
-		_testCacheListener.assertActionsCount(1);
+		testPortalCacheListener.assertActionsCount(1);
 
 		if (ttl) {
-			_testCacheReplicator.assertPut(_KEY_1, _VALUE_2, 10);
+			testPortalCacheReplicator.assertPut(_KEY_1, _VALUE_2, 10);
 		}
 		else {
-			_testCacheReplicator.assertPut(_KEY_1, _VALUE_2);
+			testPortalCacheReplicator.assertPut(_KEY_1, _VALUE_2);
 		}
 
-		_testCacheReplicator.assertActionsCount(1);
+		testPortalCacheReplicator.assertActionsCount(1);
 
 		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 
 		// Commit 2
 
@@ -944,33 +1056,33 @@ public class TransactionalPortalCacheTest {
 		}
 
 		Assert.assertEquals(_VALUE_1, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
 
 		TransactionalPortalCacheUtil.commit(false);
 
 		if (ttl) {
-			_testCacheListener.assertUpdated(_KEY_1, _VALUE_1, 10);
+			testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_1, 10);
 		}
 		else {
-			_testCacheListener.assertUpdated(_KEY_1, _VALUE_1);
+			testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_1);
 		}
 
-		_testCacheListener.assertActionsCount(1);
+		testPortalCacheListener.assertActionsCount(1);
 
 		if (ttl) {
-			_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_1, 10);
+			testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_1, 10);
 		}
 		else {
-			_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_1);
+			testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_1);
 		}
 
-		_testCacheReplicator.assertActionsCount(1);
+		testPortalCacheReplicator.assertActionsCount(1);
 
 		Assert.assertEquals(_VALUE_1, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 
 		// Commit 3
 
@@ -989,27 +1101,27 @@ public class TransactionalPortalCacheTest {
 		}
 
 		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
 
 		TransactionalPortalCacheUtil.commit(false);
 
-		_testCacheListener.assertRemoveAll();
+		testPortalCacheListener.assertRemoveAll();
 
 		if (ttl) {
-			_testCacheListener.assertPut(_KEY_1, _VALUE_2, 10);
+			testPortalCacheListener.assertPut(_KEY_1, _VALUE_2, 10);
 		}
 		else {
-			_testCacheListener.assertPut(_KEY_1, _VALUE_2);
+			testPortalCacheListener.assertPut(_KEY_1, _VALUE_2);
 		}
 
-		_testCacheListener.assertActionsCount(2);
+		testPortalCacheListener.assertActionsCount(2);
 
-		_testCacheReplicator.assertActionsCount(0);
+		testPortalCacheReplicator.assertActionsCount(0);
 
 		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
+		testPortalCacheListener.reset();
 
 		// Commit 4
 
@@ -1027,58 +1139,58 @@ public class TransactionalPortalCacheTest {
 		}
 
 		Assert.assertEquals(_VALUE_1, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
 
 		TransactionalPortalCacheUtil.commit(false);
 
 		if (mvcc) {
-			_testCacheListener.assertRemoved(_KEY_1, _VALUE_2);
+			testPortalCacheListener.assertRemoved(_KEY_1, _VALUE_2);
 
 			if (ttl) {
-				_testCacheListener.assertPut(_KEY_1, _VALUE_1, 10);
+				testPortalCacheListener.assertPut(_KEY_1, _VALUE_1, 10);
 			}
 			else {
-				_testCacheListener.assertPut(_KEY_1, _VALUE_1);
+				testPortalCacheListener.assertPut(_KEY_1, _VALUE_1);
 			}
 
-			_testCacheListener.assertActionsCount(2);
+			testPortalCacheListener.assertActionsCount(2);
 
-			_testCacheReplicator.assertRemoved(_KEY_1, _VALUE_2);
+			testPortalCacheReplicator.assertRemoved(_KEY_1, _VALUE_2);
 
 			if (ttl) {
-				_testCacheReplicator.assertPut(_KEY_1, _VALUE_1, 10);
+				testPortalCacheReplicator.assertPut(_KEY_1, _VALUE_1, 10);
 			}
 			else {
-				_testCacheReplicator.assertPut(_KEY_1, _VALUE_1);
+				testPortalCacheReplicator.assertPut(_KEY_1, _VALUE_1);
 			}
 
-			_testCacheReplicator.assertActionsCount(2);
+			testPortalCacheReplicator.assertActionsCount(2);
 		}
 		else {
 			if (ttl) {
-				_testCacheListener.assertUpdated(_KEY_1, _VALUE_1, 10);
+				testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_1, 10);
 			}
 			else {
-				_testCacheListener.assertUpdated(_KEY_1, _VALUE_1);
+				testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_1);
 			}
 
-			_testCacheListener.assertActionsCount(1);
+			testPortalCacheListener.assertActionsCount(1);
 
 			if (ttl) {
-				_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_1, 10);
+				testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_1, 10);
 			}
 			else {
-				_testCacheReplicator.assertUpdated(_KEY_1, _VALUE_1);
+				testPortalCacheReplicator.assertUpdated(_KEY_1, _VALUE_1);
 			}
 
-			_testCacheReplicator.assertActionsCount(1);
+			testPortalCacheReplicator.assertActionsCount(1);
 		}
 
 		Assert.assertEquals(_VALUE_1, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 
 		// Commit 5
 
@@ -1097,40 +1209,40 @@ public class TransactionalPortalCacheTest {
 		}
 
 		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_1, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_1, portalCache.get(_KEY_1));
 
 		TransactionalPortalCacheUtil.commit(false);
 
 		if (mvcc) {
-			_testCacheListener.assertRemoved(_KEY_1, _VALUE_1);
+			testPortalCacheListener.assertRemoved(_KEY_1, _VALUE_1);
 
 			if (ttl) {
-				_testCacheListener.assertPut(_KEY_1, _VALUE_2, 10);
+				testPortalCacheListener.assertPut(_KEY_1, _VALUE_2, 10);
 			}
 			else {
-				_testCacheListener.assertPut(_KEY_1, _VALUE_2);
+				testPortalCacheListener.assertPut(_KEY_1, _VALUE_2);
 			}
 
-			_testCacheListener.assertActionsCount(2);
-			_testCacheReplicator.assertActionsCount(0);
+			testPortalCacheListener.assertActionsCount(2);
+			testPortalCacheReplicator.assertActionsCount(0);
 		}
 		else {
 			if (ttl) {
-				_testCacheListener.assertUpdated(_KEY_1, _VALUE_2, 10);
+				testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_2, 10);
 			}
 			else {
-				_testCacheListener.assertUpdated(_KEY_1, _VALUE_2);
+				testPortalCacheListener.assertUpdated(_KEY_1, _VALUE_2);
 			}
 
-			_testCacheListener.assertActionsCount(1);
-			_testCacheReplicator.assertActionsCount(0);
+			testPortalCacheListener.assertActionsCount(1);
+			testPortalCacheReplicator.assertActionsCount(0);
 		}
 
 		Assert.assertEquals(_VALUE_2, transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 
 		// Commit 6
 
@@ -1149,21 +1261,21 @@ public class TransactionalPortalCacheTest {
 			transactionalPortalCache);
 
 		Assert.assertNull(transactionalPortalCache.get(_KEY_1));
-		Assert.assertEquals(_VALUE_2, _portalCache.get(_KEY_1));
+		Assert.assertEquals(_VALUE_2, portalCache.get(_KEY_1));
 
 		TransactionalPortalCacheUtil.commit(false);
 
-		_testCacheListener.assertRemoveAll();
-		_testCacheListener.assertActionsCount(1);
+		testPortalCacheListener.assertRemoveAll();
+		testPortalCacheListener.assertActionsCount(1);
 
-		_testCacheReplicator.assertRemoveAll();
-		_testCacheReplicator.assertActionsCount(1);
+		testPortalCacheReplicator.assertRemoveAll();
+		testPortalCacheReplicator.assertActionsCount(1);
 
 		Assert.assertNull(transactionalPortalCache.get(_KEY_1));
-		Assert.assertNull(_portalCache.get(_KEY_1));
+		Assert.assertNull(portalCache.get(_KEY_1));
 
-		_testCacheListener.reset();
-		_testCacheReplicator.reset();
+		testPortalCacheListener.reset();
+		testPortalCacheReplicator.reset();
 	}
 
 	private void _testTransactionLifecycleListenerEnabledWithBarrier(
@@ -1181,7 +1293,7 @@ public class TransactionalPortalCacheTest {
 
 		TransactionAttribute parentTransactionAttribute = parentBuilder.build();
 
-		TransactionStatus parentTransactionStatus = new TestTrasactionStatus(
+		TransactionStatus parentTransactionStatus = new TestTransactionStatus(
 			true, false, false);
 
 		transactionLifecycleListener.created(
@@ -1198,7 +1310,7 @@ public class TransactionalPortalCacheTest {
 
 		TransactionAttribute childTransactionAttribute = childBuilder.build();
 
-		TransactionStatus childTransactionStatus = new TestTrasactionStatus(
+		TransactionStatus childTransactionStatus = new TestTransactionStatus(
 			true, false, false);
 
 		transactionLifecycleListener.created(
@@ -1215,7 +1327,7 @@ public class TransactionalPortalCacheTest {
 			grandchildBuilder.build();
 
 		TransactionStatus grandchildTransactionStatus =
-			new TestTrasactionStatus(true, false, false);
+			new TestTransactionStatus(true, false, false);
 
 		transactionLifecycleListener.created(
 			grandchildTransactionAttribute, grandchildTransactionStatus);
@@ -1287,7 +1399,7 @@ public class TransactionalPortalCacheTest {
 
 		TransactionAttribute parentTransactionAttribute = parentBuilder.build();
 
-		TransactionStatus parentTransactionStatus = new TestTrasactionStatus(
+		TransactionStatus parentTransactionStatus = new TestTransactionStatus(
 			true, false, false);
 
 		transactionLifecycleListener.created(
@@ -1304,7 +1416,7 @@ public class TransactionalPortalCacheTest {
 
 		TransactionAttribute childTransactionAttribute = parentBuilder.build();
 
-		TransactionStatus childTransactionStatus = new TestTrasactionStatus(
+		TransactionStatus childTransactionStatus = new TestTransactionStatus(
 			true, false, false);
 
 		transactionLifecycleListener.created(
@@ -1359,13 +1471,23 @@ public class TransactionalPortalCacheTest {
 
 	private static final String _KEY_2 = "KEY_2";
 
+	private static final long _TEST_COMPANY_ID = 15000;
+
 	private static final String _VALUE_1 = "VALUE_1";
 
 	private static final String _VALUE_2 = "VALUE_2";
 
+	private static final MockedStatic<CompanyThreadLocal>
+		_companyThreadLocalMockedStatic = Mockito.mockStatic(
+			CompanyThreadLocal.class);
+
 	private PortalCache<String, String> _portalCache;
+	private PortalCache<String, String> _shardedPortalCache;
 	private TestPortalCacheListener<String, String> _testCacheListener;
 	private TestPortalCacheReplicator<String, String> _testCacheReplicator;
+	private TestPortalCacheListener<String, String> _testShardedCacheListener;
+	private TestPortalCacheReplicator<String, String>
+		_testShardedCacheReplicator;
 
 	private static class TestCallable implements Callable<Void> {
 
@@ -1434,7 +1556,7 @@ public class TransactionalPortalCacheTest {
 
 	}
 
-	private static class TestTrasactionStatus implements TransactionStatus {
+	private static class TestTransactionStatus implements TransactionStatus {
 
 		@Override
 		public boolean isCompleted() {
@@ -1455,7 +1577,7 @@ public class TransactionalPortalCacheTest {
 		public void suppressLifecycleListenerThrowable(Throwable throwable) {
 		}
 
-		private TestTrasactionStatus(
+		private TestTransactionStatus(
 			boolean newTransaction, boolean rollbackOnly, boolean completed) {
 
 			_newTransaction = newTransaction;
