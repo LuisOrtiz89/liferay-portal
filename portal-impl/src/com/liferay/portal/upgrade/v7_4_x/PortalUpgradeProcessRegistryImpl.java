@@ -313,6 +313,9 @@ public class PortalUpgradeProcessRegistryImpl
 
 		upgradeVersionTreeMap.put(
 			new Version(27, 0, 0), new UpgradeDBPartitionClassName());
+
+		upgradeVersionTreeMap.put(
+			new Version(28, 0, 0), new UpgradeDBPartitionResourceAction());
 	}
 
 }
