@@ -192,7 +192,7 @@ public class DBUpgradeClient {
 
 		System.out.println("JVM arguments: " + jvmOptsCommands);
 
-		Collections.addAll(commands, jvmOptsCommands.split(" "));
+		Collections.addAll(commands, jvmOptsCommands.split(" ", jvmOptsCommands.split(" -").length - 1));
 
 		commands.add(DBUpgraderLauncher.class.getName());
 
