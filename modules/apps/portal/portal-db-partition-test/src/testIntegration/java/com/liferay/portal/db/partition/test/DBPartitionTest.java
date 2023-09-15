@@ -6,6 +6,7 @@
 package com.liferay.portal.db.partition.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.document.library.kernel.service.DLFileEntryTypeLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
@@ -273,8 +274,9 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 		CompanyLocalServiceImpl companyLocalServiceImpl =
 			(CompanyLocalServiceImpl)aopInvocationHandler.getTarget();
 
-		ReflectionTestUtil.setFieldValue(
-			companyLocalServiceImpl, "_dlFileEntryTypeLocalService", null);
+		DLFileEntryTypeLocalService dlFileEntryTypeLocalService =
+			ReflectionTestUtil.getAndSetFieldValue(
+				companyLocalServiceImpl, "_dlFileEntryTypeLocalService", null);
 
 		long companyId = RandomTestUtil.randomLong();
 		boolean orphanedDBPartition = false;
@@ -306,6 +308,10 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			if (orphanedDBPartition) {
 				removeDBPartitions(new long[] {companyId}, false);
 			}
+
+			ReflectionTestUtil.setFieldValue(
+				companyLocalServiceImpl, "_dlFileEntryTypeLocalService",
+				dlFileEntryTypeLocalService);
 		}
 	}
 
