@@ -12,11 +12,14 @@ import com.liferay.portal.db.partition.DBPartitionUtil;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
+import com.liferay.portal.test.rule.Inject;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -269,6 +272,32 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 	}
 
 	@Test
+	public void testNewCompanyData() throws Exception {
+		Company company = null;
+
+		try {
+			company = _companyLocalService.addCompany(
+				null, "DBPartitionTest", "DBPartitionTest",
+				"DBPartitionTest.com", 0, true, null, null, null, null, null,
+				null);
+
+			Company companyPersisted = _companyLocalService.getCompanyByWebId(
+				"DBPartitionTest");
+
+			Assert.assertNotNull(companyPersisted);
+
+			Assert.assertEquals("DBPartitionTest", companyPersisted.getName());
+			Assert.assertEquals(
+				"DBPartitionTest.com", companyPersisted.getMx());
+		}
+		finally {
+			if (company != null) {
+				_companyLocalService.deleteCompany(company);
+			}
+		}
+	}
+
+	@Test
 	public void testRemoveDBPartition() throws Exception {
 		addDBPartitions();
 
@@ -347,5 +376,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 		return viewNames.size();
 	}
+
+	@Inject
+	private CompanyLocalService _companyLocalService;
 
 }

@@ -14,7 +14,6 @@ import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
 import com.liferay.portal.kernel.dao.orm.FinderCache;
 import com.liferay.portal.kernel.model.ClassName;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.CompanyLocalService;
@@ -202,32 +201,6 @@ public class DBPartitionTest extends BaseDBPartitionTestCase {
 			DBPartitionUtil.forEachCompanyId(
 				companyId -> _classNameLocalService.deleteClassName(
 					_classNameLocalService.fetchClassName("class.name.test")));
-		}
-	}
-
-	@Test
-	public void testNewCompanyData() throws Exception {
-		Company company = null;
-
-		try {
-			company = _companyLocalService.addCompany(
-				null, "DBPartitionTest", "DBPartitionTest",
-				"DBPartitionTest.com", 0, true, null, null, null, null, null,
-				null);
-
-			Company companyPersisted = _companyLocalService.getCompanyByWebId(
-				"DBPartitionTest");
-
-			Assert.assertNotNull(companyPersisted);
-
-			Assert.assertEquals("DBPartitionTest", companyPersisted.getName());
-			Assert.assertEquals(
-				"DBPartitionTest.com", companyPersisted.getMx());
-		}
-		finally {
-			if (company != null) {
-				_companyLocalService.deleteCompany(company);
-			}
 		}
 	}
 
