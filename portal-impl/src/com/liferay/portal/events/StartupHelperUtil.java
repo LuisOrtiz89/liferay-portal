@@ -45,9 +45,7 @@ public class StartupHelperUtil {
 
 	public static void initResourceActions() {
 		try {
-			DBPartitionUtil.forEachCompanyId(
-				companyId ->
-					ResourceActionLocalServiceUtil.checkResourceActions());
+			ResourceActionLocalServiceUtil.checkResourceActions();
 		}
 		catch (Exception exception) {
 			ReflectionUtil.throwException(exception);
