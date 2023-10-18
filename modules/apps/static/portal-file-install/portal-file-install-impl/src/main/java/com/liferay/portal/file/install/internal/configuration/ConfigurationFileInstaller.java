@@ -13,6 +13,9 @@ import com.liferay.portal.file.install.constants.FileInstallConstants;
 import com.liferay.portal.file.install.internal.Util;
 import com.liferay.portal.file.install.properties.ConfigurationProperties;
 import com.liferay.portal.file.install.properties.ConfigurationPropertiesFactory;
+import com.liferay.portal.kernel.dao.db.DB;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapDictionary;
@@ -22,6 +25,10 @@ import com.liferay.portal.util.PropsValues;
 import java.io.File;
 
 import java.net.URL;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -269,6 +276,28 @@ public class ConfigurationFileInstaller implements FileInstaller {
 		return null;
 	}
 
+	private long _getCompanyId(String webId) throws Exception {
+		if (Objects.equals(webId, "default")) {
+			webId = PropsValues.COMPANY_DEFAULT_WEB_ID;
+		}
+
+		try (Connection connection = _dataSource.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				_db.buildSQL(
+					"select companyId from Company where webId = ?"))) {
+
+			preparedStatement.setString(1, webId);
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				if (resultSet.next()) {
+					return resultSet.getLong(1);
+				}
+			}
+		}
+
+		return 0;
+	}
+
 	private Configuration _getConfiguration(
 			String fileName, String pid, String name)
 		throws Exception {
@@ -287,10 +316,26 @@ public class ConfigurationFileInstaller implements FileInstaller {
 		return _configurationAdmin.getConfiguration(pid, StringPool.QUESTION);
 	}
 
-	private String[] _parsePid(String path) {
+	private String[] _parsePid(String path) throws Exception {
 		String pid = path.substring(0, path.lastIndexOf(CharPool.PERIOD));
 
-		int index = pid.indexOf(CharPool.TILDE);
+		String webId = null;
+
+		int index;
+
+		if (DBPartition.isPartitionEnabled()) {
+			index = pid.indexOf(CharPool.AT);
+
+			if (index > 0) {
+				webId = pid.substring(index + 1);
+
+				_validateWebId(webId);
+
+				pid = pid.substring(0, index);
+			}
+		}
+
+		index = pid.indexOf(CharPool.TILDE);
 
 		if (index <= 0) {
 			index = pid.indexOf(CharPool.UNDERLINE);
@@ -305,10 +350,19 @@ public class ConfigurationFileInstaller implements FileInstaller {
 
 			pid = pid.substring(0, index);
 
-			return new String[] {pid, name};
+			return new String[] {pid, name, webId};
 		}
 
-		return new String[] {pid, null};
+		return new String[] {pid, null, webId};
+	}
+
+	private void _validateWebId(String webId) throws Exception {
+		if (_getCompanyId(webId) != 0) {
+			return;
+		}
+
+		throw new Exception(
+			"Company with webId " + webId + " has not been found");
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -317,6 +371,7 @@ public class ConfigurationFileInstaller implements FileInstaller {
 	private final String _configsDirPath;
 	private final ConfigurationAdmin _configurationAdmin;
 	private final DataSource _dataSource;
+	private final DB _db = DBManagerUtil.getDB();
 	private final String _encoding;
 
 }
