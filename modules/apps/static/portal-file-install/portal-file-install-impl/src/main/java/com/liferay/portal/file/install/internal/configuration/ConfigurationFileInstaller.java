@@ -5,9 +5,11 @@
 
 package com.liferay.portal.file.install.internal.configuration;
 
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 import com.liferay.portal.file.install.FileInstaller;
 import com.liferay.portal.file.install.constants.FileInstallConstants;
 import com.liferay.portal.file.install.internal.Util;
@@ -18,6 +20,7 @@ import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.util.PropsValues;
@@ -99,99 +102,140 @@ public class ConfigurationFileInstaller implements FileInstaller {
 
 		String[] pid = _parsePid(file.getName());
 
-		Configuration configuration = _getConfiguration(
-			file.getName(), pid[0], pid[1]);
+		SafeCloseable safeCloseable = null;
 
-		Set<Configuration.ConfigurationAttribute> configurationAttributes =
-			configuration.getAttributes();
+		if (DBPartition.isPartitionEnabled()) {
+			boolean scopedFile = false;
 
-		if (configurationAttributes.contains(
-				Configuration.ConfigurationAttribute.READ_ONLY)) {
+			if (pid[2] != null) {
+				scopedFile = true;
+			}
 
-			configuration.removeAttributes(
-				Configuration.ConfigurationAttribute.READ_ONLY);
+			boolean scopedConfig = _isScopedConfiguration(dictionary);
+
+			if (scopedFile && !scopedConfig) {
+				throw new Exception(
+					StringBundler.concat(
+						"Configuration in file ", file.getName(),
+						" does not correspond to a scoped configuration"));
+			}
+
+			if (!scopedFile && scopedConfig) {
+				throw new Exception(
+					StringBundler.concat(
+						"When Database Partitioning is enabled it is needed ",
+						"to specify the company in the configuration file ",
+						"name. ", file.getName(),
+						" is not a valid configuration file name."));
+			}
+
+			safeCloseable = CompanyThreadLocal.setWithSafeCloseable(
+				_getCompanyId(pid[2]));
 		}
 
-		Dictionary<String, Object> properties = configuration.getProperties();
+		try {
+			Configuration configuration = _getConfiguration(
+				_removeWebIdFromFileName(file.getName()), pid[0], pid[1]);
 
-		Dictionary<String, Object> old = null;
+			Set<Configuration.ConfigurationAttribute> configurationAttributes =
+				configuration.getAttributes();
 
-		if (properties != null) {
-			old = new HashMapDictionary<>();
+			if (configurationAttributes.contains(
+					Configuration.ConfigurationAttribute.READ_ONLY)) {
 
-			Enumeration<String> enumeration = properties.keys();
+				configuration.removeAttributes(
+					Configuration.ConfigurationAttribute.READ_ONLY);
+			}
 
-			while (enumeration.hasMoreElements()) {
-				String key = enumeration.nextElement();
+			Dictionary<String, Object> properties =
+				configuration.getProperties();
 
-				old.put(key, properties.get(key));
+			Dictionary<String, Object> old = null;
+
+			if (properties != null) {
+				old = new HashMapDictionary<>();
+
+				Enumeration<String> enumeration = properties.keys();
+
+				while (enumeration.hasMoreElements()) {
+					String key = enumeration.nextElement();
+
+					old.put(key, properties.get(key));
+				}
+			}
+
+			String oldFileName = null;
+
+			if (old != null) {
+				oldFileName = (String)old.remove(
+					FileInstallConstants.FELIX_FILE_INSTALL_FILENAME);
+
+				old.remove(Constants.SERVICE_PID);
+				old.remove(ConfigurationAdmin.SERVICE_FACTORYPID);
+
+				Object bundleLocation = dictionary.get(
+					ConfigurationAdmin.SERVICE_BUNDLELOCATION);
+
+				if ((bundleLocation == null) &&
+					Objects.equals(
+						StringPool.QUESTION,
+						old.get(ConfigurationAdmin.SERVICE_BUNDLELOCATION))) {
+
+					old.remove(ConfigurationAdmin.SERVICE_BUNDLELOCATION);
+				}
+			}
+
+			String currentFileName = _removeWebIdFromFileName(file.getName());
+
+			if (!_equals(dictionary, old) ||
+				!Objects.equals(oldFileName, currentFileName) ||
+				configurationAttributes.contains(
+					Configuration.ConfigurationAttribute.READ_ONLY) ||
+				!file.canWrite()) {
+
+				dictionary.put(
+					FileInstallConstants.FELIX_FILE_INSTALL_FILENAME,
+					currentFileName);
+
+				String logString = StringPool.BLANK;
+
+				if (pid[1] != null) {
+					logString = StringPool.TILDE + pid[1];
+				}
+
+				if (old == null) {
+					if (_log.isInfoEnabled()) {
+						_log.info(
+							StringBundler.concat(
+								"Creating configuration from ", pid[0],
+								logString, ".config"));
+					}
+				}
+				else {
+					if (_log.isInfoEnabled()) {
+						_log.info(
+							StringBundler.concat(
+								"Updating configuration from ", pid[0],
+								logString, ".config"));
+					}
+				}
+
+				configuration.updateIfDifferent(dictionary);
+
+				if (!file.canWrite()) {
+					try {
+						configuration.addAttributes(
+							Configuration.ConfigurationAttribute.READ_ONLY);
+					}
+					catch (Throwable throwable) {
+						_log.error(throwable);
+					}
+				}
 			}
 		}
-
-		String oldFileName = null;
-
-		if (old != null) {
-			oldFileName = (String)old.remove(
-				FileInstallConstants.FELIX_FILE_INSTALL_FILENAME);
-
-			old.remove(Constants.SERVICE_PID);
-			old.remove(ConfigurationAdmin.SERVICE_FACTORYPID);
-
-			if ((dictionary.get(ConfigurationAdmin.SERVICE_BUNDLELOCATION) ==
-					null) &&
-				Objects.equals(
-					StringPool.QUESTION,
-					old.get(ConfigurationAdmin.SERVICE_BUNDLELOCATION))) {
-
-				old.remove(ConfigurationAdmin.SERVICE_BUNDLELOCATION);
-			}
-		}
-
-		String currentFileName = file.getName();
-
-		if (!_equals(dictionary, old) ||
-			!Objects.equals(oldFileName, currentFileName) ||
-			configurationAttributes.contains(
-				Configuration.ConfigurationAttribute.READ_ONLY) ||
-			!file.canWrite()) {
-
-			dictionary.put(
-				FileInstallConstants.FELIX_FILE_INSTALL_FILENAME,
-				currentFileName);
-
-			String logString = StringPool.BLANK;
-
-			if (pid[1] != null) {
-				logString = StringPool.TILDE + pid[1];
-			}
-
-			if (old == null) {
-				if (_log.isInfoEnabled()) {
-					_log.info(
-						StringBundler.concat(
-							"Creating configuration from ", pid[0], logString,
-							".config"));
-				}
-			}
-			else {
-				if (_log.isInfoEnabled()) {
-					_log.info(
-						StringBundler.concat(
-							"Updating configuration from ", pid[0], logString,
-							".config"));
-				}
-			}
-
-			configuration.updateIfDifferent(dictionary);
-
-			if (!file.canWrite()) {
-				try {
-					configuration.addAttributes(
-						Configuration.ConfigurationAttribute.READ_ONLY);
-				}
-				catch (Throwable throwable) {
-					_log.error(throwable);
-				}
+		finally {
+			if (safeCloseable != null) {
+				safeCloseable.close();
 			}
 		}
 
@@ -208,6 +252,10 @@ public class ConfigurationFileInstaller implements FileInstaller {
 			logString = StringPool.TILDE + pid[1];
 		}
 
+		if (pid[2] != null) {
+			logString += StringPool.AT + pid[2];
+		}
+
 		if (_log.isInfoEnabled()) {
 			_log.info(
 				StringBundler.concat(
@@ -215,10 +263,24 @@ public class ConfigurationFileInstaller implements FileInstaller {
 					".config"));
 		}
 
-		Configuration configuration = _getConfiguration(
-			file.getName(), pid[0], pid[1]);
+		SafeCloseable safeCloseable = null;
 
-		configuration.delete();
+		if (pid[2] != null) {
+			safeCloseable = CompanyThreadLocal.setWithSafeCloseable(
+				_getCompanyId(pid[2]));
+		}
+
+		try {
+			Configuration configuration = _getConfiguration(
+				_removeWebIdFromFileName(file.getName()), pid[0], pid[1]);
+
+			configuration.delete();
+		}
+		finally {
+			if (safeCloseable != null) {
+				safeCloseable.close();
+			}
+		}
 	}
 
 	private boolean _equals(
@@ -316,6 +378,28 @@ public class ConfigurationFileInstaller implements FileInstaller {
 		return _configurationAdmin.getConfiguration(pid, StringPool.QUESTION);
 	}
 
+	private boolean _isScopedConfiguration(
+		Dictionary<String, Object> dictionary) {
+
+		for (ExtendedObjectClassDefinition.Scope scope :
+				ExtendedObjectClassDefinition.Scope.values()) {
+
+			String key = scope.getPortablePropertyKey();
+
+			if ((key != null) && (dictionary.get(key) != null)) {
+				return true;
+			}
+
+			key = scope.getPropertyKey();
+
+			if ((key != null) && (dictionary.get(key) != null)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private String[] _parsePid(String path) throws Exception {
 		String pid = path.substring(0, path.lastIndexOf(CharPool.PERIOD));
 
@@ -354,6 +438,21 @@ public class ConfigurationFileInstaller implements FileInstaller {
 		}
 
 		return new String[] {pid, null, webId};
+	}
+
+	private String _removeWebIdFromFileName(String fileName) {
+		if (DBPartition.isPartitionEnabled()) {
+			int index = fileName.indexOf(CharPool.AT);
+
+			if (index > 0) {
+				String webId = fileName.substring(
+					index, fileName.lastIndexOf(CharPool.PERIOD));
+
+				fileName = StringUtil.removeSubstring(fileName, webId);
+			}
+		}
+
+		return fileName;
 	}
 
 	private void _validateWebId(String webId) throws Exception {
