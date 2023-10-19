@@ -12,13 +12,17 @@ import com.liferay.configuration.admin.web.internal.display.context.Configuratio
 import com.liferay.configuration.admin.web.internal.exporter.ConfigurationExporter;
 import com.liferay.configuration.admin.web.internal.model.ConfigurationModel;
 import com.liferay.configuration.admin.web.internal.util.ConfigurationModelRetriever;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition.Scope;
 import com.liferay.portal.configuration.metatype.definitions.ExtendedAttributeDefinition;
 import com.liferay.portal.configuration.metatype.definitions.ExtendedObjectClassDefinition;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.HashMapDictionary;
@@ -324,8 +328,11 @@ public class ExportConfigurationMVCResourceCommand
 			ContentTypes.TEXT_XML_UTF8);
 	}
 
-	private String _getFileName(String factoryPid, String pid) {
+	private String _getFileName(String factoryPid, String pid)
+		throws Exception {
+
 		String fileName = pid;
+		boolean scoped = false;
 
 		if (Validator.isNotNull(factoryPid) && !factoryPid.equals(pid)) {
 			String factoryInstanceId = pid.substring(factoryPid.length() + 1);
@@ -335,19 +342,39 @@ public class ExportConfigurationMVCResourceCommand
 
 				factoryInstanceId = StringUtil.removeSubstring(
 					factoryInstanceId, "scoped.");
+
+				scoped = true;
 			}
 			else if (factoryInstanceId.startsWith("scoped~")) {
 				factoryPid = factoryPid + ".scoped";
 
 				factoryInstanceId = StringUtil.removeSubstring(
 					factoryInstanceId, "scoped~");
+
+				scoped = true;
 			}
 
 			fileName = factoryPid + StringPool.TILDE + factoryInstanceId;
 		}
 
+		if (scoped) {
+			Company company = _companyLocalService.getCompany(
+				CompanyThreadLocal.getCompanyId());
+
+			String webId = company.getWebId();
+
+			if (webId.equals(PropsValues.COMPANY_DEFAULT_WEB_ID)) {
+				webId = "default";
+			}
+
+			fileName += CharPool.AT + webId;
+		}
+
 		return fileName + ".config";
 	}
+
+	@Reference
+	private CompanyLocalService _companyLocalService;
 
 	@Reference
 	private ConfigurationExportImportProcessor
