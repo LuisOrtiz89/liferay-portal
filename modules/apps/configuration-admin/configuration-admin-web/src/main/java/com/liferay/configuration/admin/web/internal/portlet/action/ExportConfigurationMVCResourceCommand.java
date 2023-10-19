@@ -12,13 +12,18 @@ import com.liferay.configuration.admin.web.internal.display.context.Configuratio
 import com.liferay.configuration.admin.web.internal.exporter.ConfigurationExporter;
 import com.liferay.configuration.admin.web.internal.model.ConfigurationModel;
 import com.liferay.configuration.admin.web.internal.util.ConfigurationModelRetriever;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition.Scope;
 import com.liferay.portal.configuration.metatype.definitions.ExtendedAttributeDefinition;
 import com.liferay.portal.configuration.metatype.definitions.ExtendedObjectClassDefinition;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.HashMapDictionary;
@@ -194,7 +199,9 @@ public class ExportConfigurationMVCResourceCommand
 				for (ConfigurationModel factoryInstance : factoryInstances) {
 					String curPid = factoryInstance.getID();
 
-					String curFileName = _getFileName(curFactoryPid, curPid);
+					String curFileName = _getFileName(
+						curFactoryPid, curPid,
+						configurationScopeDisplayContext.getScope());
 
 					zipWriter.addEntry(
 						curFileName,
@@ -209,7 +216,8 @@ public class ExportConfigurationMVCResourceCommand
 			else if (configurationModel.hasConfiguration()) {
 				String curPid = configurationModel.getID();
 
-				String curFileName = _getFileName(null, curPid);
+				String curFileName = _getFileName(
+					null, curPid, configurationScopeDisplayContext.getScope());
 
 				zipWriter.addEntry(
 					curFileName,
@@ -276,7 +284,9 @@ public class ExportConfigurationMVCResourceCommand
 		for (ConfigurationModel factoryInstance : factoryInstances) {
 			String curPid = factoryInstance.getID();
 
-			String curFileName = _getFileName(factoryPid, curPid);
+			String curFileName = _getFileName(
+				factoryPid, curPid,
+				configurationScopeDisplayContext.getScope());
 
 			zipWriter.addEntry(
 				curFileName,
@@ -309,13 +319,13 @@ public class ExportConfigurationMVCResourceCommand
 
 		String languageId = themeDisplay.getLanguageId();
 
-		String fileName = _getFileName(factoryPid, pid);
-
 		ConfigurationScopeDisplayContext configurationScopeDisplayContext =
 			ConfigurationScopeDisplayContextFactory.create(resourceRequest);
 
 		PortletResponseUtil.sendFile(
-			resourceRequest, resourceResponse, fileName,
+			resourceRequest, resourceResponse,
+			_getFileName(
+				factoryPid, pid, configurationScopeDisplayContext.getScope()),
 			ConfigurationExporter.getPropertiesAsBytes(
 				getProperties(
 					languageId, factoryPid, pid,
@@ -324,7 +334,9 @@ public class ExportConfigurationMVCResourceCommand
 			ContentTypes.TEXT_XML_UTF8);
 	}
 
-	private String _getFileName(String factoryPid, String pid) {
+	private String _getFileName(String factoryPid, String pid, Scope scope)
+		throws Exception {
+
 		String fileName = pid;
 
 		if (Validator.isNotNull(factoryPid) && !factoryPid.equals(pid)) {
@@ -346,8 +358,26 @@ public class ExportConfigurationMVCResourceCommand
 			fileName = factoryPid + StringPool.TILDE + factoryInstanceId;
 		}
 
+		if (DBPartition.isPartitionEnabled() &&
+			!Objects.equals(scope.getValue(), "system")) {
+
+			Company company = _companyLocalService.getCompany(
+				CompanyThreadLocal.getCompanyId());
+
+			String webId = company.getWebId();
+
+			if (webId.equals(PropsValues.COMPANY_DEFAULT_WEB_ID)) {
+				webId = "default";
+			}
+
+			fileName += CharPool.AT + webId;
+		}
+
 		return fileName + ".config";
 	}
+
+	@Reference
+	private CompanyLocalService _companyLocalService;
 
 	@Reference
 	private ConfigurationExportImportProcessor
