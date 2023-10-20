@@ -178,7 +178,8 @@ public class DBPartitionUtil {
 		return _dropDBPartition(companyId);
 	}
 
-	public static void replaceByTable(Connection connection, String viewName)
+	public static void replaceByTable(
+			Connection connection, boolean copyData, String viewName)
 		throws Exception {
 
 		long companyId = getCurrentCompanyId();
@@ -192,9 +193,11 @@ public class DBPartitionUtil {
 
 			statement.execute(_getCreateTableSQL(companyId, viewName));
 
-			_copyData(
-				viewName, _defaultSchemaName, _getSchemaName(companyId),
-				statement, StringPool.BLANK);
+			if (copyData) {
+				_copyData(
+					viewName, _defaultSchemaName, _getSchemaName(companyId),
+					statement, StringPool.BLANK);
+			}
 		}
 	}
 
