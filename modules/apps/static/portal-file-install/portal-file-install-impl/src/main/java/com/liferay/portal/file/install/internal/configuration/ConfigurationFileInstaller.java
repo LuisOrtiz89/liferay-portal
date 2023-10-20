@@ -185,7 +185,7 @@ public class ConfigurationFileInstaller implements FileInstaller {
 				}
 			}
 
-			String currentFileName = _removeWebIdFromFileName(file.getName());
+			String currentFileName = file.getName();
 
 			if (!_equals(dictionary, old) ||
 				!Objects.equals(oldFileName, currentFileName) ||
