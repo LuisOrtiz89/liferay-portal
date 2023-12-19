@@ -10,6 +10,7 @@ import com.liferay.portal.db.partition.db.DBPartitionDB;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.service.CompanyLocalService;
@@ -31,7 +32,6 @@ import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.portal.test.rule.TransactionalTestRule;
-import com.liferay.portal.util.PortalInstances;
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -91,14 +91,14 @@ public class CompanyLocalServiceDBPartitionTest
 
 		Assert.assertTrue(
 			ArrayUtil.contains(
-				PortalInstances.getCompanyIdsBySQL(), _company.getCompanyId()));
+				PortalInstancePool.getCompanyIds(), _company.getCompanyId()));
 
 		Assert.assertEquals(dbPartitionsCount + 1, _getDBPartitionsCount());
 	}
 
 	@Test
 	public void testAddCompanyWhenCompanyLocalServiceFails() throws Exception {
-		long[] companyIds = PortalInstances.getCompanyIdsBySQL();
+		long[] companyIds = PortalInstancePool.getCompanyIds();
 		int dbPartitionsCount = _getDBPartitionsCount();
 
 		Company company = null;
@@ -120,7 +120,7 @@ public class CompanyLocalServiceDBPartitionTest
 		}
 		catch (Exception exception) {
 			Assert.assertArrayEquals(
-				companyIds, PortalInstances.getCompanyIdsBySQL());
+				companyIds, PortalInstancePool.getCompanyIds());
 			Assert.assertEquals(dbPartitionsCount, _getDBPartitionsCount());
 		}
 		finally {
@@ -132,7 +132,7 @@ public class CompanyLocalServiceDBPartitionTest
 
 	@Test
 	public void testAddCompanyWhenDBPartitionUtilFails() throws Exception {
-		long[] companyIds = PortalInstances.getCompanyIdsBySQL();
+		long[] companyIds = PortalInstancePool.getCompanyIds();
 		int dbPartitionsCount = _getDBPartitionsCount();
 
 		Company company = null;
@@ -159,7 +159,7 @@ public class CompanyLocalServiceDBPartitionTest
 		}
 		catch (Exception exception) {
 			Assert.assertArrayEquals(
-				companyIds, PortalInstances.getCompanyIdsBySQL());
+				companyIds, PortalInstancePool.getCompanyIds());
 			Assert.assertEquals(dbPartitionsCount, _getDBPartitionsCount());
 		}
 		finally {
@@ -187,7 +187,7 @@ public class CompanyLocalServiceDBPartitionTest
 
 			standaloneDBPartition = false;
 
-			long[] companyIds = PortalInstances.getCompanyIdsBySQL();
+			long[] companyIds = PortalInstancePool.getCompanyIds();
 
 			Assert.assertTrue(
 				ArrayUtil.contains(companyIds, company.getCompanyId()));
@@ -221,7 +221,7 @@ public class CompanyLocalServiceDBPartitionTest
 			standaloneDBPartition = true;
 
 			Company defaultCompany = _companyLocalService.getCompany(
-				PortalInstances.getDefaultCompanyId());
+				PortalInstancePool.getDefaultCompanyId());
 
 			try {
 				_companyLocalService.addDBPartitionCompany(
@@ -233,10 +233,10 @@ public class CompanyLocalServiceDBPartitionTest
 				Assert.fail();
 			}
 			catch (PortalException portalException) {
-				long[] companyIds = PortalInstances.getCompanyIdsBySQL();
-
 				Assert.assertFalse(
-					ArrayUtil.contains(companyIds, company.getCompanyId()));
+					ArrayUtil.contains(
+						PortalInstancePool.getCompanyIds(),
+						company.getCompanyId()));
 
 				_checkStandaloneDBPartitionTables(
 					company.getCompanyId(), "Company", "VirtualHost");
@@ -292,7 +292,7 @@ public class CompanyLocalServiceDBPartitionTest
 				Assert.fail();
 			}
 			catch (PortalException portalException) {
-				long[] companyIds = PortalInstances.getCompanyIdsBySQL();
+				long[] companyIds = PortalInstancePool.getCompanyIds();
 
 				Assert.assertFalse(
 					ArrayUtil.contains(companyIds, company.getCompanyId()));
@@ -321,7 +321,7 @@ public class CompanyLocalServiceDBPartitionTest
 
 		Assert.assertFalse(
 			ArrayUtil.contains(
-				PortalInstances.getCompanyIdsBySQL(), company.getCompanyId()));
+				PortalInstancePool.getCompanyIds(), company.getCompanyId()));
 		Assert.assertEquals(dbPartitionsCount - 1, _getDBPartitionsCount());
 	}
 
@@ -352,7 +352,7 @@ public class CompanyLocalServiceDBPartitionTest
 		catch (Exception exception) {
 			Assert.assertTrue(
 				ArrayUtil.contains(
-					PortalInstances.getCompanyIdsBySQL(),
+					PortalInstancePool.getCompanyIds(),
 					_company.getCompanyId()));
 		}
 	}
@@ -369,7 +369,7 @@ public class CompanyLocalServiceDBPartitionTest
 
 			Assert.assertFalse(
 				ArrayUtil.contains(
-					PortalInstances.getCompanyIdsBySQL(),
+					PortalInstancePool.getCompanyIds(),
 					company.getCompanyId()));
 
 			standaloneDBPartition = true;
@@ -430,7 +430,7 @@ public class CompanyLocalServiceDBPartitionTest
 				viewsCount, _getViewsCount(company.getCompanyId()));
 			Assert.assertTrue(
 				ArrayUtil.contains(
-					PortalInstances.getCompanyIdsBySQL(),
+					PortalInstancePool.getCompanyIds(),
 					company.getCompanyId()));
 		}
 		finally {
