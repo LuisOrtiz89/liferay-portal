@@ -405,7 +405,7 @@ public class MainServlet extends HttpServlet {
 
 			try {
 				SetupWizardSampleDataUtil.addSampleData(
-					PortalInstances.getDefaultCompanyId());
+					PortalInstancePool.getDefaultCompanyId());
 			}
 			catch (Exception exception) {
 				_log.error(exception);
