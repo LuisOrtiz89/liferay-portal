@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.test.rule.AssumeTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Props;
+import com.liferay.portal.model.impl.CompanyImpl;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -377,6 +378,13 @@ public abstract class BaseDBPartitionTestCase {
 
 				preparedStatement2.executeUpdate();
 			}
+
+			Company company = new CompanyImpl();
+
+			company.setCompanyId(companyId);
+			company.setWebId("Test" + companyId);
+
+			PortalInstancePool.add(company);
 		}
 	}
 
