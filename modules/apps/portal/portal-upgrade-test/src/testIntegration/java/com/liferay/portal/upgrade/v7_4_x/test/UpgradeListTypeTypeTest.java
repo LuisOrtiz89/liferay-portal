@@ -11,10 +11,15 @@ import com.liferay.portal.kernel.model.ListType;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.ListTypeLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.upgrade.UpgradeException;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.upgrade.v7_4_x.UpgradeListTypeType;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,43 +43,92 @@ public class UpgradeListTypeTypeTest {
 	public void setUp() throws Exception {
 		_companyId = CompanyThreadLocal.getCompanyId();
 
-		_listTypeLocalService.addListType(
-			_companyId, _LIST_TYPE_INTRANET, _LIST_TYPE_ACCOUNT_ENTRY);
-
-		_listTypeLocalService.addListType(
-			_companyId, _LIST_TYPE_INTRANET, _LIST_TYPE_COMPANY);
+		for (String listTypeName : _listTypeNames) {
+			_listTypeLocalService.addListType(
+				_companyId, listTypeName, _OLD_LIST_TYPE_TYPE);
+		}
 	}
 
 	@Test
-	public void testUpgrade() throws Exception {
+	public void testUpgradeReplacementListTypeExists() throws Exception {
+		for (String listTypeName : _listTypeNames) {
+			_listTypeLocalService.addListType(
+				_companyId, listTypeName, _NEW_LIST_TYPE_TYPE);
+		}
+
+		_test();
+	}
+
+	@Test
+	public void testUpgradeReplacementListTypeNotExists() throws Exception {
+		try {
+			for (String listTypeName : _listTypeNames) {
+				ListType listType = _deleteListType(
+					listTypeName, _NEW_LIST_TYPE_TYPE);
+
+				if (listType != null) {
+					_originalListTypes.add(listType);
+				}
+			}
+
+			_test();
+		}
+		finally {
+			for (String listTypeName : _listTypeNames) {
+				_deleteListType(listTypeName, _NEW_LIST_TYPE_TYPE);
+			}
+
+			for (ListType listType : _originalListTypes) {
+				_listTypeLocalService.addListType(listType);
+			}
+		}
+	}
+
+	private ListType _deleteListType(String listTypeName, String listTypeType) {
+		ListType listType = _listTypeLocalService.getListType(
+			_companyId, listTypeName, listTypeType);
+
+		if (listType != null) {
+			_listTypeLocalService.deleteListType(listType);
+		}
+
+		return listType;
+	}
+
+	private void _test() throws UpgradeException {
 		UpgradeProcess upgradeProcess = new UpgradeListTypeType();
 
 		upgradeProcess.upgrade();
 
 		FinderCacheUtil.clearCache();
 
-		ListType accountEntryListType = _listTypeLocalService.getListType(
-			_companyId, _LIST_TYPE_INTRANET, _LIST_TYPE_ACCOUNT_ENTRY);
+		for (String listTypeName : _listTypeNames) {
+			ListType oldListType = _listTypeLocalService.getListType(
+				_companyId, listTypeName, _OLD_LIST_TYPE_TYPE);
 
-		ListType companyListType = _listTypeLocalService.getListType(
-			_companyId, _LIST_TYPE_INTRANET, _LIST_TYPE_COMPANY);
+			ListType newListType = _listTypeLocalService.getListType(
+				_companyId, listTypeName, _NEW_LIST_TYPE_TYPE);
 
-		Assert.assertNull(accountEntryListType);
+			Assert.assertNull(oldListType);
 
-		Assert.assertNotNull(companyListType);
+			Assert.assertNotNull(newListType);
+		}
 	}
 
-	private static final String _LIST_TYPE_ACCOUNT_ENTRY =
-		"com.liferay.account.model.AccountEntry.address";
-
-	private static final String _LIST_TYPE_COMPANY =
+	private static final String _NEW_LIST_TYPE_TYPE =
 		"com.liferay.portal.kernel.model.Company.website";
 
-	private static final String _LIST_TYPE_INTRANET = "intranet";
+	private static final String _OLD_LIST_TYPE_TYPE =
+		"com.liferay.account.model.AccountEntry.address";
 
-	private static Long _companyId;
+	private static final List<String> _listTypeNames = Arrays.asList(
+		"intranet", "public");
+
+	private Long _companyId;
 
 	@Inject
 	private ListTypeLocalService _listTypeLocalService;
+
+	private final List<ListType> _originalListTypes = new ArrayList<>();
 
 }
