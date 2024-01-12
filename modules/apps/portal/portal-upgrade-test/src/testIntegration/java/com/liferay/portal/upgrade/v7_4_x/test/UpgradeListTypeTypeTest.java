@@ -50,7 +50,7 @@ public class UpgradeListTypeTypeTest {
 	}
 
 	@Test
-	public void testUpgradeReplacementListTypeExists() throws Exception {
+	public void testUpgradeListTypeExists() throws Exception {
 		for (String listTypeName : _listTypeNames) {
 			_listTypeLocalService.addListType(
 				_companyId, listTypeName, _NEW_LIST_TYPE_TYPE);
@@ -60,7 +60,7 @@ public class UpgradeListTypeTypeTest {
 	}
 
 	@Test
-	public void testUpgradeReplacementListTypeNotExists() throws Exception {
+	public void testUpgradeListTypeNotExists() throws Exception {
 		try {
 			for (String listTypeName : _listTypeNames) {
 				ListType listType = _deleteListType(
