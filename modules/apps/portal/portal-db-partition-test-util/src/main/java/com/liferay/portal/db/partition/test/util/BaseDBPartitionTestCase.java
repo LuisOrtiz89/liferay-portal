@@ -46,6 +46,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import java.util.Map;
+
 import javax.sql.DataSource;
 
 import org.junit.Assume;
@@ -417,6 +419,20 @@ public abstract class BaseDBPartitionTestCase {
 				StringBundler.concat(
 					"insert into ", tableName, " values (1, ",
 					CompanyThreadLocal.getCompanyId(), ")"));
+		}
+	}
+
+	protected long[] getCompanyIds() {
+		Map<Long, String> portalInstances =
+			ReflectionTestUtil.getAndSetFieldValue(
+				PortalInstancePool.class, "_portalInstances", null);
+
+		try {
+			return PortalInstancePool.getCompanyIds();
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				PortalInstancePool.class, "_portalInstances", portalInstances);
 		}
 	}
 
