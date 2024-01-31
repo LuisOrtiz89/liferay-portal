@@ -5,13 +5,39 @@
 
 package com.liferay.portal.kernel.instance;
 
+import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.cookies.CookiesManagerUtil;
+import com.liferay.portal.kernel.cookies.constants.CookiesConstants;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.events.EventsProcessorUtil;
+import com.liferay.portal.kernel.exception.NoSuchVirtualHostException;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.LayoutSet;
+import com.liferay.portal.kernel.model.PortletCategory;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.VirtualHost;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
+import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.service.VirtualHostLocalServiceUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebAppPool;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,7 +48,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Tina Tian
@@ -33,6 +64,125 @@ public class PortalInstancePool {
 		if (_portalInstances != null) {
 			_portalInstances.put(company.getCompanyId(), company.getWebId());
 		}
+	}
+
+	public static long getCompanyId(HttpServletRequest httpServletRequest) {
+		try {
+			return getCompanyId(httpServletRequest, false);
+		}
+		catch (NoSuchVirtualHostException noSuchVirtualHostException) {
+			_log.error(noSuchVirtualHostException);
+
+			return 0;
+		}
+	}
+
+	public static long getCompanyId(
+			HttpServletRequest httpServletRequest, boolean strict)
+		throws NoSuchVirtualHostException {
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Get company ID");
+		}
+
+		Long companyIdObj = (Long)httpServletRequest.getAttribute(
+			WebKeys.COMPANY_ID);
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Company ID from request " + companyIdObj);
+		}
+
+		if (companyIdObj != null) {
+			return companyIdObj.longValue();
+		}
+
+		long companyId = _getCompanyIdByVirtualHosts(
+			httpServletRequest, strict);
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Company ID from host " + companyId);
+		}
+
+		if (companyId <= 0) {
+			long cookieCompanyId = GetterUtil.getLong(
+				CookiesManagerUtil.getCookieValue(
+					CookiesConstants.NAME_COMPANY_ID, httpServletRequest,
+					false));
+
+			if (cookieCompanyId > 0) {
+				try {
+					Company cookieCompany =
+						CompanyLocalServiceUtil.fetchCompanyById(
+							cookieCompanyId);
+
+					if (cookieCompany == null) {
+						if (_log.isWarnEnabled()) {
+							_log.warn(
+								"Company ID from cookie " + cookieCompanyId +
+									" does not exist");
+						}
+					}
+					else {
+						companyId = cookieCompanyId;
+
+						if (_log.isDebugEnabled()) {
+							_log.debug("Company ID from cookie " + companyId);
+						}
+					}
+				}
+				catch (Exception exception) {
+					_log.error(exception);
+				}
+			}
+		}
+
+		if (companyId <= 0) {
+			companyId = getDefaultCompanyId();
+
+			if (_log.isDebugEnabled()) {
+				_log.debug("Default company ID " + companyId);
+			}
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Set company ID " + companyId);
+		}
+
+		httpServletRequest.setAttribute(
+			WebKeys.COMPANY_ID, Long.valueOf(companyId));
+
+		CompanyThreadLocal.setCompanyId(companyId);
+
+		if (Validator.isNotNull(
+				PropsUtil.get(PropsKeys.VIRTUAL_HOSTS_DEFAULT_SITE_NAME)) &&
+			(httpServletRequest.getAttribute(WebKeys.VIRTUAL_HOST_LAYOUT_SET) ==
+				null)) {
+
+			try {
+				Group group = GroupLocalServiceUtil.getGroup(
+					companyId,
+					PropsUtil.get(PropsKeys.VIRTUAL_HOSTS_DEFAULT_SITE_NAME));
+
+				LayoutSet layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
+					group.getGroupId(), false);
+
+				TreeMap<String, String> virtualHostnames =
+					layoutSet.getVirtualHostnames();
+
+				if (virtualHostnames.isEmpty() ||
+					_isCompanyVirtualHostname(
+						companyId, httpServletRequest.getServerName())) {
+
+					httpServletRequest.setAttribute(
+						WebKeys.VIRTUAL_HOST_LAYOUT_SET, layoutSet);
+				}
+			}
+			catch (Exception exception) {
+				_log.error(exception);
+			}
+		}
+
+		return companyId;
 	}
 
 	public static long getCompanyId(String webId) {
@@ -132,10 +282,182 @@ public class PortalInstancePool {
 		}
 	}
 
+	public static long initCompany(Company company) {
+		return initCompany(company, false);
+	}
+
+	public static long initCompany(Company company, boolean skipCheck) {
+
+		// Begin initializing company
+
+		if (_log.isDebugEnabled()) {
+			_log.debug(
+				"Begin initializing company with web ID " + company.getWebId());
+		}
+
+		Long currentThreadCompanyId = CompanyThreadLocal.getCompanyId();
+
+		String currentThreadPrincipalName = PrincipalThreadLocal.getName();
+
+		try {
+			CompanyThreadLocal.setCompanyId(company.getCompanyId());
+
+			if (!skipCheck) {
+				try {
+					CompanyLocalServiceUtil.checkCompany(company.getWebId());
+				}
+				catch (Exception exception) {
+					_log.error(exception);
+				}
+			}
+
+			String principalName = null;
+
+			long userId = PrincipalThreadLocal.getUserId();
+
+			if (userId > 0) {
+				User user = UserLocalServiceUtil.fetchUser(userId);
+
+				if ((user != null) &&
+					(user.getCompanyId() == company.getCompanyId())) {
+
+					principalName = currentThreadPrincipalName;
+				}
+			}
+
+			PrincipalThreadLocal.setName(principalName);
+
+			// Initialize display
+
+			if (_log.isDebugEnabled()) {
+				_log.debug("Initialize display");
+			}
+
+			try {
+				PortletCategory portletCategory =
+					(PortletCategory)WebAppPool.get(
+						company.getCompanyId(), WebKeys.PORTLET_CATEGORY);
+
+				if (portletCategory == null) {
+					portletCategory = new PortletCategory();
+				}
+
+				for (long currentCompanyId : getCompanyIds()) {
+					PortletCategory currentPortletCategory =
+						(PortletCategory)WebAppPool.get(
+							currentCompanyId, WebKeys.PORTLET_CATEGORY);
+
+					if (currentPortletCategory != null) {
+						portletCategory.merge(currentPortletCategory);
+					}
+				}
+
+				WebAppPool.put(
+					company.getCompanyId(), WebKeys.PORTLET_CATEGORY,
+					portletCategory);
+			}
+			catch (Exception exception) {
+				_log.error(exception);
+			}
+
+			// Process application startup events
+
+			if (_log.isDebugEnabled()) {
+				_log.debug("Process application startup events");
+			}
+
+			try {
+				EventsProcessorUtil.process(
+					PropsKeys.APPLICATION_STARTUP_EVENTS,
+					PropsUtil.getArray(PropsKeys.APPLICATION_STARTUP_EVENTS),
+					new String[] {String.valueOf(company.getCompanyId())});
+			}
+			catch (Exception exception) {
+				_log.error(exception);
+			}
+
+			// End initializing company
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					StringBundler.concat(
+						"End initializing company with web ID ",
+						company.getWebId(), " and company ID ",
+						company.getCompanyId()));
+			}
+
+			add(company);
+		}
+		finally {
+			CompanyThreadLocal.setCompanyId(currentThreadCompanyId);
+
+			PrincipalThreadLocal.setName(currentThreadPrincipalName);
+		}
+
+		return company.getCompanyId();
+	}
+
+	public static boolean isAutoLoginIgnoreHost(String host) {
+		return _autoLoginIgnoreHosts.contains(host);
+	}
+
+	public static boolean isAutoLoginIgnorePath(String path) {
+		return _autoLoginIgnorePaths.contains(path);
+	}
+
+	public static boolean isCompanyActive(long companyId) {
+		try {
+			Company company = CompanyLocalServiceUtil.fetchCompanyById(
+				companyId);
+
+			if (company != null) {
+				return company.isActive();
+			}
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		return false;
+	}
+
+	public static boolean isCompanyInDeletionProcess(long companyId) {
+		return _companyIdsInDeletionProcess.contains(companyId);
+	}
+
+	public static boolean isCurrentCompanyInDeletionProcess() {
+		return _companyIdsInDeletionProcess.contains(
+			CompanyThreadLocal.getCompanyId());
+	}
+
+	public static boolean isVirtualHostsIgnoreHost(String host) {
+		return _virtualHostsIgnoreHosts.contains(host);
+	}
+
+	public static boolean isVirtualHostsIgnorePath(String path) {
+		return _virtualHostsIgnorePaths.contains(path);
+	}
+
 	public static void remove(long companyId) {
 		if (_portalInstances != null) {
 			_portalInstances.remove(companyId);
 		}
+	}
+
+	public static void removeCompany(long companyId) {
+		try {
+			EventsProcessorUtil.process(
+				PropsKeys.APPLICATION_SHUTDOWN_EVENTS,
+				PropsUtil.getArray(PropsKeys.APPLICATION_SHUTDOWN_EVENTS),
+				new String[] {String.valueOf(companyId)});
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		remove(companyId);
+
+		WebAppPool.remove(companyId, WebKeys.PORTLET_CATEGORY);
 	}
 
 	public static void set(List<Company> companies) {
@@ -146,6 +468,47 @@ public class PortalInstancePool {
 		}
 
 		_portalInstances = portalInstances;
+	}
+
+	public static SafeCloseable setCompanyInDeletionProcess(long companyId) {
+		if (_companyIdsInDeletionProcess.contains(companyId)) {
+			throw new UnsupportedOperationException(
+				companyId + " is already in deletion");
+		}
+
+		_companyIdsInDeletionProcess.add(companyId);
+
+		return () -> _companyIdsInDeletionProcess.remove(companyId);
+	}
+
+	private static long _getCompanyIdByHost(
+		String host, HttpServletRequest httpServletRequest) {
+
+		if (Validator.isNull(host)) {
+			return 0;
+		}
+
+		try {
+			VirtualHost virtualHost =
+				VirtualHostLocalServiceUtil.fetchVirtualHost(host);
+
+			if (virtualHost == null) {
+				return 0;
+			}
+
+			CompanyThreadLocal.setCompanyId(virtualHost.getCompanyId());
+
+			if (virtualHost.getLayoutSetId() != 0) {
+				_setAttributes(virtualHost, httpServletRequest);
+			}
+
+			return virtualHost.getCompanyId();
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
+		return 0;
 	}
 
 	private static long _getCompanyIdBySQL(String webId) throws SQLException {
@@ -164,6 +527,29 @@ public class PortalInstancePool {
 
 		throw new IllegalArgumentException(
 			"Unable to get company ID with web ID" + webId);
+	}
+
+	private static long _getCompanyIdByVirtualHosts(
+			HttpServletRequest httpServletRequest, boolean strict)
+		throws NoSuchVirtualHostException {
+
+		String host = PortalUtil.getHost(httpServletRequest);
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Host " + host);
+		}
+
+		if (isVirtualHostsIgnoreHost(host)) {
+			return 0;
+		}
+
+		long companyId = _getCompanyIdByHost(host, httpServletRequest);
+
+		if (strict && (companyId == 0)) {
+			throw new NoSuchVirtualHostException(host);
+		}
+
+		return companyId;
 	}
 
 	private static long[] _getCompanyIdsBySQL() throws SQLException {
@@ -243,12 +629,84 @@ public class PortalInstancePool {
 		return webIds.toArray(new String[0]);
 	}
 
+	private static boolean _isCompanyVirtualHostname(
+			long companyId, String serverName)
+		throws PortalException {
+
+		Company company = CompanyLocalServiceUtil.getCompany(companyId);
+
+		String virtualHostname = company.getVirtualHostname();
+
+		if (Validator.isNull(virtualHostname)) {
+			virtualHostname = "localhost";
+		}
+
+		if (Objects.equals(virtualHostname, serverName)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private static void _setAttributes(
+			VirtualHost virtualHost, HttpServletRequest httpServletRequest)
+		throws PortalException {
+
+		LayoutSet layoutSet = LayoutSetLocalServiceUtil.getLayoutSet(
+			virtualHost.getLayoutSetId());
+
+		if (_log.isDebugEnabled()) {
+			_log.debug(
+				StringBundler.concat(
+					"Company ", virtualHost.getCompanyId(),
+					" is associated with layout set ",
+					virtualHost.getLayoutSetId()));
+		}
+
+		httpServletRequest.setAttribute(
+			WebKeys.VIRTUAL_HOST_LAYOUT_SET, layoutSet);
+
+		String languageId = virtualHost.getLanguageId();
+
+		if (Validator.isNotNull(languageId) &&
+			LanguageUtil.isAvailableLocale(
+				layoutSet.getGroupId(), languageId)) {
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					StringBundler.concat(
+						"Virtual host ", virtualHost.getHostname(),
+						" has default language ", languageId));
+			}
+
+			httpServletRequest.setAttribute(
+				WebKeys.VIRTUAL_HOST_LANGUAGE_ID, languageId);
+		}
+	}
+
 	private static final String _COMPANY_DEFAULT_WEB_ID = PropsUtil.get(
 		PropsKeys.COMPANY_DEFAULT_WEB_ID);
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		PortalInstancePool.class);
 
+	private static final Set<String> _autoLoginIgnoreHosts;
+	private static final Set<String> _autoLoginIgnorePaths;
+	private static final List<Long> _companyIdsInDeletionProcess =
+		new CopyOnWriteArrayList<>();
 	private static Map<Long, String> _portalInstances;
+	private static final Set<String> _virtualHostsIgnoreHosts;
+	private static final Set<String> _virtualHostsIgnorePaths;
+
+	static {
+		_autoLoginIgnoreHosts = SetUtil.fromArray(
+			PropsUtil.getArray(PropsKeys.AUTO_LOGIN_IGNORE_HOSTS));
+		_autoLoginIgnorePaths = SetUtil.fromArray(
+			PropsUtil.getArray(PropsKeys.AUTO_LOGIN_IGNORE_PATHS));
+		_virtualHostsIgnoreHosts = SetUtil.fromArray(
+			PropsUtil.getArray(PropsKeys.VIRTUAL_HOSTS_IGNORE_HOSTS));
+		_virtualHostsIgnorePaths = SetUtil.fromArray(
+			PropsUtil.getArray(PropsKeys.VIRTUAL_HOSTS_IGNORE_PATHS));
+	}
 
 }
