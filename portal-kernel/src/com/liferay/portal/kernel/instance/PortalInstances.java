@@ -60,12 +60,6 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class PortalInstances {
 
-	public static void add(Company company) {
-		if (_portalInstances != null) {
-			_portalInstances.put(company.getCompanyId(), company.getWebId());
-		}
-	}
-
 	public static long getCompanyId(HttpServletRequest httpServletRequest) {
 		try {
 			return getCompanyId(httpServletRequest, false);
@@ -386,7 +380,10 @@ public class PortalInstances {
 						company.getCompanyId()));
 			}
 
-			add(company);
+			if (_portalInstances != null) {
+				_portalInstances.put(
+					company.getCompanyId(), company.getWebId());
+			}
 		}
 		finally {
 			CompanyThreadLocal.setCompanyId(currentThreadCompanyId);
@@ -438,12 +435,6 @@ public class PortalInstances {
 		return _virtualHostsIgnorePaths.contains(path);
 	}
 
-	public static void remove(long companyId) {
-		if (_portalInstances != null) {
-			_portalInstances.remove(companyId);
-		}
-	}
-
 	public static void removeCompany(long companyId) {
 		try {
 			EventsProcessorUtil.process(
@@ -455,7 +446,9 @@ public class PortalInstances {
 			_log.error(exception);
 		}
 
-		remove(companyId);
+		if (_portalInstances != null) {
+			_portalInstances.remove(companyId);
+		}
 
 		WebAppPool.remove(companyId, WebKeys.PORTLET_CATEGORY);
 	}
