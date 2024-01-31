@@ -5,7 +5,7 @@
 
 package com.liferay.document.library.layout.set.prototype.internal.upgrade.v1_0_0;
 
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.upgrade.BaseLocalizedColumnUpgradeProcess;
 import com.liferay.portal.language.LanguageResources;
 
@@ -16,7 +16,7 @@ public class UpgradeLocalizedColumn extends BaseLocalizedColumnUpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		long[] companyIds = PortalInstancePool.getCompanyIds();
+		long[] companyIds = PortalInstances.getCompanyIds();
 
 		upgradeLocalizedColumn(
 			LanguageResources.PORTAL_RESOURCE_BUNDLE_LOADER,

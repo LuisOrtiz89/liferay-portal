@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2024 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
@@ -58,7 +58,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author Tina Tian
  */
-public class PortalInstancePool {
+public class PortalInstances {
 
 	public static void add(Company company) {
 		if (_portalInstances != null) {
@@ -688,7 +688,7 @@ public class PortalInstancePool {
 		PropsKeys.COMPANY_DEFAULT_WEB_ID);
 
 	private static final Log _log = LogFactoryUtil.getLog(
-		PortalInstancePool.class);
+		PortalInstances.class);
 
 	private static final Set<String> _autoLoginIgnoreHosts;
 	private static final Set<String> _autoLoginIgnorePaths;

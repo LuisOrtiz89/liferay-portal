@@ -6,7 +6,7 @@
 package com.liferay.portal.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebService;
 import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceMode;
 import com.liferay.portal.kernel.model.Country;
@@ -88,7 +88,7 @@ public class CountryServiceImpl extends CountryServiceBaseImpl {
 	@Deprecated
 	@Override
 	public Country fetchCountryByA2(String a2) {
-		return fetchCountryByA2(PortalInstancePool.getDefaultCompanyId(), a2);
+		return fetchCountryByA2(PortalInstances.getDefaultCompanyId(), a2);
 	}
 
 	@Override
@@ -102,7 +102,7 @@ public class CountryServiceImpl extends CountryServiceBaseImpl {
 	@Deprecated
 	@Override
 	public Country fetchCountryByA3(String a3) {
-		return fetchCountryByA3(PortalInstancePool.getDefaultCompanyId(), a3);
+		return fetchCountryByA3(PortalInstances.getDefaultCompanyId(), a3);
 	}
 
 	@Override
@@ -150,7 +150,7 @@ public class CountryServiceImpl extends CountryServiceBaseImpl {
 	@Deprecated
 	@Override
 	public List<Country> getCountries() {
-		return getCompanyCountries(PortalInstancePool.getDefaultCompanyId());
+		return getCompanyCountries(PortalInstances.getDefaultCompanyId());
 	}
 
 	/**
@@ -161,7 +161,7 @@ public class CountryServiceImpl extends CountryServiceBaseImpl {
 	@Override
 	public List<Country> getCountries(boolean active) {
 		return getCompanyCountries(
-			PortalInstancePool.getDefaultCompanyId(), active);
+			PortalInstances.getDefaultCompanyId(), active);
 	}
 
 	@Override
@@ -182,7 +182,7 @@ public class CountryServiceImpl extends CountryServiceBaseImpl {
 	@Deprecated
 	@Override
 	public Country getCountryByA2(String a2) throws PortalException {
-		return getCountryByA2(PortalInstancePool.getDefaultCompanyId(), a2);
+		return getCountryByA2(PortalInstances.getDefaultCompanyId(), a2);
 	}
 
 	@Override
@@ -198,7 +198,7 @@ public class CountryServiceImpl extends CountryServiceBaseImpl {
 	@Deprecated
 	@Override
 	public Country getCountryByA3(String a3) throws PortalException {
-		return getCountryByA3(PortalInstancePool.getDefaultCompanyId(), a3);
+		return getCountryByA3(PortalInstances.getDefaultCompanyId(), a3);
 	}
 
 	@Override
@@ -214,7 +214,7 @@ public class CountryServiceImpl extends CountryServiceBaseImpl {
 	@Deprecated
 	@Override
 	public Country getCountryByName(String name) throws PortalException {
-		return getCountryByName(PortalInstancePool.getDefaultCompanyId(), name);
+		return getCountryByName(PortalInstances.getDefaultCompanyId(), name);
 	}
 
 	@Override

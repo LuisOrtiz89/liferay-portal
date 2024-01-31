@@ -8,7 +8,7 @@ package com.liferay.on.demand.admin.internal.helper;
 import com.liferay.on.demand.admin.constants.OnDemandAdminActionKeys;
 import com.liferay.on.demand.admin.constants.OnDemandAdminPortletKeys;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.User;
@@ -30,14 +30,14 @@ public class OnDemandAdminHelper {
 			long companyId, long userId)
 		throws PortalException {
 
-		if (companyId == PortalInstancePool.getDefaultCompanyId()) {
+		if (companyId == PortalInstances.getDefaultCompanyId()) {
 			throw new PrincipalException(
 				"Target company must not be the default company");
 		}
 
 		User user = _userLocalService.getUser(userId);
 
-		if (user.getCompanyId() != PortalInstancePool.getDefaultCompanyId()) {
+		if (user.getCompanyId() != PortalInstances.getDefaultCompanyId()) {
 			throw new PrincipalException(
 				"Request can only be made from the default company");
 		}

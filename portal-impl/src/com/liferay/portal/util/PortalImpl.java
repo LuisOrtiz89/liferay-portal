@@ -43,7 +43,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.RSSFeedException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.image.ImageBag;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.language.constants.LanguageConstants;
 import com.liferay.portal.kernel.log.Log;
@@ -1073,7 +1073,9 @@ public class PortalImpl implements Portal {
 			HttpServletRequest httpServletRequest =
 				(HttpServletRequest)requestContext.get("request");
 
-			long companyId = PortalInstances.getCompanyId(httpServletRequest);
+			long companyId =
+				com.liferay.portal.util.PortalInstances.getCompanyId(
+					httpServletRequest);
 
 			for (String urlSeparator :
 					FriendlyURLResolverRegistryUtil.getURLSeparators()) {
@@ -1753,7 +1755,7 @@ public class PortalImpl implements Portal {
 
 			if (company == null) {
 				company = CompanyLocalServiceUtil.getCompanyById(
-					PortalInstancePool.getDefaultCompanyId());
+					PortalInstances.getDefaultCompanyId());
 			}
 
 			httpServletRequest.setAttribute(WebKeys.COMPANY, company);
@@ -1771,7 +1773,8 @@ public class PortalImpl implements Portal {
 
 	@Override
 	public long getCompanyId(HttpServletRequest httpServletRequest) {
-		return PortalInstances.getCompanyId(httpServletRequest);
+		return com.liferay.portal.util.PortalInstances.getCompanyId(
+			httpServletRequest);
 	}
 
 	@Override
@@ -1781,7 +1784,7 @@ public class PortalImpl implements Portal {
 
 	@Override
 	public long[] getCompanyIds() {
-		return PortalInstancePool.getCompanyIds();
+		return PortalInstances.getCompanyIds();
 	}
 
 	@Override
@@ -2185,7 +2188,7 @@ public class PortalImpl implements Portal {
 
 	@Override
 	public long getDefaultCompanyId() {
-		return PortalInstancePool.getDefaultCompanyId();
+		return PortalInstances.getDefaultCompanyId();
 	}
 
 	@Override
@@ -2650,7 +2653,9 @@ public class PortalImpl implements Portal {
 			HttpServletRequest httpServletRequest =
 				(HttpServletRequest)requestContext.get("request");
 
-			long companyId = PortalInstances.getCompanyId(httpServletRequest);
+			long companyId =
+				com.liferay.portal.util.PortalInstances.getCompanyId(
+					httpServletRequest);
 
 			for (String urlSeparator :
 					FriendlyURLResolverRegistryUtil.getURLSeparators()) {

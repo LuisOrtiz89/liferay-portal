@@ -30,7 +30,7 @@ import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -734,7 +734,7 @@ public class FragmentDisplayContext {
 
 		if ((fragmentCollection.getGroupId() == CompanyConstants.SYSTEM) &&
 			((_themeDisplay.getCompanyId() !=
-				PortalInstancePool.getDefaultCompanyId()) ||
+				PortalInstances.getDefaultCompanyId()) ||
 			 !scopeGroup.isCompany())) {
 
 			return true;

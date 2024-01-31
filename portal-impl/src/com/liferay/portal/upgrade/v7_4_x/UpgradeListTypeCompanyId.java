@@ -7,7 +7,7 @@ package com.liferay.portal.upgrade.v7_4_x;
 
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.db.partition.DBPartition;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.model.ListType;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
@@ -34,7 +34,7 @@ public class UpgradeListTypeCompanyId extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		long defaultCompanyId = PortalInstancePool.getDefaultCompanyId();
+		long defaultCompanyId = PortalInstances.getDefaultCompanyId();
 
 		_resetCounter(defaultCompanyId);
 
@@ -167,7 +167,7 @@ public class UpgradeListTypeCompanyId extends UpgradeProcess {
 
 		runSQL("update ListType set companyId = " + defaultCompanyId);
 
-		long[] companyIds = PortalInstancePool.getCompanyIds();
+		long[] companyIds = PortalInstances.getCompanyIds();
 
 		List<ListTypeEntry> listTypeEntries = _getListTypes();
 

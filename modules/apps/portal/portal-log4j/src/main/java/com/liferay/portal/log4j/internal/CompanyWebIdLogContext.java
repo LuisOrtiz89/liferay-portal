@@ -5,7 +5,7 @@
 
 package com.liferay.portal.log4j.internal;
 
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.log.LogContext;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.Validator;
@@ -20,7 +20,7 @@ public class CompanyWebIdLogContext implements LogContext {
 
 	@Override
 	public Map<String, String> getContext(String logName) {
-		String webId = PortalInstancePool.getWebId(
+		String webId = PortalInstances.getWebId(
 			CompanyThreadLocal.getCompanyId());
 
 		if (Validator.isNull(webId)) {

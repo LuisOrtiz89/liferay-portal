@@ -6,7 +6,7 @@
 package com.liferay.portal.db.partition.internal.operation.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,7 +28,7 @@ public class DBPartitionInsertVirtualInstanceOperationTest
 		deployConfiguration(
 			_PID,
 			"newWebId=T\"testNewWebId\"\ncompanyId=L\"" +
-				PortalInstancePool.getDefaultCompanyId() + "\"\n");
+				PortalInstances.getDefaultCompanyId() + "\"\n");
 
 		verifyConfigurationIsDeletedAfterDeploy(_PID);
 	}

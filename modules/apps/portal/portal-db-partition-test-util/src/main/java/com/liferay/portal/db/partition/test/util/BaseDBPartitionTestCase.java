@@ -22,7 +22,7 @@ import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.UserConstants;
 import com.liferay.portal.kernel.module.util.BundleUtil;
@@ -184,8 +184,7 @@ public abstract class BaseDBPartitionTestCase {
 	}
 
 	protected static void enableDBPartition() throws Exception {
-		CompanyThreadLocal.setCompanyId(
-			PortalInstancePool.getDefaultCompanyId());
+		CompanyThreadLocal.setCompanyId(PortalInstances.getDefaultCompanyId());
 
 		_dbPartitionEnabled = DBPartition.isPartitionEnabled();
 
@@ -425,14 +424,14 @@ public abstract class BaseDBPartitionTestCase {
 	protected long[] getCompanyIds() {
 		Map<Long, String> portalInstances =
 			ReflectionTestUtil.getAndSetFieldValue(
-				PortalInstancePool.class, "_portalInstances", null);
+				PortalInstances.class, "_portalInstances", null);
 
 		try {
-			return PortalInstancePool.getCompanyIds();
+			return PortalInstances.getCompanyIds();
 		}
 		finally {
 			ReflectionTestUtil.setFieldValue(
-				PortalInstancePool.class, "_portalInstances", portalInstances);
+				PortalInstances.class, "_portalInstances", portalInstances);
 		}
 	}
 

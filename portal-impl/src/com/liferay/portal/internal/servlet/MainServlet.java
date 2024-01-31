@@ -20,7 +20,7 @@ import com.liferay.portal.kernel.deploy.hot.HotDeployUtil;
 import com.liferay.portal.kernel.events.EventsProcessorUtil;
 import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
@@ -87,7 +87,6 @@ import com.liferay.portal.struts.model.ModuleConfig;
 import com.liferay.portal.tools.DBUpgrader;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
 import com.liferay.portal.util.MaintenanceUtil;
-import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.ShutdownUtil;
@@ -410,7 +409,7 @@ public class MainServlet extends HttpServlet {
 
 			try {
 				SetupWizardSampleDataUtil.addSampleData(
-					PortalInstancePool.getDefaultCompanyId());
+					PortalInstances.getDefaultCompanyId());
 			}
 			catch (Exception exception) {
 				_log.error(exception);
@@ -454,7 +453,8 @@ public class MainServlet extends HttpServlet {
 			_log.debug("Get company ID");
 		}
 
-		long companyId = PortalInstances.getCompanyId(httpServletRequest);
+		long companyId = com.liferay.portal.util.PortalInstances.getCompanyId(
+			httpServletRequest);
 
 		if (_processCompanyInactiveRequest(
 				httpServletRequest, httpServletResponse, companyId)) {
@@ -798,16 +798,18 @@ public class MainServlet extends HttpServlet {
 						PropsValues.COMPANY_DEFAULT_WEB_ID,
 						company.getWebId())) {
 
-					PortalInstances.initCompany(company, true);
+					com.liferay.portal.util.PortalInstances.initCompany(
+						company, true);
 				}
 				else {
-					PortalInstances.initCompany(company, false);
+					com.liferay.portal.util.PortalInstances.initCompany(
+						company, false);
 				}
 
 				companies.add(company);
 			});
 
-		PortalInstancePool.set(companies);
+		PortalInstances.set(companies);
 	}
 
 	private void _initLayoutTemplates(PluginPackage pluginPackage) {
@@ -1058,7 +1060,9 @@ public class MainServlet extends HttpServlet {
 			HttpServletResponse httpServletResponse, long companyId)
 		throws IOException {
 
-		if (PortalInstances.isCompanyActive(companyId)) {
+		if (com.liferay.portal.util.PortalInstances.isCompanyActive(
+				companyId)) {
+
 			return false;
 		}
 

@@ -9,7 +9,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
@@ -35,7 +35,6 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.List;
@@ -168,19 +167,18 @@ public class PortalInstancesTest {
 
 	@Test
 	public void testGetWebIdsAfterInitCompany() {
-		PortalInstances.initCompany(_company);
+		com.liferay.portal.util.PortalInstances.initCompany(_company);
 
-		List<String> webIds = ListUtil.fromArray(
-			PortalInstancePool.getWebIds());
+		List<String> webIds = ListUtil.fromArray(PortalInstances.getWebIds());
 
 		Assert.assertTrue(webIds.contains(_company.getWebId()));
 
 		_company.setWebId(RandomTestUtil.randomString());
 
-		PortalInstances.initCompany(
+		com.liferay.portal.util.PortalInstances.initCompany(
 			_companyLocalService.updateCompany(_company));
 
-		webIds = ListUtil.fromArray(PortalInstancePool.getWebIds());
+		webIds = ListUtil.fromArray(PortalInstances.getWebIds());
 
 		Assert.assertTrue(webIds.contains(_company.getWebId()));
 	}
@@ -197,7 +195,8 @@ public class PortalInstancesTest {
 
 		Assert.assertEquals(
 			_company.getCompanyId(),
-			PortalInstances.getCompanyId(mockHttpServletRequest));
+			com.liferay.portal.util.PortalInstances.getCompanyId(
+				mockHttpServletRequest));
 
 		Assert.assertEquals(
 			expectedLayoutSet,
@@ -216,7 +215,8 @@ public class PortalInstancesTest {
 
 		Assert.assertEquals(
 			_company.getCompanyId(),
-			PortalInstances.getCompanyId(mockHttpServletRequest));
+			com.liferay.portal.util.PortalInstances.getCompanyId(
+				mockHttpServletRequest));
 		Assert.assertEquals(
 			expectedLanguageId,
 			mockHttpServletRequest.getAttribute(

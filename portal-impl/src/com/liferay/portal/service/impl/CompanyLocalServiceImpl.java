@@ -37,7 +37,7 @@ import com.liferay.portal.kernel.exception.NoSuchVirtualHostException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.RequiredCompanyException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.instance.lifecycle.PortalInstanceLifecycleManager;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -119,7 +119,6 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.liveusers.LiveUsers;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
 import com.liferay.portal.service.base.CompanyLocalServiceBaseImpl;
-import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
 
@@ -354,7 +353,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				"Database partition must be enabled");
 		}
 
-		if (companyId == PortalInstancePool.getDefaultCompanyId()) {
+		if (companyId == PortalInstances.getDefaultCompanyId()) {
 			throw new IllegalArgumentException(
 				"Company ID " + companyId + " is the default company ID");
 		}
@@ -415,7 +414,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 							registerCompany(dbPartitionCompany);
 
-							PortalInstances.initCompany(
+							com.liferay.portal.util.PortalInstances.initCompany(
 								dbPartitionCompany, true);
 
 							return null;
@@ -497,7 +496,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 	@Override
 	public Company deleteCompany(long companyId) throws PortalException {
-		if (companyId == PortalInstancePool.getDefaultCompanyId()) {
+		if (companyId == PortalInstances.getDefaultCompanyId()) {
 			throw new RequiredCompanyException(
 				"Select another default company before deleting company " +
 					companyId);
@@ -506,7 +505,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		try (SafeCloseable safeCloseable1 =
 				CompanyThreadLocal.setWithSafeCloseable(companyId);
 			SafeCloseable safeCloseable2 =
-				PortalInstances.setCompanyInDeletionProcess(companyId)) {
+				com.liferay.portal.util.PortalInstances.
+					setCompanyInDeletionProcess(companyId)) {
 
 			return doDeleteCompany(companyId);
 		}
@@ -542,7 +542,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				"Database partition must be enabled");
 		}
 
-		if (companyId == PortalInstancePool.getDefaultCompanyId()) {
+		if (companyId == PortalInstances.getDefaultCompanyId()) {
 			throw new RequiredCompanyException(
 				"Select another default company before extracting company " +
 					companyId);
@@ -554,14 +554,16 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			companyId);
 
 		try (SafeCloseable safeCloseable2 =
-				PortalInstances.setCompanyInDeletionProcess(companyId)) {
+				com.liferay.portal.util.PortalInstances.
+					setCompanyInDeletionProcess(companyId)) {
 
 			_clearCompanyCache(companyId, true);
 			_clearVirtualHostCache(companyId);
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
-					PortalInstances.removeCompany(company.getCompanyId());
+					com.liferay.portal.util.PortalInstances.removeCompany(
+						company.getCompanyId());
 
 					unregisterCompany(company);
 
@@ -803,7 +805,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	 */
 	@Override
 	public long getCompanyIdByUserId(long userId) throws Exception {
-		long[] companyIds = PortalInstancePool.getCompanyIds();
+		long[] companyIds = PortalInstances.getCompanyIds();
 
 		long companyId = 0;
 
@@ -945,9 +947,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		virtualHostname = StringUtil.toLowerCase(
 			StringUtil.trim(virtualHostname));
 
-		if (!active &&
-			(companyId == PortalInstancePool.getDefaultCompanyId())) {
-
+		if (!active && (companyId == PortalInstances.getDefaultCompanyId())) {
 			throw new RequiredCompanyException(
 				"Select another default company before deactivating company " +
 					companyId);
@@ -1422,7 +1422,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
-					PortalInstances.removeCompany(company.getCompanyId());
+					com.liferay.portal.util.PortalInstances.removeCompany(
+						company.getCompanyId());
 
 					unregisterCompany(company);
 
@@ -2264,7 +2265,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		TransactionCommitCallbackUtil.registerCallback(
 			() -> {
-				PortalInstances.removeCompany(company.getCompanyId());
+				com.liferay.portal.util.PortalInstances.removeCompany(
+					company.getCompanyId());
 
 				unregisterCompany(company);
 
@@ -2278,8 +2280,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		ThreadLocalRandom threadLocalRandom = ThreadLocalRandom.current();
 
 		while ((nextLong == 0) ||
-			   ArrayUtil.contains(
-				   PortalInstancePool.getCompanyIds(), nextLong)) {
+			   ArrayUtil.contains(PortalInstances.getCompanyIds(), nextLong)) {
 
 			nextLong = threadLocalRandom.nextLong(
 				(long)Math.pow(10, 15), Long.MAX_VALUE);

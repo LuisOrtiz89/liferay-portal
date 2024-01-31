@@ -10,7 +10,7 @@ import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.TreeModel;
@@ -302,7 +302,7 @@ public class UpgradeDocumentLibrary extends UpgradeProcess {
 		_runSQL("create index IX_LPP_41834_EYIW on DLFolder (userId);");
 
 		try (LoggingTimer loggingTimer = new LoggingTimer()) {
-			long[] companyIds = PortalInstancePool.getCompanyIds();
+			long[] companyIds = PortalInstances.getCompanyIds();
 
 			for (long companyId : companyIds) {
 				try (PreparedStatement folderPreparedStatement =

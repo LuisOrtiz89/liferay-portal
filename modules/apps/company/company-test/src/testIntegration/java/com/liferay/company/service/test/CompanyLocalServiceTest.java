@@ -34,7 +34,7 @@ import com.liferay.portal.kernel.exception.ModelListenerException;
 import com.liferay.portal.kernel.exception.NoSuchPasswordPolicyException;
 import com.liferay.portal.kernel.exception.NoSuchVirtualHostException;
 import com.liferay.portal.kernel.exception.RequiredCompanyException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -95,7 +95,6 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.portal.test.rule.SybaseDump;
 import com.liferay.portal.test.rule.SybaseDumpTransactionLog;
-import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.site.model.adapter.StagedGroup;
 import com.liferay.sites.kernel.util.Sites;
@@ -184,7 +183,7 @@ public class CompanyLocalServiceTest {
 
 		_companyLocalService.deleteCompany(company.getCompanyId());
 
-		for (String webId : PortalInstancePool.getWebIds()) {
+		for (String webId : PortalInstances.getWebIds()) {
 			Assert.assertNotEquals(company.getWebId(), webId);
 		}
 	}
@@ -773,7 +772,7 @@ public class CompanyLocalServiceTest {
 
 	@Test(expected = RequiredCompanyException.class)
 	public void testDeleteDefaultCompany() throws Exception {
-		long companyId = PortalInstancePool.getDefaultCompanyId();
+		long companyId = PortalInstances.getDefaultCompanyId();
 
 		_companyLocalService.deleteCompany(companyId);
 	}
@@ -799,7 +798,7 @@ public class CompanyLocalServiceTest {
 	public void testExtractDBPartitionCompanyDefaultCompany() {
 		try {
 			_companyLocalService.extractDBPartitionCompany(
-				PortalInstancePool.getDefaultCompanyId());
+				PortalInstances.getDefaultCompanyId());
 
 			Assert.fail();
 		}
@@ -1022,7 +1021,7 @@ public class CompanyLocalServiceTest {
 			null, webId, webId, "test.com", 0, true, null, null, null, null,
 			null, null);
 
-		PortalInstances.initCompany(company);
+		com.liferay.portal.util.PortalInstances.initCompany(company);
 
 		CompanyThreadLocal.setCompanyId(company.getCompanyId());
 

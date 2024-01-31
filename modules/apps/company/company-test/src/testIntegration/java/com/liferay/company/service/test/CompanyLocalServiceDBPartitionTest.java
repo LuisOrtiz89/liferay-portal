@@ -10,7 +10,7 @@ import com.liferay.portal.db.partition.db.DBPartitionDB;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.service.CompanyLocalService;
@@ -216,7 +216,7 @@ public class CompanyLocalServiceDBPartitionTest
 			standaloneDBPartition = true;
 
 			Company defaultCompany = _companyLocalService.getCompany(
-				PortalInstancePool.getDefaultCompanyId());
+				PortalInstances.getDefaultCompanyId());
 
 			try {
 				_companyLocalService.addDBPartitionCompany(

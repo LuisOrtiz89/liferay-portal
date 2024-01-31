@@ -10,7 +10,7 @@ import com.liferay.portal.aop.AopService;
 import com.liferay.portal.instances.service.base.PortalInstancesLocalServiceBaseImpl;
 import com.liferay.portal.kernel.cluster.Clusterable;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
@@ -55,7 +55,6 @@ import com.liferay.portal.kernel.util.PrefsProps;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.util.PortalInstances;
 import com.liferay.portlet.RenderRequestFactory;
 import com.liferay.portlet.RenderResponseFactory;
 import com.liferay.site.initializer.SiteInitializer;
@@ -85,12 +84,12 @@ public class PortalInstancesLocalServiceImpl
 
 	@Override
 	public long[] getCompanyIds() {
-		return PortalInstancePool.getCompanyIds();
+		return PortalInstances.getCompanyIds();
 	}
 
 	@Override
 	public long getDefaultCompanyId() {
-		return PortalInstancePool.getDefaultCompanyId();
+		return PortalInstances.getDefaultCompanyId();
 	}
 
 	@Override
@@ -100,7 +99,7 @@ public class PortalInstancesLocalServiceImpl
 
 		Company company = _companyLocalService.getCompany(companyId);
 
-		PortalInstances.initCompany(company);
+		com.liferay.portal.util.PortalInstances.initCompany(company);
 
 		if (Validator.isNull(siteInitializerKey)) {
 			return;
@@ -179,11 +178,14 @@ public class PortalInstancesLocalServiceImpl
 						return;
 					}
 
-					PortalInstances.initCompany(company);
+					com.liferay.portal.util.PortalInstances.initCompany(
+						company);
 				});
 
 			_companyLocalService.forEachCompanyId(
-				companyId -> PortalInstances.removeCompany(companyId),
+				companyId ->
+					com.liferay.portal.util.PortalInstances.removeCompany(
+						companyId),
 				ArrayUtil.toLongArray(removeableCompanyIds));
 		}
 		catch (Exception exception) {
