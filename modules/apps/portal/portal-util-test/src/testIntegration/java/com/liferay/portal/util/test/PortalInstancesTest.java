@@ -167,7 +167,7 @@ public class PortalInstancesTest {
 
 	@Test
 	public void testGetWebIdsAfterInitCompany() {
-		com.liferay.portal.util.PortalInstances.initCompany(_company);
+		PortalInstances.initCompany(_company);
 
 		List<String> webIds = ListUtil.fromArray(PortalInstances.getWebIds());
 
@@ -175,7 +175,7 @@ public class PortalInstancesTest {
 
 		_company.setWebId(RandomTestUtil.randomString());
 
-		com.liferay.portal.util.PortalInstances.initCompany(
+		PortalInstances.initCompany(
 			_companyLocalService.updateCompany(_company));
 
 		webIds = ListUtil.fromArray(PortalInstances.getWebIds());
@@ -195,8 +195,7 @@ public class PortalInstancesTest {
 
 		Assert.assertEquals(
 			_company.getCompanyId(),
-			com.liferay.portal.util.PortalInstances.getCompanyId(
-				mockHttpServletRequest));
+			PortalInstances.getCompanyId(mockHttpServletRequest));
 
 		Assert.assertEquals(
 			expectedLayoutSet,
@@ -215,8 +214,7 @@ public class PortalInstancesTest {
 
 		Assert.assertEquals(
 			_company.getCompanyId(),
-			com.liferay.portal.util.PortalInstances.getCompanyId(
-				mockHttpServletRequest));
+			PortalInstances.getCompanyId(mockHttpServletRequest));
 		Assert.assertEquals(
 			expectedLanguageId,
 			mockHttpServletRequest.getAttribute(

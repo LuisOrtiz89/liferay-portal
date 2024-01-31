@@ -1073,9 +1073,7 @@ public class PortalImpl implements Portal {
 			HttpServletRequest httpServletRequest =
 				(HttpServletRequest)requestContext.get("request");
 
-			long companyId =
-				com.liferay.portal.util.PortalInstances.getCompanyId(
-					httpServletRequest);
+			long companyId = PortalInstances.getCompanyId(httpServletRequest);
 
 			for (String urlSeparator :
 					FriendlyURLResolverRegistryUtil.getURLSeparators()) {
@@ -1773,13 +1771,13 @@ public class PortalImpl implements Portal {
 
 	@Override
 	public long getCompanyId(HttpServletRequest httpServletRequest) {
-		return com.liferay.portal.util.PortalInstances.getCompanyId(
-			httpServletRequest);
+		return PortalInstances.getCompanyId(httpServletRequest);
 	}
 
 	@Override
 	public long getCompanyId(PortletRequest portletRequest) {
-		return getCompanyId(getHttpServletRequest(portletRequest));
+		return PortalInstances.getCompanyId(
+			getHttpServletRequest(portletRequest));
 	}
 
 	@Override
@@ -2653,9 +2651,7 @@ public class PortalImpl implements Portal {
 			HttpServletRequest httpServletRequest =
 				(HttpServletRequest)requestContext.get("request");
 
-			long companyId =
-				com.liferay.portal.util.PortalInstances.getCompanyId(
-					httpServletRequest);
+			long companyId = getCompanyId(httpServletRequest);
 
 			for (String urlSeparator :
 					FriendlyURLResolverRegistryUtil.getURLSeparators()) {

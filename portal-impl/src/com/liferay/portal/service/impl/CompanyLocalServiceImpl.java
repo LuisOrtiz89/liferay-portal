@@ -414,7 +414,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 							registerCompany(dbPartitionCompany);
 
-							com.liferay.portal.util.PortalInstances.initCompany(
+							PortalInstances.initCompany(
 								dbPartitionCompany, true);
 
 							return null;
@@ -505,8 +505,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		try (SafeCloseable safeCloseable1 =
 				CompanyThreadLocal.setWithSafeCloseable(companyId);
 			SafeCloseable safeCloseable2 =
-				com.liferay.portal.util.PortalInstances.
-					setCompanyInDeletionProcess(companyId)) {
+				PortalInstances.setCompanyInDeletionProcess(companyId)) {
 
 			return doDeleteCompany(companyId);
 		}
@@ -554,16 +553,14 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			companyId);
 
 		try (SafeCloseable safeCloseable2 =
-				com.liferay.portal.util.PortalInstances.
-					setCompanyInDeletionProcess(companyId)) {
+				PortalInstances.setCompanyInDeletionProcess(companyId)) {
 
 			_clearCompanyCache(companyId, true);
 			_clearVirtualHostCache(companyId);
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
-					com.liferay.portal.util.PortalInstances.removeCompany(
-						company.getCompanyId());
+					PortalInstances.removeCompany(company.getCompanyId());
 
 					unregisterCompany(company);
 
@@ -1422,8 +1419,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
-					com.liferay.portal.util.PortalInstances.removeCompany(
-						company.getCompanyId());
+					PortalInstances.removeCompany(company.getCompanyId());
 
 					unregisterCompany(company);
 
@@ -2265,8 +2261,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		TransactionCommitCallbackUtil.registerCallback(
 			() -> {
-				com.liferay.portal.util.PortalInstances.removeCompany(
-					company.getCompanyId());
+				PortalInstances.removeCompany(company.getCompanyId());
 
 				unregisterCompany(company);
 

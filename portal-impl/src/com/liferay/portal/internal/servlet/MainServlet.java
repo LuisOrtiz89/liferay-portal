@@ -453,8 +453,7 @@ public class MainServlet extends HttpServlet {
 			_log.debug("Get company ID");
 		}
 
-		long companyId = com.liferay.portal.util.PortalInstances.getCompanyId(
-			httpServletRequest);
+		long companyId = PortalInstances.getCompanyId(httpServletRequest);
 
 		if (_processCompanyInactiveRequest(
 				httpServletRequest, httpServletResponse, companyId)) {
@@ -798,12 +797,10 @@ public class MainServlet extends HttpServlet {
 						PropsValues.COMPANY_DEFAULT_WEB_ID,
 						company.getWebId())) {
 
-					com.liferay.portal.util.PortalInstances.initCompany(
-						company, true);
+					PortalInstances.initCompany(company, true);
 				}
 				else {
-					com.liferay.portal.util.PortalInstances.initCompany(
-						company, false);
+					PortalInstances.initCompany(company, false);
 				}
 
 				companies.add(company);
@@ -1060,9 +1057,7 @@ public class MainServlet extends HttpServlet {
 			HttpServletResponse httpServletResponse, long companyId)
 		throws IOException {
 
-		if (com.liferay.portal.util.PortalInstances.isCompanyActive(
-				companyId)) {
-
+		if (PortalInstances.isCompanyActive(companyId)) {
 			return false;
 		}
 

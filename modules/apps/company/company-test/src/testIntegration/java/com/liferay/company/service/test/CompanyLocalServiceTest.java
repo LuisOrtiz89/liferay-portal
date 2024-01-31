@@ -1021,7 +1021,7 @@ public class CompanyLocalServiceTest {
 			null, webId, webId, "test.com", 0, true, null, null, null, null,
 			null, null);
 
-		com.liferay.portal.util.PortalInstances.initCompany(company);
+		PortalInstances.initCompany(company);
 
 		CompanyThreadLocal.setCompanyId(company.getCompanyId());
 

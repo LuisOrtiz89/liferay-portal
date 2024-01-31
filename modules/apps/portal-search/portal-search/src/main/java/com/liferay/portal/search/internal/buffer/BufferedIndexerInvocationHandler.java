@@ -5,6 +5,7 @@
 
 package com.liferay.portal.search.internal.buffer;
 
+import com.liferay.portal.kernel.instance.PortalInstances;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
@@ -16,7 +17,6 @@ import com.liferay.portal.kernel.util.MethodKey;
 import com.liferay.portal.search.configuration.IndexerRegistryConfiguration;
 import com.liferay.portal.search.index.IndexStatusManager;
 import com.liferay.portal.service.PersistedModelLocalServiceRegistryUtil;
-import com.liferay.portal.util.PortalInstances;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;

@@ -99,7 +99,7 @@ public class PortalInstancesLocalServiceImpl
 
 		Company company = _companyLocalService.getCompany(companyId);
 
-		com.liferay.portal.util.PortalInstances.initCompany(company);
+		PortalInstances.initCompany(company);
 
 		if (Validator.isNull(siteInitializerKey)) {
 			return;
@@ -178,14 +178,11 @@ public class PortalInstancesLocalServiceImpl
 						return;
 					}
 
-					com.liferay.portal.util.PortalInstances.initCompany(
-						company);
+					PortalInstances.initCompany(company);
 				});
 
 			_companyLocalService.forEachCompanyId(
-				companyId ->
-					com.liferay.portal.util.PortalInstances.removeCompany(
-						companyId),
+				companyId -> PortalInstances.removeCompany(companyId),
 				ArrayUtil.toLongArray(removeableCompanyIds));
 		}
 		catch (Exception exception) {

@@ -466,7 +466,7 @@ public class SetupWizardUtil {
 
 		company = CompanyLocalServiceUtil.updateCompany(company);
 
-		com.liferay.portal.util.PortalInstances.initCompany(company);
+		PortalInstances.initCompany(company);
 
 		themeDisplay.setCompany(company);
 	}
