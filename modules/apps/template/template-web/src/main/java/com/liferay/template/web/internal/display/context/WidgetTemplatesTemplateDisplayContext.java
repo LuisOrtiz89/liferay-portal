@@ -14,12 +14,15 @@ import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.template.TemplateHandler;
@@ -32,7 +35,9 @@ import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.liferay.template.web.internal.security.permissions.resource.DDMTemplatePermission;
 import com.liferay.template.web.internal.util.DDMTemplateActionDropdownItemsProvider;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -53,16 +58,12 @@ public class WidgetTemplatesTemplateDisplayContext
 	}
 
 	public long[] getClassNameIds() {
-		if (_classNameIds != null) {
-			return _classNameIds;
-		}
-
-		_classNameIds = TransformUtil.transformToLongArray(
-			_portletDisplayTemplate.getPortletDisplayTemplateHandlers(),
-			templateHandler -> PortalUtil.getClassNameId(
-				templateHandler.getClassName()));
-
-		return _classNameIds;
+		return _classNameIds.computeIfAbsent(
+			_getKey(CompanyThreadLocal.getCompanyId()),
+			key -> TransformUtil.transformToLongArray(
+				_portletDisplayTemplate.getPortletDisplayTemplateHandlers(),
+				templateHandler -> PortalUtil.getClassNameId(
+					templateHandler.getClassName())));
 	}
 
 	public List<DropdownItem> getDDMTemplateActionDropdownItems(
@@ -185,6 +186,14 @@ public class WidgetTemplatesTemplateDisplayContext
 		return templateHandler.getName(themeDisplay.getLocale());
 	}
 
+	private long _getKey(long companyId) {
+		if (DBPartition.isPartitionEnabled()) {
+			return companyId;
+		}
+
+		return CompanyConstants.SYSTEM;
+	}
+
 	private OrderByComparator<DDMTemplate> _getTemplateOrderByComparator() {
 		OrderByComparator<DDMTemplate> orderByComparator = null;
 
@@ -204,7 +213,7 @@ public class WidgetTemplatesTemplateDisplayContext
 		return orderByComparator;
 	}
 
-	private long[] _classNameIds;
+	private final Map<Long, long[]> _classNameIds = new HashMap<>();
 	private SearchContainer<DDMTemplate> _ddmTemplateSearchContainer;
 	private final PortletDisplayTemplate _portletDisplayTemplate;
 	private Long _resourceClassNameId;
