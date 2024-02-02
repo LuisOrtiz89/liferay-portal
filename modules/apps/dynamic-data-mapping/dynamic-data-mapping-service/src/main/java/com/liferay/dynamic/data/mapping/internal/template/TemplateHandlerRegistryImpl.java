@@ -312,6 +312,35 @@ public class TemplateHandlerRegistryImpl implements TemplateHandlerRegistry {
 						false, null, null, serviceContext);
 				}
 			}
+
+			_classNameIdTemplateHandlersServiceTrackerMaps.putIfAbsent(
+				_getKey(company.getCompanyId()),
+				ServiceTrackerMapFactory.openSingleValueMap(
+					_bundleContext, TemplateHandler.class, null,
+					(serviceReference, emitter) -> {
+						TemplateHandler templateHandler =
+							_bundleContext.getService(serviceReference);
+
+						emitter.emit(
+							_portal.getClassNameId(
+								templateHandler.getClassName()));
+
+						_bundleContext.ungetService(serviceReference);
+					}));
+
+			_classNameTemplateHandlersServiceTrackerMaps.putIfAbsent(
+				_getKey(company.getCompanyId()),
+				ServiceTrackerMapFactory.openSingleValueMap(
+					_bundleContext, TemplateHandler.class, null,
+					(serviceReference, emitter) -> {
+						TemplateHandler templateHandler =
+							_bundleContext.getService(serviceReference);
+
+						emitter.emit(templateHandler.getClassName());
+
+						_bundleContext.ungetService(serviceReference);
+					},
+					new TemplateHandlerServiceTrackerCustomizer()));
 		}
 
 		@Override
