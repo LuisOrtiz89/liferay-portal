@@ -16,9 +16,11 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.instance.lifecycle.BasePortalInstanceLifecycleListener;
 import com.liferay.portal.instance.lifecycle.PortalInstanceLifecycleListener;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.resource.bundle.AggregateResourceBundleLoader;
 import com.liferay.portal.kernel.resource.bundle.ClassResourceBundleLoader;
@@ -67,14 +69,14 @@ public class TemplateHandlerRegistryImpl implements TemplateHandlerRegistry {
 	public long[] getClassNameIds() {
 		return ArrayUtil.toLongArray(
 			_classNameIdTemplateHandlersServiceTrackerMaps.get(
-				CompanyThreadLocal.getCompanyId()
+				_getKey(CompanyThreadLocal.getCompanyId())
 			).keySet());
 	}
 
 	@Override
 	public TemplateHandler getTemplateHandler(long classNameId) {
 		return _classNameIdTemplateHandlersServiceTrackerMaps.get(
-			CompanyThreadLocal.getCompanyId()
+			_getKey(CompanyThreadLocal.getCompanyId())
 		).getService(
 			classNameId
 		);
@@ -83,7 +85,7 @@ public class TemplateHandlerRegistryImpl implements TemplateHandlerRegistry {
 	@Override
 	public TemplateHandler getTemplateHandler(String className) {
 		return _classNameTemplateHandlersServiceTrackerMaps.get(
-			CompanyThreadLocal.getCompanyId()
+			_getKey(CompanyThreadLocal.getCompanyId())
 		).getService(
 			className
 		);
@@ -93,7 +95,7 @@ public class TemplateHandlerRegistryImpl implements TemplateHandlerRegistry {
 	public List<TemplateHandler> getTemplateHandlers() {
 		return new ArrayList<>(
 			_classNameTemplateHandlersServiceTrackerMaps.get(
-				CompanyThreadLocal.getCompanyId()
+				_getKey(CompanyThreadLocal.getCompanyId())
 			).values());
 	}
 
@@ -106,12 +108,8 @@ public class TemplateHandlerRegistryImpl implements TemplateHandlerRegistry {
 		try {
 			DBPartitionUtil.forEachCompanyId(
 				company -> {
-					if (company == null) {
-						company = CompanyThreadLocal.getCompanyId();
-					}
-
 					_classNameIdTemplateHandlersServiceTrackerMaps.put(
-						company,
+						_getKey(company),
 						ServiceTrackerMapFactory.openSingleValueMap(
 							bundleContext, TemplateHandler.class, null,
 							(serviceReference, emitter) -> {
@@ -126,7 +124,7 @@ public class TemplateHandlerRegistryImpl implements TemplateHandlerRegistry {
 							}));
 
 					_classNameTemplateHandlersServiceTrackerMaps.put(
-						company,
+						_getKey(company),
 						ServiceTrackerMapFactory.openSingleValueMap(
 							bundleContext, TemplateHandler.class, null,
 							(serviceReference, emitter) -> {
@@ -151,10 +149,10 @@ public class TemplateHandlerRegistryImpl implements TemplateHandlerRegistry {
 			DBPartitionUtil.forEachCompanyId(
 				company -> {
 					_classNameIdTemplateHandlersServiceTrackerMaps.get(
-						company
+						_getKey(company)
 					).close();
 					_classNameTemplateHandlersServiceTrackerMaps.get(
-						company
+						_getKey(company)
 					).close();
 				});
 		}
@@ -163,6 +161,14 @@ public class TemplateHandlerRegistryImpl implements TemplateHandlerRegistry {
 		}
 
 		_bundleContext = null;
+	}
+
+	private long _getKey(long companyId) {
+		if (DBPartition.isPartitionEnabled()) {
+			return companyId;
+		}
+
+		return CompanyConstants.SYSTEM;
 	}
 
 	private BundleContext _bundleContext;
