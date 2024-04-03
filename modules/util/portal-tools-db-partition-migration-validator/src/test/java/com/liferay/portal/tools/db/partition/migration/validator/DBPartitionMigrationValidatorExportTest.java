@@ -41,9 +41,7 @@ public class DBPartitionMigrationValidatorExportTest extends MockDatabaseUtil {
 	public void setUp() {
 		System.setErr(new PrintStream(_errByteArrayOutputStream));
 		System.setOut(new PrintStream(_outByteArrayOutputStream));
-		System.setSecurityManager(
-			new DBPartitionMigrationValidatorExportTest.
-				DisallowExitSecurityManager());
+		System.setSecurityManager(_disallowExitSecurityManager);
 	}
 
 	@After
@@ -54,6 +52,8 @@ public class DBPartitionMigrationValidatorExportTest extends MockDatabaseUtil {
 
 	@Test
 	public void testMultipleCompanyDefaultDatabase() throws Exception {
+		_disallowExitSecurityManager.setExpectedStatus(1);
+
 		_export(
 			_generateCompanies(),
 			Arrays.asList(
@@ -65,6 +65,8 @@ public class DBPartitionMigrationValidatorExportTest extends MockDatabaseUtil {
 
 	@Test
 	public void testMultipleCompanyNondefaultDatabase() throws Exception {
+		_disallowExitSecurityManager.setExpectedStatus(1);
+
 		_export(
 			_generateCompanies(),
 			Arrays.asList(
@@ -141,36 +143,24 @@ public class DBPartitionMigrationValidatorExportTest extends MockDatabaseUtil {
 				"Table1", "Company", "Table2",
 				"Object_x_" + companyIds.get(0)));
 
-		File outputDirectory = temporaryFolder.newFolder("tempExports");
+		_outputDirectory = temporaryFolder.newFolder("tempExports");
 
 		try {
 			DBPartitionMigrationValidator.main(
 				new String[] {
 					"-e", "-j", _URL, "-u", _USER, "-p", _PASSWORD, "-d",
-					outputDirectory.getAbsolutePath(), "-s", _SCHEMA_NAME
+					_outputDirectory.getAbsolutePath(), "-s", _SCHEMA_NAME
 				});
 		}
 		catch (RuntimeException runtimeException) {
-			if (companyInfoIds.size() > 1) {
-				Assert.assertEquals("1", runtimeException.getMessage());
-				Assert.assertTrue(
-					_errByteArrayOutputStream.toString(
-					).contains(
-						"Source multi company or target with DB Partitioning " +
-							"disabled environments are not supported"
-					));
-
-				File[] files = outputDirectory.listFiles();
-
-				Assert.assertEquals(Arrays.toString(files), 0, files.length);
-
+			if (_disallowExitSecurityManager.getExpectedStatus() == 1) {
 				return;
 			}
 
 			Assert.assertEquals("0", runtimeException.getMessage());
 		}
 
-		File[] files = outputDirectory.listFiles();
+		File[] files = _outputDirectory.listFiles();
 
 		Assert.assertEquals(Arrays.toString(files), 1, files.length);
 
@@ -316,12 +306,15 @@ public class DBPartitionMigrationValidatorExportTest extends MockDatabaseUtil {
 
 	private static final String _USER = RandomTestUtil.randomString();
 
+	private final DisallowExitSecurityManager _disallowExitSecurityManager =
+		new DisallowExitSecurityManager();
 	private final ByteArrayOutputStream _errByteArrayOutputStream =
 		new ByteArrayOutputStream();
 	private final PrintStream _originalErr = System.err;
 	private final PrintStream _originalOut = System.out;
 	private final ByteArrayOutputStream _outByteArrayOutputStream =
 		new ByteArrayOutputStream();
+	private File _outputDirectory;
 
 	private class DisallowExitSecurityManager extends SecurityManager {
 
@@ -329,12 +322,36 @@ public class DBPartitionMigrationValidatorExportTest extends MockDatabaseUtil {
 		public void checkExit(int status) {
 			super.checkExit(status);
 
+			if (_expectedStatus == 1) {
+				Assert.assertEquals(_expectedStatus, status);
+				Assert.assertTrue(
+					_errByteArrayOutputStream.toString(
+					).contains(
+						"Source multi company or target with DB Partitioning " +
+							"disabled environments are not supported"
+					));
+
+				File[] files = _outputDirectory.listFiles();
+
+				Assert.assertEquals(Arrays.toString(files), 0, files.length);
+			}
+
 			throw new RuntimeException(String.valueOf(status));
 		}
 
 		@Override
 		public void checkPermission(Permission perm) {
 		}
+
+		public int getExpectedStatus() {
+			return _expectedStatus;
+		}
+
+		public void setExpectedStatus(int expectedStatus) {
+			_expectedStatus = expectedStatus;
+		}
+
+		private int _expectedStatus;
 
 	}
 
