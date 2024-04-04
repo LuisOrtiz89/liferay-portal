@@ -239,7 +239,7 @@ public class VerifyProcessTrackerOSGiCommands {
 						release.setVerified(false);
 						release.setState(ReleaseConstants.STATE_GOOD);
 
-						release = _releaseLocalService.updateRelease(release);
+						_releaseLocalService.updateRelease(release);
 					}
 					else if (initialDeployment && (release != null)) {
 						release.setVerified(true);
