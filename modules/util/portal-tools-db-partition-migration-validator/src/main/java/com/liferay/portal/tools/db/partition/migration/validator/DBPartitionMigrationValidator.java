@@ -7,16 +7,11 @@ package com.liferay.portal.tools.db.partition.migration.validator;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -24,10 +19,12 @@ import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.tools.db.partition.migration.validator.util.DatabaseUtil;
 import com.liferay.portal.tools.db.partition.migration.validator.util.ValidatorUtil;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import java.sql.Connection;
@@ -311,20 +308,6 @@ public class DBPartitionMigrationValidator {
 			}
 		}
 
-		DefaultPrettyPrinter defaultPrettyPrinter = new DefaultPrettyPrinter();
-
-		defaultPrettyPrinter.indentArraysWith(
-			DefaultIndenter.SYSTEM_LINEFEED_INSTANCE);
-
-		ObjectMapper objectMapper = new ObjectMapper() {
-			{
-				configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
-				enable(SerializationFeature.INDENT_OUTPUT);
-				setDateFormat(new ISO8601DateFormat());
-				setDefaultPrettyPrinter(defaultPrettyPrinter);
-			}
-		};
-
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
 			"yyyyMMddHHmmss");
 
@@ -334,7 +317,11 @@ public class DBPartitionMigrationValidator {
 				simpleDateFormat.format(liferayDatabase.getDate()), "_export_",
 				liferayDatabase.getExportedCompanyId(), ".json"));
 
-		objectMapper.writeValue(exportFile, liferayDatabase);
+		try (BufferedWriter bufferedWriter = Files.newBufferedWriter(
+			exportFile.toPath(), StandardCharsets.UTF_8)) {
+
+			bufferedWriter.write(liferayDatabase.toString());
+		}
 
 		return exportFile.getCanonicalPath();
 	}

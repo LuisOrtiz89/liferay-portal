@@ -5,6 +5,9 @@
 
 package com.liferay.portal.tools.db.partition.migration.validator;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.Date;
 import java.util.List;
 
@@ -63,6 +66,25 @@ public class LiferayDatabase {
 
 	public void setTableNames(List<String> tableNames) {
 		_tableNames = tableNames;
+	}
+
+	public String toString() {
+		return new JSONObject(
+		).put(
+			"companies",
+			new JSONArray(_companies)
+		).put(
+			"date", _date
+		).put(
+			"exportedCompanyDefault", _exportedCompanyDefault
+		).put(
+			"exportedCompanyId", _exportedCompanyId
+		).put(
+			"releases",
+			new JSONArray(_releases)
+		).put(
+			"tableNames", _tableNames
+		).toString();
 	}
 
 	private List<Company> _companies;
