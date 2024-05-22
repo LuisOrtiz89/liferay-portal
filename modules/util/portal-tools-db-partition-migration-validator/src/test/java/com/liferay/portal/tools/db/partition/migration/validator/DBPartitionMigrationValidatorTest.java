@@ -63,7 +63,9 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 	@Test
 	public void testExportDefaultDatabase() throws Exception {
 		_testExport(
-			Collections.singletonList(RandomTestUtil.randomLong()), true);
+			Collections.singletonList(RandomTestUtil.randomLong()),
+			Collections.singletonList(RandomTestUtil.randomLong()),
+			true);
 	}
 
 	@Test
@@ -73,13 +75,16 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		_testExport(
 			Arrays.asList(
 				RandomTestUtil.randomLong(), RandomTestUtil.randomLong()),
+			Arrays.asList(RandomTestUtil.randomLong(), RandomTestUtil.randomLong()),
 			true);
 	}
 
 	@Test
 	public void testExportNondefaultDatabase() throws Exception {
 		_testExport(
-			Collections.singletonList(RandomTestUtil.randomLong()), false);
+			Collections.singletonList(RandomTestUtil.randomLong()),
+			Collections.singletonList(RandomTestUtil.randomLong()),
+			false);
 	}
 
 	@Test
@@ -89,6 +94,7 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		_testExport(
 			Arrays.asList(
 				RandomTestUtil.randomLong(), RandomTestUtil.randomLong()),
+			Arrays.asList(RandomTestUtil.randomLong(), RandomTestUtil.randomLong()),
 			false);
 	}
 
@@ -230,7 +236,7 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		return sb.toString();
 	}
 
-	private void _testExport(List<Long> companyIds, boolean defaultPartition)
+	private void _testExport(List<Long> companyIds, List<Long> companyInfoIds, boolean defaultPartition)
 		throws Exception {
 
 		List<Company> companies = Arrays.asList(
@@ -240,8 +246,6 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 			new Company(
 				RandomTestUtil.randomLong(), RandomTestUtil.randomString(),
 				RandomTestUtil.randomString(), RandomTestUtil.randomString()));
-		List<Long> companyInfoIds = Arrays.asList(
-			RandomTestUtil.randomLong(), RandomTestUtil.randomLong());
 		String password = RandomTestUtil.randomString();
 		List<Release> releases = Arrays.asList(
 			new Release(Version.parseVersion("14.2.4"), "module1", 0, true),
