@@ -58,6 +58,15 @@ public class DBPartitionMySQLDB implements DBPartitionDB {
 	}
 
 	@Override
+	public String getRenameTableSQL(
+		String fromTableName, String partitionName, String toTableName) {
+
+		return StringBundler.concat(
+			"rename table ", partitionName, StringPool.PERIOD, fromTableName,
+			" to ", partitionName, StringPool.PERIOD, toTableName);
+	}
+
+	@Override
 	public boolean isDDLTransactional() {
 		return false;
 	}

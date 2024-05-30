@@ -48,6 +48,17 @@ public class DBPartitionPostgreSQLDB implements DBPartitionDB {
 	}
 
 	@Override
+	public String getRenameTableSQL(
+		String fromTableName, String partitionName, String toTableName) {
+
+		return StringBundler.concat(
+			"alter table ", partitionName, StringPool.PERIOD, fromTableName,
+			" rename to ", toTableName, ";alter table ", partitionName,
+			StringPool.PERIOD, toTableName, " rename constraint ",
+			fromTableName, "_pkey to ", toTableName, "_pkey;");
+	}
+
+	@Override
 	public String getSafeAlterTable(String alterTableSQL) {
 		if (StringUtil.count(StringUtil.toLowerCase(alterTableSQL), "drop ") >
 				0) {

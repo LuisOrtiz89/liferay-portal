@@ -62,6 +62,9 @@ public interface DBPartitionDB {
 			"drop view if exists ", partitionName, StringPool.PERIOD, viewName);
 	}
 
+	public String getRenameTableSQL(
+		String fromTableName, String partitionName, String toTableName);
+
 	public default String getSafeAlterTable(String alterTableSQL) {
 		return alterTableSQL;
 	}
