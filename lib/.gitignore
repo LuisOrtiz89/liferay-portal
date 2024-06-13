@@ -95,6 +95,7 @@
 /portal/commons-configuration.jar
 /portal/commons-lang.jar
 /portal/commons-logging.jar
+/portal/configadmin.jar
 /portal/dom4j.jar
 /portal/hibernate-core.jar
 /portal/hikaricp.jar
