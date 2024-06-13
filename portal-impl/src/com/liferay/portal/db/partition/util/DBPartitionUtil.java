@@ -20,13 +20,17 @@ import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
+import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
+import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.CompanyConstants;
+import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -34,6 +38,7 @@ import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.spring.hibernate.DialectDetector;
 import com.liferay.portal.util.PropsValues;
 
@@ -45,6 +50,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -53,6 +59,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import javax.sql.DataSource;
+
+import org.apache.felix.cm.file.ConfigurationHandler;
 
 /**
  * @author Alberto Chaparro
@@ -447,6 +455,22 @@ public class DBPartitionUtil {
 								"update ", partitionTableName, " set classPK ",
 								"= ", toCompanyId, " where classPK = ",
 								fromCompanyId));
+					}
+
+					if (fromTableName.equals("ResourcePermission")) {
+						statement.executeUpdate(
+							StringBundler.concat(
+								"update ", partitionTableName, " set primKey ",
+								"= ", toCompanyId, ", primKeyId = ",
+								toCompanyId, " where primKey = ", fromCompanyId,
+								" and scope = ",
+								ResourceConstants.SCOPE_COMPANY));
+					}
+
+					if (fromTableName.equals("Configuration_")) {
+						_updateCompanyIdConfiguration(
+							connection, fromCompanyId, toCompanyId,
+							partitionTableName);
 					}
 				}
 			}
@@ -1128,6 +1152,63 @@ public class DBPartitionUtil {
 		statement.executeUpdate(
 			_dbPartitionDB.getCreateViewSQL(
 				_defaultPartitionName, partitionName, tableName));
+	}
+
+	private static void _updateCompanyIdConfiguration(
+			Connection connection, long fromCompanyId, long toCompanyId,
+			String partitionTableName)
+		throws Exception {
+
+		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+				"select * from " + partitionTableName +
+					" where dictionary like '%companyId%'");
+			PreparedStatement preparedStatement2 =
+				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+					connection,
+					StringBundler.concat(
+						"update ", partitionTableName,
+						" set dictionary = ? where configurationId = ?"));
+			ResultSet resultSet = preparedStatement1.executeQuery()) {
+
+			while (resultSet.next()) {
+				String dictionaryString = resultSet.getString("dictionary");
+
+				if (Validator.isNull(dictionaryString)) {
+					continue;
+				}
+
+				Dictionary<String, String> dictionary =
+					ConfigurationHandler.read(
+						new UnsyncByteArrayInputStream(
+							dictionaryString.getBytes(StringPool.UTF8)));
+
+				String companyId = dictionary.get("companyId");
+
+				if (companyId == String.valueOf(fromCompanyId)) {
+					dictionary.put("companyId", String.valueOf(toCompanyId));
+				}
+				else {
+					continue;
+				}
+
+				UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
+					new UnsyncByteArrayOutputStream();
+
+				ConfigurationHandler.write(
+					unsyncByteArrayOutputStream, dictionary);
+
+				String configurationId = resultSet.getString("configurationId");
+
+				preparedStatement2.setString(
+					1, unsyncByteArrayOutputStream.toString());
+
+				preparedStatement2.setString(2, configurationId);
+
+				preparedStatement2.addBatch();
+			}
+
+			preparedStatement2.executeBatch();
+		}
 	}
 
 	private static Statement _wrapStatement(Statement statement) {
