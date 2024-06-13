@@ -510,13 +510,14 @@ public class DBPartitionUtil {
 		String columnName = "";
 
 		if (StringUtil.endsWith(tableName, "JOB_DETAILS")) {
-			columnNames.removeIf(value -> value.equalsIgnoreCase("job_name"));
+			columnNames.removeIf(
+				value -> StringUtil.equalsIgnoreCase(value, "job_name"));
 
 			columnName = "job_name";
 		}
 		else {
 			columnNames.removeIf(
-				value -> value.equalsIgnoreCase("trigger_name"));
+				value -> StringUtil.equalsIgnoreCase(value, "trigger_name"));
 
 			columnName = "trigger_name";
 		}
