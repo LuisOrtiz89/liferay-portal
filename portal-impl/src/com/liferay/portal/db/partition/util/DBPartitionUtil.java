@@ -449,6 +449,14 @@ public class DBPartitionUtil {
 								"companyId = ", fromCompanyId));
 					}
 
+					if (StringUtil.equalsIgnoreCase(
+							fromTableName, "Configuration_")) {
+
+						_updateCompanyIdConfiguration(
+							connection, fromCompanyId, toCompanyId,
+							partitionTableName);
+					}
+
 					if (StringUtil.equalsIgnoreCase(fromTableName, "Group_")) {
 						statement.executeUpdate(
 							StringBundler.concat(
@@ -467,14 +475,6 @@ public class DBPartitionUtil {
 								toCompanyId, " where primKey = ", fromCompanyId,
 								" and scope = ",
 								ResourceConstants.SCOPE_COMPANY));
-					}
-
-					if (StringUtil.equalsIgnoreCase(
-							fromTableName, "Configuration_")) {
-
-						_updateCompanyIdConfiguration(
-							connection, fromCompanyId, toCompanyId,
-							partitionTableName);
 					}
 				}
 			}
