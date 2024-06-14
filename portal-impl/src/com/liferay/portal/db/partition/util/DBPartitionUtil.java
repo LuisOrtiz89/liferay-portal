@@ -449,7 +449,7 @@ public class DBPartitionUtil {
 								"companyId = ", fromCompanyId));
 					}
 
-					if (fromTableName.equals("Group_")) {
+					if (StringUtil.equalsIgnoreCase(fromTableName, "Group_")) {
 						statement.executeUpdate(
 							StringBundler.concat(
 								"update ", partitionTableName, " set classPK ",
@@ -457,7 +457,9 @@ public class DBPartitionUtil {
 								fromCompanyId));
 					}
 
-					if (fromTableName.equals("ResourcePermission")) {
+					if (StringUtil.equalsIgnoreCase(
+							fromTableName, "ResourcePermission")) {
+
 						statement.executeUpdate(
 							StringBundler.concat(
 								"update ", partitionTableName, " set primKey ",
@@ -467,7 +469,9 @@ public class DBPartitionUtil {
 								ResourceConstants.SCOPE_COMPANY));
 					}
 
-					if (fromTableName.equals("Configuration_")) {
+					if (StringUtil.equalsIgnoreCase(
+							fromTableName, "Configuration_")) {
+
 						_updateCompanyIdConfiguration(
 							connection, fromCompanyId, toCompanyId,
 							partitionTableName);
@@ -1185,7 +1189,7 @@ public class DBPartitionUtil {
 
 				String companyId = dictionary.get("companyId");
 
-				if (companyId == String.valueOf(fromCompanyId)) {
+				if (companyId.equals(String.valueOf(fromCompanyId))) {
 					dictionary.put("companyId", String.valueOf(toCompanyId));
 				}
 				else {
