@@ -12,13 +12,18 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.db.partition.test.util.BaseDBPartitionTestCase;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
+import com.liferay.portal.file.install.constants.FileInstallConstants;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnection;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
+import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.model.CompanyConstants;
+import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.scheduler.SchedulerEngine;
 import com.liferay.portal.kernel.scheduler.StorageType;
 import com.liferay.portal.kernel.scheduler.TimeUnit;
@@ -27,6 +32,9 @@ import com.liferay.portal.kernel.scheduler.TriggerFactory;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
+import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.test.rule.Inject;
 
 import java.sql.Connection;
@@ -37,10 +45,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+
+import javax.sql.DataSource;
+
+import org.apache.felix.cm.file.ConfigurationHandler;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -163,6 +176,10 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 				createAndPopulateTable(
 					testObjectTableNamePrefix + COMPANY_IDS[0]);
+
+				_populateResourcePermissionTable();
+
+				_populateConfigurationTable();
 			}
 
 			Assert.assertTrue(
@@ -193,6 +210,18 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 			for (String fromTableName : fromTableNames) {
 				String toTableName = fromTableName;
+
+				if (StringUtil.equalsIgnoreCase(
+						fromTableName, "ResourcePermission")) {
+
+					_testResourcePermissionTableCopy(companyId);
+				}
+
+				if (StringUtil.equalsIgnoreCase(
+						fromTableName, "Configuration_")) {
+
+					_testConfigurationTableCopy(companyId);
+				}
 
 				if (fromTableName.equals(
 						testObjectTableNamePrefix + companyId)) {
@@ -532,6 +561,71 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 		return viewNames.size();
 	}
 
+	private void _populateConfigurationTable() throws Exception {
+		long companyId = CompanyThreadLocal.getCompanyId();
+
+		UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
+			new UnsyncByteArrayOutputStream();
+
+		ConfigurationHandler.write(
+			unsyncByteArrayOutputStream,
+			HashMapDictionaryBuilder.put(
+				FileInstallConstants.FELIX_FILE_INSTALL_FILENAME,
+				_SERVICE_FACTORY_PID + ".default.config"
+			).put(
+				"companyId", String.valueOf(companyId)
+			).put(
+				"service.factoryPid", _SERVICE_FACTORY_PID
+			).put(
+				"service.pid", _SERVICE_FACTORY_PID
+			).build());
+
+		DataSource dataSource = InfrastructureUtil.getDataSource();
+
+		try (Connection connection = dataSource.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"insert into Configuration_ (configurationId, dictionary) " +
+					"values(?, ?)")) {
+
+			preparedStatement.setString(1, _SERVICE_FACTORY_PID + ".instance1");
+			preparedStatement.setString(
+				2, unsyncByteArrayOutputStream.toString());
+
+			preparedStatement.execute();
+		}
+	}
+
+	private void _populateResourcePermissionTable() throws Exception {
+		long companyId = CompanyThreadLocal.getCompanyId();
+
+		DataSource dataSource = InfrastructureUtil.getDataSource();
+
+		try (Connection connection = dataSource.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"insert into ResourcePermission (mvccVersion, ",
+					"ctCollectionId, resourcePermissionId, companyId, name, ",
+					"scope, primKey, primKeyId, roleId, ownerId, actionIds, ",
+					"viewActionId) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ",
+					"?)"))) {
+
+			preparedStatement.setLong(1, 0);
+			preparedStatement.setLong(2, 0);
+			preparedStatement.setLong(3, 1);
+			preparedStatement.setLong(4, companyId);
+			preparedStatement.setString(5, Role.class.getName());
+			preparedStatement.setInt(6, ResourceConstants.SCOPE_COMPANY);
+			preparedStatement.setLong(7, companyId);
+			preparedStatement.setLong(8, companyId);
+			preparedStatement.setLong(9, 1);
+			preparedStatement.setInt(10, 0);
+			preparedStatement.setInt(11, 1);
+			preparedStatement.setInt(12, 1);
+
+			preparedStatement.executeUpdate();
+		}
+	}
+
 	private void _scheduleJob(long companyId, String jobName) throws Exception {
 		Trigger trigger = _triggerFactory.createTrigger(
 			StringBundler.concat(jobName, StringPool.AT, companyId),
@@ -542,6 +636,47 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 			StorageType.PERSISTED);
 	}
 
+	private void _testConfigurationTableCopy(long companyId) throws Exception {
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setWithSafeCloseable(companyId);
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"select dictionary from Configuration_");
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			while (resultSet.next()) {
+				String dictionaryString = resultSet.getString("dictionary");
+
+				Dictionary<String, String> dictionary =
+					ConfigurationHandler.read(
+						new UnsyncByteArrayInputStream(
+							dictionaryString.getBytes(StringPool.UTF8)));
+
+				Assert.assertEquals(
+					companyId, GetterUtil.getLong(dictionary.get("companyId")));
+			}
+		}
+	}
+
+	private void _testResourcePermissionTableCopy(long companyId)
+		throws Exception {
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setWithSafeCloseable(companyId);
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"select primKey, primKeyId from ResourcePermission");
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			while (resultSet.next()) {
+				long primKey = resultSet.getLong("primKey");
+				long primKeyId = resultSet.getLong("primKeyId");
+
+				Assert.assertEquals(companyId, primKey);
+
+				Assert.assertEquals(companyId, primKeyId);
+			}
+		}
+	}
+
 	private static final String _JOB_GROUP_NAME = "liferay/test";
 
 	private static final String _JOB_NAME_1 = "testjob1";
@@ -549,6 +684,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 	private static final String _JOB_NAME_2 = "testjob2";
 
 	private static final int _JOBS_COUNT = 2;
+
+	private static final String _SERVICE_FACTORY_PID = "test.configuration";
 
 	@Inject(
 		filter = "component.name=com.liferay.portal.scheduler.quartz.internal.QuartzSchedulerEngine"
