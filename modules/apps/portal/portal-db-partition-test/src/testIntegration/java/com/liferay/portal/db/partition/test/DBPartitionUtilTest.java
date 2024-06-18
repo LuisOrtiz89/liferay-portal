@@ -211,18 +211,6 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 			for (String fromTableName : fromTableNames) {
 				String toTableName = fromTableName;
 
-				if (StringUtil.equalsIgnoreCase(
-						fromTableName, "ResourcePermission")) {
-
-					_testResourcePermissionTableCopy(companyId);
-				}
-
-				if (StringUtil.equalsIgnoreCase(
-						fromTableName, "Configuration_")) {
-
-					_testConfigurationTableCopy(companyId);
-				}
-
 				if (fromTableName.equals(
 						testObjectTableNamePrefix + companyId)) {
 
@@ -233,6 +221,9 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 					toTableName, _getCount(COMPANY_IDS[0], fromTableName),
 					_getCount(companyId, toTableName));
 			}
+
+			_testConfigurationTableCopy(companyId);
+			_testResourcePermissionTableCopy(companyId);
 		}
 		finally {
 			ReflectionTestUtil.setFieldValue(
