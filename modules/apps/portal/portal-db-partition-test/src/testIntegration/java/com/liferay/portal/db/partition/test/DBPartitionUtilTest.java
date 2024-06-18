@@ -643,6 +643,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 				"select dictionary from Configuration_");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
+			Assert.assertTrue(resultSet.isBeforeFirst());
+
 			while (resultSet.next()) {
 				String dictionaryString = resultSet.getString("dictionary");
 
@@ -665,6 +667,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				"select primKey, primKeyId from ResourcePermission");
 			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			Assert.assertTrue(resultSet.isBeforeFirst());
 
 			while (resultSet.next()) {
 				long primKey = resultSet.getLong("primKey");
