@@ -307,7 +307,6 @@ public class ResourceActionLocalServiceImpl
 	}
 
 	@Override
-	@Transactional(enabled = false)
 	public ResourceAction fetchResourceAction(String name, String actionId) {
 		ResourceAction resourceAction = _resourceActions.get(
 			encodeKey(name, actionId));
@@ -325,7 +324,6 @@ public class ResourceActionLocalServiceImpl
 	}
 
 	@Override
-	@Transactional(enabled = false)
 	public ResourceAction getResourceAction(String name, String actionId)
 		throws PortalException {
 
