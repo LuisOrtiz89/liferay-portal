@@ -1515,6 +1515,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		Company company = companyPersistence.findByPrimaryKey(companyId);
 
 		if (DBPartition.isPartitionEnabled()) {
+			preunregisterDBPartitionCompany(company);
+
 			_clearCompanyCache(companyId, true);
 			_clearVirtualHostCache(companyId);
 
@@ -1718,6 +1720,16 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		if (portalInstanceLifecycleManager != null) {
 			portalInstanceLifecycleManager.preunregisterCompany(company);
+		}
+	}
+
+	protected void preunregisterDBPartitionCompany(Company company) {
+		PortalInstanceLifecycleManager portalInstanceLifecycleManager =
+			_serviceTracker.getService();
+
+		if (portalInstanceLifecycleManager != null) {
+			portalInstanceLifecycleManager.preunregisterDBPartitionCompany(
+				company);
 		}
 	}
 
