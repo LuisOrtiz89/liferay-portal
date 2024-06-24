@@ -37,6 +37,11 @@ public interface PortalInstanceLifecycleListener {
 		throws Exception {
 	}
 
+	public default void portalInstancePreunregisteredDBPartition(
+			Company company)
+		throws Exception {
+	}
+
 	public void portalInstanceRegistered(Company company) throws Exception;
 
 	public void portalInstanceUnregistered(Company company) throws Exception;

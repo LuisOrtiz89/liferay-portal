@@ -87,6 +87,16 @@ public class PortalInstanceLifecycleListenerManagerImpl
 		}
 	}
 
+	@Override
+	public void preunregisterDBPartitionCompany(Company company) {
+		for (PortalInstanceLifecycleListener portalInstanceLifecycleListener :
+				_serviceTrackerList) {
+
+			preunregisterDBPartitionCompany(
+				portalInstanceLifecycleListener, company);
+		}
+	}
+
 	@Clusterable
 	@Override
 	public void registerCompany(Company company) {
@@ -162,6 +172,24 @@ public class PortalInstanceLifecycleListenerManagerImpl
 			if (_log.isWarnEnabled()) {
 				_log.warn(
 					"Unable to preunregister portal instance " + company,
+					exception);
+			}
+		}
+	}
+
+	protected void preunregisterDBPartitionCompany(
+		PortalInstanceLifecycleListener portalInstanceLifecycleListener,
+		Company company) {
+
+		try {
+			portalInstanceLifecycleListener.
+				portalInstancePreunregisteredDBPartition(company);
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to preunregister portal instance DB partition " +
+						company,
 					exception);
 			}
 		}

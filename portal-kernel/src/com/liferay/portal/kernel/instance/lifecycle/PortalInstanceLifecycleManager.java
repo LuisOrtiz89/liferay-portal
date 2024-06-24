@@ -19,6 +19,8 @@ public interface PortalInstanceLifecycleManager {
 
 	public void preunregisterCompany(Company company);
 
+	public void preunregisterDBPartitionCompany(Company company);
+
 	public void registerCompany(Company company);
 
 	public void unregisterCompany(Company company);
