@@ -356,6 +356,19 @@ public class ResourceActionLocalServiceImpl
 		return resourceActionPersistence.countByName(name);
 	}
 
+	@Override
+	public void invalidate(long companyId) {
+		if (!DBPartition.isPartitionEnabled()) {
+			return;
+		}
+
+		for (String key : _resourceActions.keySet()) {
+			if (key.endsWith(StringPool.AT + companyId)) {
+				_resourceActions.remove(key);
+			}
+		}
+	}
+
 	protected String encodeKey(String name, String actionId) {
 		String key = StringBundler.concat(name, StringPool.POUND, actionId);
 
