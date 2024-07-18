@@ -45,6 +45,11 @@ public class CounterLocalServiceImpl
 	}
 
 	@Override
+	public void invalidate(long companyId) {
+		counterFinder.invalidate(companyId);
+	}
+
+	@Override
 	public void rename(String oldName, String newName) {
 		counterFinder.rename(oldName, newName);
 	}
