@@ -61,6 +61,11 @@ public class CounterLocalServiceWrapper
 	}
 
 	@Override
+	public void invalidate(long companyId) {
+		_counterLocalService.invalidate(companyId);
+	}
+
+	@Override
 	public void rename(String oldName, String newName) {
 		_counterLocalService.rename(oldName, newName);
 	}

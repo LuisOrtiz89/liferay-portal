@@ -57,6 +57,8 @@ public interface CounterLocalService extends BaseLocalService {
 
 	public long increment(String name, int size);
 
+	public void invalidate(long companyId);
+
 	public void rename(String oldName, String newName);
 
 	public void reset(String name);

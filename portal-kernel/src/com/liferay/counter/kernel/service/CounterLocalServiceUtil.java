@@ -55,6 +55,10 @@ public class CounterLocalServiceUtil {
 		return getService().increment(name, size);
 	}
 
+	public static void invalidate(long companyId) {
+		getService().invalidate(companyId);
+	}
+
 	public static void rename(String oldName, String newName) {
 		getService().rename(oldName, newName);
 	}
