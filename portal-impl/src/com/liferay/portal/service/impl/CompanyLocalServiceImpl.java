@@ -2176,8 +2176,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		preregisterCompany(company);
 
-		_resourceActionLocalService.checkResourceActions();
-
 		_portletLocalService.checkPortlets(company.getCompanyId());
 
 		TransactionCommitCallbackUtil.registerCallback(
@@ -2321,12 +2319,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			// Virtual host
 
 			company = syncVirtualHost(company);
-
-			// Resource actions
-
-			if (DBPartition.isPartitionEnabled()) {
-				_resourceActionLocalService.checkResourceActions();
-			}
 
 			// System roles
 
