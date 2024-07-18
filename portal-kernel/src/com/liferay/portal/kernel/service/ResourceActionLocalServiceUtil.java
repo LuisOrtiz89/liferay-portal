@@ -314,6 +314,10 @@ public class ResourceActionLocalServiceUtil {
 		return getService().getResourceActionsCount(name);
 	}
 
+	public static void invalidate(long companyId) {
+		getService().invalidate(companyId);
+	}
+
 	/**
 	 * Updates the resource action in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *

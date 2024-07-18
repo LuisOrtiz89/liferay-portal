@@ -363,6 +363,11 @@ public class ResourceActionLocalServiceWrapper
 		return _resourceActionLocalService.getResourceActionsCount(name);
 	}
 
+	@Override
+	public void invalidate(long companyId) {
+		_resourceActionLocalService.invalidate(companyId);
+	}
+
 	/**
 	 * Updates the resource action in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
