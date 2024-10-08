@@ -272,7 +272,8 @@ public class DBPartitionUtil {
 
 			statement.execute(
 				_dbPartitionDB.getCreateTableSQL(
-					_defaultPartitionName, partitionName, viewName));
+					connection, _defaultPartitionName, partitionName,
+					viewName));
 
 			if (copyData) {
 				statement.executeUpdate(
@@ -394,8 +395,8 @@ public class DBPartitionUtil {
 					else {
 						statement.executeUpdate(
 							_dbPartitionDB.getCreateTableSQL(
-								_defaultPartitionName, partitionName,
-								tableName));
+								connection, _defaultPartitionName,
+								partitionName, tableName));
 
 						if (dbInspector.isPartitionedControlTable(tableName)) {
 							statement.executeUpdate(
@@ -492,8 +493,8 @@ public class DBPartitionUtil {
 
 					statement.executeUpdate(
 						_dbPartitionDB.getCreateTableSQL(
-							fromPartitionName, toPartitionName, fromTableName,
-							toTableName));
+							connection, fromPartitionName, toPartitionName,
+							fromTableName, toTableName));
 
 					if (StringUtil.equalsIgnoreCase(
 							fromTableName, "Configuration_")) {
@@ -705,7 +706,8 @@ public class DBPartitionUtil {
 						controlTableNames.add(tableName);
 
 						_extractTable(
-							companyId, tableName, statement, dbInspector);
+							companyId, connection, tableName, statement,
+							dbInspector);
 					}
 				}
 			}
@@ -743,8 +745,8 @@ public class DBPartitionUtil {
 	}
 
 	private static void _extractTable(
-			long companyId, String tableName, Statement statement,
-			DBInspector dbInspector)
+			long companyId, Connection connection, String tableName,
+			Statement statement, DBInspector dbInspector)
 		throws Exception {
 
 		String partitionName = getPartitionName(companyId);
@@ -754,7 +756,7 @@ public class DBPartitionUtil {
 
 		statement.executeUpdate(
 			_dbPartitionDB.getCreateTableSQL(
-				_defaultPartitionName, partitionName, tableName));
+				connection, _defaultPartitionName, partitionName, tableName));
 
 		if (dbInspector.hasColumn(tableName, "companyId")) {
 			_moveCompanyData(
@@ -1095,7 +1097,8 @@ public class DBPartitionUtil {
 
 				for (String copiedTableName : copiedTableNames) {
 					_extractTable(
-						companyId, copiedTableName, statement, dbInspector);
+						companyId, connection, copiedTableName, statement,
+						dbInspector);
 				}
 
 				connection.commit();
