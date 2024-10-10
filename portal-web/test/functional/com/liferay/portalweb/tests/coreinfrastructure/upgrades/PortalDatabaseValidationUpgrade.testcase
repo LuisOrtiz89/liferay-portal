@@ -35,10 +35,10 @@ definition {
 		task ("And the server is upgraded to a new version") {
 			Upgrade.restoreOriginalBundleAndUpgrade();
 
-			User.firstLoginPG(
+			User.firstLoginUI(
 				password = PropsUtil.get("default.admin.password"),
-				userEmailAddress = "test@www.able.com",
-				virtualHostsURL = "http://www.able.com:8080");
+				specificURL = "http://www.able.com:8080",
+				userEmailAddress = "test@www.able.com");
 
 			Portlet.shutdownServer();
 		}
@@ -60,10 +60,10 @@ definition {
 
 			Portlet.startServer();
 
-			User.firstLoginPG(
+			User.firstLoginUI(
 				password = PropsUtil.get("default.admin.password"),
-				userEmailAddress = "test@liferay.com",
-				virtualHostsURL = "http://localhost:8080");
+				specificURL = "http://localhost:8080",
+				userEmailAddress = "test@liferay.com");
 		}
 
 		task ("And a new partition is created to emulate the same enviroment as before") {
@@ -72,10 +72,10 @@ definition {
 				portalInstanceId = "www.baker.com",
 				virtualHost = "www.baker.com");
 
-			User.firstLoginPG(
+			User.firstLoginUI(
 				password = PropsUtil.get("default.admin.password"),
-				userEmailAddress = "test@www.baker.com",
-				virtualHostsURL = "http://www.baker.com:8080");
+				specificURL = "http://www.baker.com:8080",
+				userEmailAddress = "test@www.baker.com");
 		}
 
 		task ("And the database is captured again") {
@@ -126,10 +126,10 @@ definition {
 		task ("And the user start the server again to have a fresh and clean base") {
 			Portlet.startServer();
 
-			User.firstLoginPG(
+			User.firstLoginUI(
 				password = PropsUtil.get("default.admin.password"),
-				userEmailAddress = "test@liferay.com",
-				virtualHostsURL = "http://localhost:8080");
+				specificURL = "http://localhost:8080",
+				userEmailAddress = "test@liferay.com");
 		}
 
 		task ("And the user add two new partitions to emulate the same enviroment as before") {
@@ -143,10 +143,10 @@ definition {
 				portalInstanceId = "www.baker.com",
 				virtualHost = "www.baker.com");
 
-			User.firstLoginPG(
+			User.firstLoginUI(
 				password = PropsUtil.get("default.admin.password"),
-				userEmailAddress = "test@www.able.com",
-				virtualHostsURL = "http://www.able.com:8080");
+				specificURL = "http://www.able.com:8080",
+				userEmailAddress = "test@www.able.com");
 		}
 
 		task ("Then he export the fresh schemas") {
