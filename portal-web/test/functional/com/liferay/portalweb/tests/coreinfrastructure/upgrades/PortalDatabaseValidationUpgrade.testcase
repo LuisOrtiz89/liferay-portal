@@ -17,6 +17,7 @@ definition {
 		property portal.acceptance = "true";
 		property portal.smoke.upgrades = "false";
 		property skip.start.app.server = "true";
+		property terms.of.use.required = "false";
 		property testcase.url = "file:///opt/dev/projects/github/liferay-portal/";
 
 		task ("Given the user is using the latest 7413 portal version") {
