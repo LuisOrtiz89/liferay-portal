@@ -9,26 +9,19 @@ import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
-import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.tools.db.partition.migration.validator.util.BaseTestCase;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 
 import java.net.URL;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import java.security.Permission;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +34,6 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -205,7 +197,7 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		return path.toString();
 	}
 
-	private void _mockDatabase(
+	private static void _mockDatabase(
 			List<Company> companies, List<Long> companyIds,
 			List<Long> companyInfoIds, boolean defaultPartition,
 			String password, List<Release> releases, String schemaName,
@@ -241,45 +233,27 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 	private void _testExport(List<Long> companyIds, boolean defaultPartition)
 		throws Exception {
 
-		List<Company> companies = Arrays.asList(
-			new Company(
-				RandomTestUtil.randomLong(), RandomTestUtil.randomString(),
-				RandomTestUtil.randomString(), RandomTestUtil.randomString()),
-			new Company(
-				RandomTestUtil.randomLong(), RandomTestUtil.randomString(),
-				RandomTestUtil.randomString(), RandomTestUtil.randomString()));
-		String password = RandomTestUtil.randomString();
-		List<Release> releases = Arrays.asList(
-			new Release(Version.parseVersion("14.2.4"), "module1", 0, true),
-			new Release(Version.parseVersion("2.0.1"), "module2", 1, false));
-		String schemaName = RandomTestUtil.randomString();
-		String url = "jdbc:mysql://localhost:3306/lportal?useUnicode=true";
-		String user = RandomTestUtil.randomString();
-
-		_mockDatabase(
-			companies, companyIds, companyIds, defaultPartition, password,
-			releases, schemaName,
-			Arrays.asList(
-				"Company", "Object_x_" + companyIds.get(0), "Table1", "Table2"),
-			url, user);
-
 		File outputDirectory = temporaryFolder.newFolder();
 
 		try {
 			List<String> args = new ArrayList<>();
 			args.add("export");
 			args.add("--jdbc-url");
-			args.add(url);
+			args.add(_url);
 			args.add("--output-dir");
 			args.add(outputDirectory.getAbsolutePath());
 			args.add("--password");
-			args.add(password);
+			args.add(_password);
 			args.add("--schema-name");
-			args.add(schemaName);
+			args.add(_schemaName);
 			args.add("--user");
-			args.add(user);
+			args.add(_user);
 
-			_callDBPartitionMigrationValidatorTool(args);
+			List<String> jvmArgs = new ArrayList<>();
+			jvmArgs.add("-D" + _COMPANY_IDS_PROPERTY_NAME + "=" + companyIds.toString());
+			jvmArgs.add("-D" + _DEFAULT_PARTITION_PROPERTY_NAME + "=" + defaultPartition);
+
+			_callDBPartitionMigrationValidatorTool(jvmArgs, args);
 		}
 		catch (RuntimeException runtimeException) {
 			String errorFileContent = new String(
@@ -302,6 +276,10 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 
 			Assert.assertEquals("0", runtimeException.getMessage());
 		}
+		finally {
+			System.clearProperty(_COMPANY_IDS_PROPERTY_NAME);
+			System.clearProperty(_DEFAULT_PARTITION_PROPERTY_NAME);
+		}
 
 		File[] files = outputDirectory.listFiles();
 
@@ -312,7 +290,7 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		JSONAssert.assertEquals(
 			new JSONObject(
 			).put(
-				"companies", new JSONArray(companies)
+				"companies", new JSONArray(_companies)
 			).toString(),
 			content, false);
 		JSONAssert.assertEquals(
@@ -338,7 +316,7 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		JSONAssert.assertEquals(
 			new JSONObject(
 			).put(
-				"releases", new JSONArray(releases)
+				"releases", new JSONArray(_releases)
 			).toString(),
 			content, false);
 		JSONAssert.assertEquals(
@@ -363,7 +341,9 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 			args.add("--target-file");
 			args.add( _getPathString(targetFileName));
 
-			_callDBPartitionMigrationValidatorTool(args);
+			List<String> jvmArgs = new ArrayList<>();
+
+			_callDBPartitionMigrationValidatorTool(jvmArgs, args);
 		}
 		catch (RuntimeException runtimeException) {
 			unsafeConsumer.accept(runtimeException);
@@ -372,14 +352,15 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		unsafeRunnable.run();
 	}
 
-	private void _callDBPartitionMigrationValidatorTool(List<String> args)
+	private void _callDBPartitionMigrationValidatorTool(List<String> jvmArgs, List<String> args)
 		throws Exception {
 		String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
 		String classPath = System.getProperty("java.class.path");
-		String className = DBPartitionMigrationValidator.class.getName();
+		String className = MockedDBPartitionMigrationValidator.class.getName();
 
 		List<String> command = new ArrayList<>();
 		command.add(javaBin);
+		command.addAll(jvmArgs);
 		command.add("-cp");
 		command.add(classPath);
 		command.add(className);
@@ -398,20 +379,52 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 	private File _errorTempFile;
 	private File _outputTempFile;
 
-	private class DisallowExitSecurityManager extends SecurityManager {
+	private static final List<Company> _companies = Arrays.asList(
+		new Company(
+			12345L, "test.com",
+			"test.com", "test.com"),
+		new Company(
+			54321L, "test.net",
+			"test.net", "test.net"));
+	private static final String _password = "secretPassword";
+	private static final List<Release> _releases = Arrays.asList(
+		new Release(Version.parseVersion("14.2.4"), "module1", 0, true),
+		new Release(Version.parseVersion("2.0.1"), "module2", 1, false));
+	private static final String _schemaName = "schemaNameTest";
+	private static final String _url = "jdbc:mysql://localhost:3306/lportal?useUnicode=true";
+	private static final String _user = "secretUser";
 
-		@Override
-		public void checkExit(int status) {
-			super.checkExit(status);
+	private static final String _COMPANY_IDS_PROPERTY_NAME = "dbpartitionmigrationvalidatortest.companies";
+	private static final String _DEFAULT_PARTITION_PROPERTY_NAME = "dbpartitionmigrationvalidatortest.defaultPartition";
 
-			throw new RuntimeException(String.valueOf(status));
+	public static class MockedDBPartitionMigrationValidator {
+
+		public static void main(String[] args) throws Exception {
+			String companyIdsString = System.getProperty(_COMPANY_IDS_PROPERTY_NAME);
+
+			if (companyIdsString != null) {
+				String[] companyIdsArray = companyIdsString.substring(1,
+					companyIdsString.length() - 1).split(", ");
+
+				boolean defaultPartition = Boolean.valueOf(
+					System.getProperty(_DEFAULT_PARTITION_PROPERTY_NAME));
+
+				List<Long> companyIds = new ArrayList<>();
+				for (String companyId : companyIdsArray) {
+					companyIds.add(Long.valueOf(companyId));
+				}
+
+				_mockDatabase(
+					_companies, companyIds, companyIds, defaultPartition,
+					_password,
+					_releases, _schemaName,
+					Arrays.asList(
+						"Company", "Object_x_" + companyIds.get(0), "Table1", "Table2"),
+					_url, _user);
+			}
+
+			DBPartitionMigrationValidator.main(args);
 		}
-
-		@Override
-		public void checkPermission(Permission perm) {
-		}
-
 	}
-
 	
 }
