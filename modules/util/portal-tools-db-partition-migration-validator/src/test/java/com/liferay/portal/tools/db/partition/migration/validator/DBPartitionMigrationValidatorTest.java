@@ -7,7 +7,9 @@ package com.liferay.portal.tools.db.partition.migration.validator;
 
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeRunnable;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.tools.db.partition.migration.validator.util.BaseTestCase;
@@ -16,15 +18,19 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 
 import java.net.URL;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import java.security.Permission;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +41,7 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -48,15 +55,14 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 
 	@Before
 	public void setUp() {
-		System.setErr(new PrintStream(_errByteArrayOutputStream));
-		System.setOut(new PrintStream(_outByteArrayOutputStream));
-		System.setSecurityManager(new DisallowExitSecurityManager());
+		_errorTempFile = new File(StringUtil.randomString());
+		_outputTempFile = new File(StringUtil.randomString());
 	}
 
 	@After
 	public void tearDown() {
-		System.setErr(_originalErr);
-		System.setOut(_originalOut);
+		_errorTempFile.delete();
+		_outputTempFile.delete();
 	}
 
 	@Test
@@ -133,10 +139,11 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 			runtimeException -> {
 				Assert.assertEquals("1", runtimeException.getMessage());
 
-				String string = _outByteArrayOutputStream.toString();
+				String outputFileContent = new String(
+					Files.readAllBytes(_outputTempFile.toPath()), StringPool.UTF8);
 
 				for (String message : messages) {
-					Assert.assertTrue(string.contains(message));
+					Assert.assertTrue(outputFileContent.contains(message));
 				}
 			},
 			() -> {
@@ -150,12 +157,16 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 			runtimeException -> Assert.assertEquals(
 				"0", runtimeException.getMessage()),
 			() -> {
+				String errorFileContent = new String(
+					Files.readAllBytes(_errorTempFile.toPath()), StringPool.UTF8);
+
+				String outputFileContent = new String(
+					Files.readAllBytes(_outputTempFile.toPath()), StringPool.UTF8);
+
 				Assert.assertTrue(
-					_errByteArrayOutputStream.toString(
-					).isEmpty());
+					errorFileContent.isEmpty());
 				Assert.assertTrue(
-					_outByteArrayOutputStream.toString(
-					).isEmpty());
+					outputFileContent.isEmpty());
 			});
 	}
 
@@ -164,15 +175,19 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		_testValidate(
 			"source-success.json", "target-nondefault.json",
 			runtimeException -> {
+				String errorFileContent = new String(
+					Files.readAllBytes(_errorTempFile.toPath()), StringPool.UTF8);
+
+				String outputFileContent = new String(
+					Files.readAllBytes(_outputTempFile.toPath()), StringPool.UTF8);
+
 				Assert.assertEquals("1", runtimeException.getMessage());
 				Assert.assertTrue(
-					_errByteArrayOutputStream.toString(
-					).contains(
+					errorFileContent.contains(
 						"Target is not the default partition"
 					));
 				Assert.assertTrue(
-					_outByteArrayOutputStream.toString(
-					).isEmpty());
+					outputFileContent.isEmpty());
 			},
 			() -> {
 			});
@@ -251,18 +266,28 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		File outputDirectory = temporaryFolder.newFolder();
 
 		try {
-			DBPartitionMigrationValidator.main(
-				new String[] {
-					"export", "--jdbc-url", url, "--output-dir",
-					outputDirectory.getAbsolutePath(), "--password", password,
-					"--schema-name", schemaName, "--user", user
-				});
+			List<String> args = new ArrayList<>();
+			args.add("export");
+			args.add("--jdbc-url");
+			args.add(url);
+			args.add("--output-dir");
+			args.add(outputDirectory.getAbsolutePath());
+			args.add("--password");
+			args.add(password);
+			args.add("--schema-name");
+			args.add(schemaName);
+			args.add("--user");
+			args.add(user);
+
+			_callDBPartitionMigrationValidatorTool(args);
 		}
 		catch (RuntimeException runtimeException) {
+			String errorFileContent = new String(
+				Files.readAllBytes(_errorTempFile.toPath()), StringPool.UTF8);
+
 			if (companyIds.size() > 1) {
 				Assert.assertTrue(
-					_errByteArrayOutputStream.toString(
-					).contains(
+					errorFileContent.contains(
 						"Database schema has to have a single company or " +
 							"database partitioning must be enabled"
 					));
@@ -331,11 +356,14 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		throws Exception {
 
 		try {
-			DBPartitionMigrationValidator.main(
-				new String[] {
-					"validate", "--source-file", _getPathString(sourceFileName),
-					"--target-file", _getPathString(targetFileName)
-				});
+			List<String> args = new ArrayList<>();
+			args.add("validate");
+			args.add("--source-file");
+			args.add(_getPathString(sourceFileName));
+			args.add("--target-file");
+			args.add( _getPathString(targetFileName));
+
+			_callDBPartitionMigrationValidatorTool(args);
 		}
 		catch (RuntimeException runtimeException) {
 			unsafeConsumer.accept(runtimeException);
@@ -344,12 +372,31 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 		unsafeRunnable.run();
 	}
 
-	private final ByteArrayOutputStream _errByteArrayOutputStream =
-		new ByteArrayOutputStream();
-	private final PrintStream _originalErr = System.err;
-	private final PrintStream _originalOut = System.out;
-	private final ByteArrayOutputStream _outByteArrayOutputStream =
-		new ByteArrayOutputStream();
+	private void _callDBPartitionMigrationValidatorTool(List<String> args)
+		throws Exception {
+		String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
+		String classPath = System.getProperty("java.class.path");
+		String className = DBPartitionMigrationValidator.class.getName();
+
+		List<String> command = new ArrayList<>();
+		command.add(javaBin);
+		command.add("-cp");
+		command.add(classPath);
+		command.add(className);
+		command.addAll(args);
+
+		ProcessBuilder builder = new ProcessBuilder(command)
+			.redirectOutput(_outputTempFile)
+			.redirectError(_errorTempFile);
+
+		Process process = builder.start();
+		process.waitFor();
+
+		throw new RuntimeException(String.valueOf(process.exitValue()));
+	}
+
+	private File _errorTempFile;
+	private File _outputTempFile;
 
 	private class DisallowExitSecurityManager extends SecurityManager {
 
@@ -366,4 +413,5 @@ public class DBPartitionMigrationValidatorTest extends BaseTestCase {
 
 	}
 
+	
 }
