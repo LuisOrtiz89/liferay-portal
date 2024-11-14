@@ -8,9 +8,12 @@ package com.liferay.portal.db.partition.internal.operation;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.db.partition.internal.configuration.DBPartitionInsertVirtualInstanceConfiguration;
+import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.model.impl.CompanyImpl;
 
 import java.util.Map;
 
@@ -58,6 +61,9 @@ public class DBPartitionInsertVirtualInstanceOperation
 
 					return null;
 				}
+
+				EntityCacheUtil.clearCache(CompanyImpl.class);
+				FinderCacheUtil.clearCache(CompanyImpl.class);
 
 				return _companyLocalService.addDBPartitionCompany(
 					companyId,
