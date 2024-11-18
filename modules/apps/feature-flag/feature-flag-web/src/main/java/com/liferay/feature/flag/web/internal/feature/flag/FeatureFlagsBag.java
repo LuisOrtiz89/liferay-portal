@@ -87,6 +87,17 @@ public class FeatureFlagsBag {
 			return featureFlag.isEnabled();
 		}
 
+		try {
+			throw new Exception(
+				StringBundler.concat(
+					"Feature flag ", key, " is not available for company ",
+					_companyId)
+			);
+		}
+		catch (Exception exception) {
+			_log.error(exception);
+		}
+
 		_log.error(
 			StringBundler.concat(
 				"Feature flag ", key, " is not available for company ",
