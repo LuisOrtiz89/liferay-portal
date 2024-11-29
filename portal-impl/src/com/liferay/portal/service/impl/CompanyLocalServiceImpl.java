@@ -1490,9 +1490,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		_clearCompanyCache(companyId, false);
 	}
 
-	protected void addAssetEntriesFacet(SearchContext searchContext) {
-	}
-
 	protected Company checkLogo(long companyId) throws PortalException {
 		Company company = companyPersistence.findByPrimaryKey(companyId);
 
