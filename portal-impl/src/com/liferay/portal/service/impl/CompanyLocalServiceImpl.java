@@ -2365,7 +2365,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 					registerCompany(finalCompany);
 
 					if (newCompany) {
-						PortalInstances.initCompany(finalCompany);
+						PortalInstances.initCompany(finalCompany, true);
 
 						_synchronizePortalInstances();
 					}
