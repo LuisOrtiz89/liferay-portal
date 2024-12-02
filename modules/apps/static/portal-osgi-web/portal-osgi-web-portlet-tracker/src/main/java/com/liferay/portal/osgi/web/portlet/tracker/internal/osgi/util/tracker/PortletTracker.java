@@ -40,6 +40,7 @@ import com.liferay.portal.kernel.portlet.LiferayPortletConfig;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.portlet.PortletInstanceFactory;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.PortletLocalService;
@@ -178,16 +179,22 @@ public class PortletTracker
 		FutureTask<com.liferay.portal.kernel.model.Portlet> futureTask =
 			new FutureTask<>(
 				() -> {
-					com.liferay.portal.kernel.model.Portlet addedPortletModel =
-						_addingPortlet(
-							serviceReference, portlet, finalPortletName,
-							finalPortletId);
+					try (SafeCloseable safeCloseable =
+							CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+								(Long)serviceReference.getProperty(
+									"com.liferay.portlet.company"))) {
 
-					if (addedPortletModel == null) {
-						_bundleContext.ungetService(serviceReference);
+						com.liferay.portal.kernel.model.Portlet
+							addedPortletModel = _addingPortlet(
+								serviceReference, portlet, finalPortletName,
+								finalPortletId);
+
+						if (addedPortletModel == null) {
+							_bundleContext.ungetService(serviceReference);
+						}
+
+						return addedPortletModel;
 					}
-
-					return addedPortletModel;
 				});
 
 		if (_parallel &&
@@ -427,8 +434,7 @@ public class PortletTracker
 			com.liferay.portal.kernel.model.Portlet portletModel =
 				_buildPortletModel(
 					portletApp, portletId, bundle,
-					(Long)serviceReference.getProperty(
-						"com.liferay.portlet.company"));
+					CompanyThreadLocal.getCompanyId());
 
 			portletModel.setPortletName(portletName);
 			portletModel.setDisplayName(
