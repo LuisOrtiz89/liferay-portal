@@ -687,7 +687,23 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 	@Override
 	@Transactional(enabled = false)
 	public Portlet getPortletById(String portletId) {
-		return _portletsMap.get(PortletIdCodec.decodePortletName(portletId));
+		Portlet portlet =
+			_portletsMap.get(PortletIdCodec.decodePortletName(portletId));
+
+		if ((portlet == null) || portlet.getCompanyId() == CompanyConstants.SYSTEM ||
+			portlet.getCompanyId() == CompanyThreadLocal.getNonsystemCompanyId()) {
+
+			return portlet;
+		}
+
+		Map<String, Portlet> companyPortletsMap =
+			_portletsMaps.get(CompanyThreadLocal.getNonsystemCompanyId());
+
+		if (companyPortletsMap != null) {
+			return companyPortletsMap.get(PortletIdCodec.decodePortletName(portletId));
+		}
+
+		return null;
 	}
 
 	@Override
@@ -1123,6 +1139,12 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 
 		for (Portlet portlet : portlets) {
 			Portlet portletModel = portletsMap.get(portlet.getPortletId());
+
+			if ((portletModel == null) && _portletsMap.get(portlet.getPortletId()) != null) {
+				portletsMap.put(portlet.getPortletId(), portlet);
+
+				continue;
+			}
 
 			// Portlet may be null if it exists in the database but its portlet
 			// WAR is not yet loaded
