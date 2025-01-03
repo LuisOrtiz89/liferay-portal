@@ -30,6 +30,7 @@ definition {
 		task ("Print the upgrade execution time") {
 			UpgradeReport.printUpgradeExecutionTime(upgradeType = "auto");
 		}
+		
 
 		User.firstLoginUI(
 			password = 1234,
