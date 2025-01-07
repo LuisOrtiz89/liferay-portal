@@ -10,6 +10,8 @@
 	<Loggers>
 		<Logger level="INFO" name="com.liferay.portal.kernel.test.performance.PerformanceTimer" />
 		<Logger level="INFO" name="com.liferay.portal.spring.hibernate.DialectDetector" />
+		<Logger level="DEBUG" name="com.liferay.portal.model.impl.ThemeImpl" />
+		<Logger level="DEBUG" name="com.liferay.portal.service.impl.ThemeLocalServiceImpl" />
 
 		<Root level="ERROR">
 			<AppenderRef ref="CONSOLE" />
