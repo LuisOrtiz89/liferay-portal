@@ -52,21 +52,7 @@ public class CompanyObjectDefinitionPortalInstanceLifecycleListener
 			return;
 		}
 
-		List<ObjectDefinition> objectDefinitions =
-			_objectDefinitionLocalService.getObjectDefinitions(
-				company.getCompanyId(), WorkflowConstants.STATUS_APPROVED);
-
-		for (ObjectDefinition objectDefinition : objectDefinitions) {
-			if (objectDefinition.isActive()) {
-				_objectDefinitionLocalService.deployObjectDefinition(
-					objectDefinition);
-
-				continue;
-			}
-
-			_objectDefinitionLocalService.deployInactiveObjectDefinition(
-				objectDefinition);
-		}
+		_objectDefinitionLocalService.deployObjectDefinitions();
 	}
 
 	@Reference
