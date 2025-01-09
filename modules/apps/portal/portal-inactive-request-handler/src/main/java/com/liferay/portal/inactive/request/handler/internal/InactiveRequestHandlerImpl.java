@@ -8,6 +8,7 @@ package com.liferay.portal.inactive.request.handler.internal;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.inactive.request.handler.configuration.InactiveRequestHandlerConfiguration;
+import com.liferay.portal.kernel.content.security.policy.ContentSecurityPolicyNonceProviderUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -75,6 +76,11 @@ public class InactiveRequestHandlerImpl implements InactiveRequestHandler {
 		}
 
 		String html = StringUtil.replace(_content, "[$MESSAGE$]", message);
+
+		html = StringUtil.replace(
+			html, "$nonceAttribute",
+			ContentSecurityPolicyNonceProviderUtil.getNonceAttribute(
+				httpServletRequest));
 
 		printWriter.print(html);
 	}
