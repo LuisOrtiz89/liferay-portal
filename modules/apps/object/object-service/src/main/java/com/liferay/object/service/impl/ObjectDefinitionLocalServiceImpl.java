@@ -670,7 +670,13 @@ public class ObjectDefinitionLocalServiceImpl
 						companyId, WorkflowConstants.STATUS_APPROVED);
 
 				for (ObjectDefinition objectDefinition : objectDefinitions) {
-					deployObjectDefinition(objectDefinition);
+					if (objectDefinition.isActive()) {
+						deployObjectDefinition(objectDefinition);
+
+						continue;
+					}
+
+					deployInactiveObjectDefinition(objectDefinition);
 				}
 			});
 	}
