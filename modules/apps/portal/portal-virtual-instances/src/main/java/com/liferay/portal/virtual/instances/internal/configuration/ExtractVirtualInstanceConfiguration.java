@@ -18,6 +18,9 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
 )
 public interface ExtractVirtualInstanceConfiguration {
 
+	@Meta.AD(deflt = "false", required = false, type = Meta.Type.Boolean)
+	public boolean deleteCompany();
+
 	@Meta.AD(type = Meta.Type.Long)
 	public long extractCompanyId();
 
