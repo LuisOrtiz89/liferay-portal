@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-package com.liferay.portal.db.partition.internal.operation.test;
+package com.liferay.portal.virtual.instances.internal.operation.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
 
@@ -16,26 +17,31 @@ import org.junit.runner.RunWith;
  * @author Mariano Álvaro Sáiz
  */
 @RunWith(Arquillian.class)
-public class DBPartitionExtractVirtualInstanceOperationTest
+public class DBPartitionInsertVirtualInstanceOperationTest
 	extends BaseVirtualInstanceOperationTestCase {
 
 	@Override
 	public String getComponentName() {
-		return "ExtractVirtualInstanceOperation";
+		return "InsertVirtualInstanceOperation";
 	}
 
 	@Test
 	public void testDeployConfiguration() throws Exception {
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
 				"com.liferay.portal.virtual.instances.internal.operation." +
-					"ExtractVirtualInstanceOperation",
+					"InsertVirtualInstanceOperation",
 				LoggerTestUtil.ERROR)) {
 
-			deployConfiguration(_PID, "extractCompanyId=L\"0\"\n");
+			deployConfiguration(
+				_PID,
+				"newWebId=\"testNewWebId\"\ninsertCompanyId=L\"" +
+					PortalInstancePool.getDefaultCompanyId() + "\"\n");
 
 			assertLog(
 				logCapture,
-				"Virtual instance with company ID 0 does not exist");
+				"Virtual instance with company ID " +
+					PortalInstancePool.getDefaultCompanyId() +
+						" already exists");
 		}
 
 		assertConfigurationIsDeletedAfterDeploy(_PID);
@@ -43,6 +49,6 @@ public class DBPartitionExtractVirtualInstanceOperationTest
 
 	private static final String _PID =
 		"com.liferay.portal.virtual.instances.internal.configuration." +
-			"ExtractVirtualInstanceConfiguration";
+			"InsertVirtualInstanceConfiguration";
 
 }
