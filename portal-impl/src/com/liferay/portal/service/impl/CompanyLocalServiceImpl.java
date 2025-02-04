@@ -681,6 +681,14 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	public Company extractDBPartitionCompany(long companyId)
 		throws PortalException {
 
+		return extractDBPartitionCompany(companyId, false);
+	}
+
+	@Override
+	public Company extractDBPartitionCompany(
+			long companyId, boolean deleteCompany)
+		throws PortalException {
+
 		if (!DBPartition.isPartitionEnabled()) {
 			throw new UnsupportedOperationException(
 				"Database partitioning must be enabled");
