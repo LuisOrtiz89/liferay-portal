@@ -256,6 +256,10 @@ public interface CompanyLocalService
 	public Company extractDBPartitionCompany(long companyId)
 		throws PortalException;
 
+	public Company extractDBPartitionCompany(
+			long companyId, boolean deleteCompany)
+		throws PortalException;
+
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public Company fetchCompany(long companyId);
 
