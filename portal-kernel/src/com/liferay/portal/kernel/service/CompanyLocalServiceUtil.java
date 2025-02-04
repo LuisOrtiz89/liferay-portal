@@ -282,6 +282,13 @@ public class CompanyLocalServiceUtil {
 		return getService().extractDBPartitionCompany(companyId);
 	}
 
+	public static Company extractDBPartitionCompany(
+			long companyId, boolean deleteCompany)
+		throws PortalException {
+
+		return getService().extractDBPartitionCompany(companyId, deleteCompany);
+	}
+
 	public static Company fetchCompany(long companyId) {
 		return getService().fetchCompany(companyId);
 	}
