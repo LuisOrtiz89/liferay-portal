@@ -702,40 +702,11 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		Company company = companyPersistence.findByPrimaryKey(companyId);
 
-		try (SafeCloseable safeCloseable1 =
-				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId);
-			SafeCloseable safeCloseable2 =
-				PortalInstances.setCompanyInDeletionProcessWithSafeCloseable(
-					companyId)) {
-
-			preunregisterCompany(company);
-
-			TransactionCommitCallbackUtil.registerCallback(
-				() -> {
-					_clearCache(company.getCompanyId());
-
-					PortalInstances.removeCompany(company.getCompanyId());
-
-					unregisterCompany(company);
-
-					_synchronizePortalInstances();
-
-					try (SafeCloseable safeCloseable =
-							CompanyThreadLocal.setCompanyIdWithSafeCloseable(
-								companyId)) {
-
-						CacheRegistryUtil.clear();
-					}
-
-					return null;
-				});
-
-			_clearCacheCallback(companyId, true);
-
-			DBPartitionUtil.extractDBPartition(companyId);
+		if (deleteCompany) {
+			_extractDBPartitionCompanyWithDeletion(company);
 		}
-		catch (Throwable throwable) {
-			throw new PortalException(throwable);
+		else {
+			_extractDBPartitionCompanyWithoutDeletion(company);
 		}
 
 		return company;
@@ -2495,6 +2466,67 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 				return null;
 			});
+	}
+
+	private void _extractDBPartitionCompanyWithDeletion(Company company)
+		throws PortalException {
+
+		long companyId = company.getCompanyId();
+
+		try (SafeCloseable safeCloseable1 =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId);
+			SafeCloseable safeCloseable2 =
+				PortalInstances.setCompanyInDeletionProcessWithSafeCloseable(
+					companyId)) {
+
+			preunregisterCompany(company);
+
+			TransactionCommitCallbackUtil.registerCallback(
+				() -> {
+					_clearCache(company.getCompanyId());
+
+					PortalInstances.removeCompany(company.getCompanyId());
+
+					unregisterCompany(company);
+
+					_synchronizePortalInstances();
+
+					try (SafeCloseable safeCloseable =
+							CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+								companyId)) {
+
+						CacheRegistryUtil.clear();
+					}
+
+					return null;
+				});
+
+			_clearCacheCallback(companyId, true);
+
+			DBPartitionUtil.extractDBPartition(companyId);
+		}
+		catch (Throwable throwable) {
+			throw new PortalException(throwable);
+		}
+	}
+
+	private void _extractDBPartitionCompanyWithoutDeletion(Company company)
+		throws PortalException {
+
+		long companyId = company.getCompanyId();
+
+		try (SafeCloseable safeCloseable1 =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId)) {
+
+			DBPartitionUtil.copySchema(companyId);
+
+			DBPartitionUtil.extractDBPartition(companyId);
+		}
+		catch (Throwable throwable) {
+			DBPartitionUtil.dropCopiedSchema(companyId);
+
+			throw new PortalException(throwable);
+		}
 	}
 
 	private long _getNextCompanyId() {

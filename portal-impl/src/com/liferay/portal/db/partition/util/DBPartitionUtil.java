@@ -113,6 +113,32 @@ public class DBPartitionUtil {
 		return true;
 	}
 
+	public static boolean copySchema(long companyId) throws PortalException {
+		if (!DBPartition.isPartitionEnabled() ||
+			(companyId == _defaultCompanyId)) {
+
+			return false;
+		}
+
+		_copySchema(companyId);
+
+		return true;
+	}
+
+	public static void dropCopiedSchema(long companyId) throws PortalException {
+		Connection connection = CurrentConnectionUtil.getConnection(
+			InfrastructureUtil.getDataSource());
+
+		try (Statement statement = connection.createStatement()) {
+			statement.executeUpdate(
+				_dbPartitionDB.getDropPartitionSQL(
+					getExtractedPartitionName(companyId)));
+		}
+		catch (Exception exception) {
+			throw new PortalException(exception);
+		}
+	}
+
 	public static boolean extractDBPartition(long companyId)
 		throws PortalException {
 
@@ -222,6 +248,16 @@ public class DBPartitionUtil {
 
 			return configurations;
 		}
+	}
+
+	public static String getExtractedPartitionName(long companyId) {
+		if ((companyId == CompanyConstants.SYSTEM) ||
+			(companyId == _defaultCompanyId)) {
+
+			return _defaultPartitionName;
+		}
+
+		return _DATABASE_EXTRACTED_PARTITION_SCHEMA_NAME_PREFIX + companyId;
 	}
 
 	public static String getPartitionKey(Object key) {
@@ -658,6 +694,86 @@ public class DBPartitionUtil {
 		}
 	}
 
+	private static void _copySchema(long companyId) throws PortalException {
+		Connection connection = CurrentConnectionUtil.getConnection(
+			InfrastructureUtil.getDataSource());
+
+		String partitionName = getPartitionName(companyId);
+		String extractedPartitionName = getExtractedPartitionName(companyId);
+
+		try (AutoCloseable autoCloseable = _disableAutoCommit(connection);
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				_dbPartitionDB.getCreatePartitionSQL(
+					connection, extractedPartitionName))) {
+
+			preparedStatement.executeUpdate();
+
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+			try (SafeCloseable safeCloseable = CompanyThreadLocal.lock(
+					companyId);
+				ResultSet resultSet = databaseMetaData.getTables(
+					_dbPartitionDB.getCatalog(connection, partitionName),
+					_dbPartitionDB.getSchema(connection, partitionName), null,
+					new String[] {"TABLE", "VIEW"});
+				Statement statement = connection.createStatement()) {
+
+				while (resultSet.next()) {
+					String fromTableName = resultSet.getString("TABLE_NAME");
+
+					if (Objects.equals(
+							resultSet.getString("TABLE_TYPE"), "VIEW")) {
+
+						statement.executeUpdate(
+							_dbPartitionDB.getCreateViewSQL(
+								_defaultPartitionName, extractedPartitionName,
+								fromTableName));
+
+						continue;
+					}
+
+					statement.executeUpdate(
+						_dbPartitionDB.getCreateTableSQL(
+							connection, partitionName, extractedPartitionName,
+							fromTableName, fromTableName));
+
+					statement.executeUpdate(
+						_getCopyDataSQL(
+							partitionName, extractedPartitionName,
+							fromTableName, fromTableName,
+							_getColumnNames(connection, fromTableName),
+							StringPool.BLANK));
+				}
+			}
+
+			try (Statement statement = connection.createStatement()) {
+				for (String createRuleSQL :
+						_dbPartitionDB.getCreateRulesSQL(
+							extractedPartitionName)) {
+
+					statement.executeUpdate(createRuleSQL);
+				}
+			}
+
+			connection.commit();
+		}
+		catch (Exception exception) {
+			if (!_dbPartitionDB.isDDLTransactional()) {
+				try (Statement statement = connection.createStatement()) {
+					statement.executeUpdate(
+						_dbPartitionDB.getDropPartitionSQL(
+							extractedPartitionName));
+				}
+				catch (SQLException sqlException) {
+					throw new PortalException(
+						"Unable to roll back schema creation", sqlException);
+				}
+			}
+
+			throw new PortalException(exception);
+		}
+	}
+
 	private static void _deleteCompanyData(
 			long companyId, String tableName, String fromPartitionName,
 			Statement statement)
@@ -741,6 +857,22 @@ public class DBPartitionUtil {
 
 		Connection connection = CurrentConnectionUtil.getConnection(
 			InfrastructureUtil.getDataSource());
+
+		boolean hasExtractedPartition = true;
+
+		try {
+			if (!_dbPartitionDB.isPartitionCreated(
+					connection,
+					_DATABASE_EXTRACTED_PARTITION_SCHEMA_NAME_PREFIX +
+						companyId)) {
+
+				hasExtractedPartition = false;
+			}
+		}
+		catch (Exception exception) {
+			throw new PortalException(exception);
+		}
+
 		List<String> controlTableNames = new ArrayList<>();
 
 		DBInspector dbInspector = new DBInspector(connection);
@@ -763,7 +895,7 @@ public class DBPartitionUtil {
 
 						_extractTable(
 							companyId, connection, tableName, statement,
-							dbInspector);
+							dbInspector, hasExtractedPartition);
 					}
 				}
 			}
@@ -779,7 +911,8 @@ public class DBPartitionUtil {
 				for (String tableName : controlTableNames) {
 					try (Statement statement = connection.createStatement()) {
 						_restoreView(
-							companyId, tableName, statement, dbInspector);
+							companyId, tableName, statement, dbInspector,
+							hasExtractedPartition);
 					}
 				}
 
@@ -802,10 +935,13 @@ public class DBPartitionUtil {
 
 	private static void _extractTable(
 			long companyId, Connection connection, String tableName,
-			Statement statement, DBInspector dbInspector)
+			Statement statement, DBInspector dbInspector,
+			boolean hasExtractedPartition)
 		throws Exception {
 
-		String partitionName = getPartitionName(companyId);
+		String partitionName =
+			hasExtractedPartition ? getExtractedPartitionName(companyId) :
+				getPartitionName(companyId);
 
 		statement.executeUpdate(
 			_dbPartitionDB.getDropViewSQL(partitionName, tableName));
@@ -817,13 +953,14 @@ public class DBPartitionUtil {
 		if (dbInspector.hasColumn(tableName, "companyId")) {
 			_moveCompanyData(
 				companyId, _defaultPartitionName, partitionName, tableName,
-				statement);
+				statement, hasExtractedPartition);
 		}
 		else if (_isCopyableQuartzTable(tableName)) {
 			_moveData(
 				_defaultPartitionName, partitionName, tableName,
 				_getColumnNames(statement.getConnection(), tableName),
-				statement, _getQuartzWhereClauseSQL(companyId, tableName));
+				statement, _getQuartzWhereClauseSQL(companyId, tableName),
+				hasExtractedPartition);
 		}
 		else {
 			statement.executeUpdate(
@@ -1148,7 +1285,7 @@ public class DBPartitionUtil {
 				for (String copiedTableName : copiedTableNames) {
 					_extractTable(
 						companyId, connection, copiedTableName, statement,
-						dbInspector);
+						dbInspector, false);
 				}
 
 				connection.commit();
@@ -1218,18 +1355,19 @@ public class DBPartitionUtil {
 
 	private static void _moveCompanyData(
 			long companyId, String fromPartitionName, String toPartitionName,
-			String tableName, Statement statement)
+			String tableName, Statement statement, boolean hasExtractedPartition)
 		throws Exception {
 
 		_moveData(
 			fromPartitionName, toPartitionName, tableName,
 			_getColumnNames(statement.getConnection(), tableName), statement,
-			" where companyId = " + companyId);
+			" where companyId = " + companyId, hasExtractedPartition);
 	}
 
 	private static void _moveData(
 			String fromPartitionName, String toPartitionName, String tableName,
-			List<String> columnNames, Statement statement, String whereClause)
+			List<String> columnNames, Statement statement, String whereClause,
+			boolean hasExtractedPartition)
 		throws Exception {
 
 		statement.executeUpdate(
@@ -1237,7 +1375,9 @@ public class DBPartitionUtil {
 				fromPartitionName, toPartitionName, tableName, columnNames,
 				whereClause));
 
-		_deleteData(tableName, fromPartitionName, statement, whereClause);
+		if (!hasExtractedPartition) {
+			_deleteData(tableName, fromPartitionName, statement, whereClause);
+		}
 	}
 
 	private static void _reloadQuartzJobs(long fromCompanyId, long toCompanyId)
@@ -1304,10 +1444,12 @@ public class DBPartitionUtil {
 
 	private static void _restoreView(
 			long companyId, String tableName, Statement statement,
-			DBInspector dbInspector)
+			DBInspector dbInspector, boolean hasExtractedPartition)
 		throws Exception {
 
-		String partitionName = getPartitionName(companyId);
+		String partitionName =
+			hasExtractedPartition ? getExtractedPartitionName(companyId) :
+				getPartitionName(companyId);
 
 		try (SafeCloseable safeCloseable =
 				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId)) {
@@ -1321,16 +1463,19 @@ public class DBPartitionUtil {
 			}
 		}
 
-		if (dbInspector.hasColumn(tableName, "companyId")) {
-			_moveCompanyData(
-				companyId, partitionName, _defaultPartitionName, tableName,
-				statement);
-		}
-		else if (_isCopyableQuartzTable(tableName)) {
-			_moveData(
-				partitionName, _defaultPartitionName, tableName,
-				_getColumnNames(statement.getConnection(), tableName),
-				statement, _getQuartzWhereClauseSQL(companyId, tableName));
+		if (!hasExtractedPartition) {
+			if (dbInspector.hasColumn(tableName, "companyId")) {
+				_moveCompanyData(
+					companyId, partitionName, _defaultPartitionName, tableName,
+					statement, hasExtractedPartition);
+			}
+			else if (_isCopyableQuartzTable(tableName)) {
+				_moveData(
+					partitionName, _defaultPartitionName, tableName,
+					_getColumnNames(statement.getConnection(), tableName),
+					statement, _getQuartzWhereClauseSQL(companyId, tableName),
+					hasExtractedPartition);
+			}
 		}
 
 		statement.executeUpdate(
@@ -1411,6 +1556,9 @@ public class DBPartitionUtil {
 
 		};
 	}
+
+	private static final String
+		_DATABASE_EXTRACTED_PARTITION_SCHEMA_NAME_PREFIX = "lextracted_";
 
 	private static final String _DATABASE_PARTITION_SCHEMA_NAME_PREFIX =
 		GetterUtil.get(
