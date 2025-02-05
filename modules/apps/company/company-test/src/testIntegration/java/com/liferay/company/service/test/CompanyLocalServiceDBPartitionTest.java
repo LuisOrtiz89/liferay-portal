@@ -260,7 +260,8 @@ public class CompanyLocalServiceDBPartitionTest
 
 		String pid = configuration.getPid();
 
-		companyLocalService.extractDBPartitionCompany(company.getCompanyId());
+		companyLocalService.extractDBPartitionCompany(
+			company.getCompanyId(), true);
 
 		boolean standaloneDBPartition = true;
 
@@ -311,7 +312,7 @@ public class CompanyLocalServiceDBPartitionTest
 
 		try {
 			companyLocalService.extractDBPartitionCompany(
-				company.getCompanyId());
+				company.getCompanyId(), true);
 
 			standaloneDBPartition = true;
 
@@ -356,7 +357,7 @@ public class CompanyLocalServiceDBPartitionTest
 
 		try {
 			companyLocalService.extractDBPartitionCompany(
-				company.getCompanyId());
+				company.getCompanyId(), true);
 
 			standaloneDBPartition = true;
 
@@ -654,7 +655,7 @@ public class CompanyLocalServiceDBPartitionTest
 			String pid = configuration.getPid();
 
 			companyLocalService.extractDBPartitionCompany(
-				company.getCompanyId());
+				company.getCompanyId(), true);
 
 			Assert.assertFalse(
 				ArrayUtil.contains(
@@ -715,7 +716,7 @@ public class CompanyLocalServiceDBPartitionTest
 						}))) {
 
 			companyLocalService.extractDBPartitionCompany(
-				company.getCompanyId());
+				company.getCompanyId(), true);
 
 			standaloneDBPartition = true;
 

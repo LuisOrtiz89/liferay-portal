@@ -57,7 +57,8 @@ public class ExtractVirtualInstanceOperation
 				}
 
 				return _companyLocalService.extractDBPartitionCompany(
-					companyId);
+					companyId,
+					extractVirtualInstanceConfiguration.deleteCompany());
 			},
 			properties);
 	}
