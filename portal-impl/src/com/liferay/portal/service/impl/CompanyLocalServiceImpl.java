@@ -441,7 +441,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			try {
 				_transactionAwareInvoke(
 					() -> {
-						extractDBPartitionCompany(companyId);
+						extractDBPartitionCompany(companyId, true);
 
 						return null;
 					});
