@@ -678,13 +678,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 	}
 
 	@Override
-	public Company extractDBPartitionCompany(long companyId)
-		throws PortalException {
-
-		return extractDBPartitionCompany(companyId, false);
-	}
-
-	@Override
 	public Company extractDBPartitionCompany(
 			long companyId, boolean deleteCompany)
 		throws PortalException {
