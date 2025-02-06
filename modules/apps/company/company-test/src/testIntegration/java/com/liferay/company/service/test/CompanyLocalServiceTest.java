@@ -883,35 +883,16 @@ public class CompanyLocalServiceTest {
 			return;
 		}
 
-		try {
-			_companyLocalService.extractDBPartitionCompany(1L, true);
-
-			Assert.fail();
-		}
-		catch (Exception exception) {
-			Assert.assertTrue(
-				exception instanceof UnsupportedOperationException);
-		}
+		_testExtractDBPartitionCompany(1L, false);
+		_testExtractDBPartitionCompany(1L, true);
 	}
 
 	@Test
 	public void testExtractDBPartitionCompanyDefaultCompany() {
-		try {
-			_companyLocalService.extractDBPartitionCompany(
-				PortalInstancePool.getDefaultCompanyId(), true);
-
-			Assert.fail();
-		}
-		catch (Exception exception) {
-			if (DBPartition.isPartitionEnabled()) {
-				Assert.assertTrue(
-					exception instanceof RequiredCompanyException);
-			}
-			else {
-				Assert.assertTrue(
-					exception instanceof UnsupportedOperationException);
-			}
-		}
+		_testExtractDBPartitionCompany(
+			PortalInstancePool.getDefaultCompanyId(), false);
+		_testExtractDBPartitionCompany(
+			PortalInstancePool.getDefaultCompanyId(), true);
 	}
 
 	@Test
@@ -1406,6 +1387,27 @@ public class CompanyLocalServiceTest {
 				new HashMapDictionary<>()));
 
 		return list;
+	}
+
+	private void _testExtractDBPartitionCompany(
+		long companyId, boolean deleteCompany) {
+
+		try {
+			_companyLocalService.extractDBPartitionCompany(
+				companyId, deleteCompany);
+
+			Assert.fail();
+		}
+		catch (Exception exception) {
+			if (DBPartition.isPartitionEnabled()) {
+				Assert.assertTrue(
+					exception instanceof RequiredCompanyException);
+			}
+			else {
+				Assert.assertTrue(
+					exception instanceof UnsupportedOperationException);
+			}
+		}
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
