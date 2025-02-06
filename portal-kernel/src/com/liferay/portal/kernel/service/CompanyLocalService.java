@@ -253,9 +253,6 @@ public interface CompanyLocalService
 	public long dynamicQueryCount(
 		DynamicQuery dynamicQuery, Projection projection);
 
-	public Company extractDBPartitionCompany(long companyId)
-		throws PortalException;
-
 	public Company extractDBPartitionCompany(
 			long companyId, boolean deleteCompany)
 		throws PortalException;
