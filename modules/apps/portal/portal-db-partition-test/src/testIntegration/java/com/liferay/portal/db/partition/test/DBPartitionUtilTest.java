@@ -226,6 +226,101 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 	}
 
 	@Test
+	public void testCopySchema() throws Exception {
+		CurrentConnection defaultCurrentConnection =
+			CurrentConnectionUtil.getCurrentConnection();
+
+		try (SafeCloseable safeCloseable1 =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+					PortalInstancePool.getDefaultCompanyId())) {
+
+			CurrentConnection currentConnection = dataSource -> connection;
+
+			ReflectionTestUtil.setFieldValue(
+				CurrentConnectionUtil.class, "_currentConnection",
+				currentConnection);
+
+			addDBPartitions();
+
+			insertPartitionRequiredData();
+
+			List<String> frompartitionTableNames = _getObjectNames(
+				"TABLE", COMPANY_IDS[0]);
+			List<String> fromPartitionViewNames = _getObjectNames(
+				"VIEW", COMPANY_IDS[0]);
+
+			Assert.assertTrue(DBPartitionUtil.copySchema(COMPANY_IDS[0]));
+
+			List<String> afterCopyFromPartitionTableNames = _getObjectNames(
+				"TABLE", COMPANY_IDS[0]);
+
+			Assert.assertEquals(
+				afterCopyFromPartitionTableNames.toString(),
+				frompartitionTableNames.size(),
+				afterCopyFromPartitionTableNames.size());
+			Assert.assertTrue(
+				afterCopyFromPartitionTableNames.containsAll(
+					frompartitionTableNames));
+
+			List<String> afterCopyFromPartitionViewNames = _getObjectNames(
+				"VIEW", COMPANY_IDS[0]);
+
+			Assert.assertEquals(
+				afterCopyFromPartitionViewNames.toString(),
+				fromPartitionViewNames.size(),
+				afterCopyFromPartitionViewNames.size());
+			Assert.assertTrue(
+				afterCopyFromPartitionViewNames.containsAll(
+					fromPartitionViewNames));
+
+			List<String> copiedPartitionTableNames = _getObjectNames(
+				"TABLE",
+				DBPartitionUtil.getExtractedPartitionName(COMPANY_IDS[0]));
+
+			Assert.assertEquals(
+				copiedPartitionTableNames.toString(),
+				frompartitionTableNames.size(),
+				copiedPartitionTableNames.size());
+			Assert.assertTrue(
+				copiedPartitionTableNames.containsAll(frompartitionTableNames));
+
+			List<String> copiedPartitionViewNames = _getObjectNames(
+				"VIEW",
+				DBPartitionUtil.getExtractedPartitionName(COMPANY_IDS[0]));
+
+			Assert.assertEquals(
+				copiedPartitionViewNames.toString(),
+				fromPartitionViewNames.size(), copiedPartitionViewNames.size());
+			Assert.assertTrue(
+				copiedPartitionViewNames.containsAll(fromPartitionViewNames));
+
+			DBPartitionUtil.dropCopiedSchema(COMPANY_IDS[0]);
+
+			Assert.assertFalse(
+				dbPartitionDB.isPartitionCreated(
+					connection,
+					DBPartitionUtil.getExtractedPartitionName(COMPANY_IDS[0])));
+			Assert.assertTrue(
+				dbPartitionDB.isPartitionCreated(
+					connection,
+					DBPartitionUtil.getPartitionName(COMPANY_IDS[0])));
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				CurrentConnectionUtil.class, "_currentConnection",
+				defaultCurrentConnection);
+
+			db.runSQL(
+				dbPartitionDB.getDropPartitionSQL(
+					DBPartitionUtil.getExtractedPartitionName(COMPANY_IDS[0])));
+
+			deletePartitionRequiredData();
+
+			removeDBPartitions();
+		}
+	}
+
+	@Test
 	public void testExtractAndInsertDBPartition() throws Exception {
 		try {
 			int companyCount = _getDefaultSchemaCount("Company");
@@ -294,77 +389,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 	@Test
 	public void testExtractDBPartition() throws Exception {
-		addDBPartitions();
-
-		insertPartitionRequiredData();
-
-		try {
-			HashMap<Long, List<String>> viewNames = new HashMap<>();
-			HashMap<Long, Integer> tablesCount = new HashMap<>();
-
-			for (long companyId : COMPANY_IDS) {
-				List<String> views = _getObjectNames("VIEW", companyId);
-
-				viewNames.put(companyId, views);
-
-				Assert.assertNotEquals(0, views.size());
-
-				tablesCount.put(companyId, _getTablesCount(companyId));
-
-				_scheduleJob(companyId, _JOB_NAME_1);
-			}
-
-			Assert.assertEquals(
-				COMPANY_IDS.length + _JOBS_COUNT,
-				_getJobsCount(defaultPartitionName));
-
-			extractDBPartitions();
-
-			for (long companyId : COMPANY_IDS) {
-				List<String> views = viewNames.get(companyId);
-
-				Assert.assertEquals(
-					tablesCount.get(companyId) + views.size(),
-					_getTablesCount(companyId));
-
-				Assert.assertEquals(0, _getViewsCount(companyId));
-
-				for (String viewName : viewNames.get(companyId)) {
-					if (!isCopyableQuartzTable(viewName)) {
-						Assert.assertEquals(
-							viewName + " count",
-							_getCount(
-								PortalInstancePool.getDefaultCompanyId(),
-								viewName),
-							_getCount(companyId, viewName));
-					}
-					else if (StringUtil.equalsIgnoreCase(
-								viewName, "QUARTZ_JOB_DETAILS") ||
-							 StringUtil.equalsIgnoreCase(
-								 viewName, "QUARTZ_SIMPROP_TRIGGERS") ||
-							 StringUtil.equalsIgnoreCase(
-								 viewName, "QUARTZ_TRIGGERS")) {
-
-						Assert.assertEquals(
-							viewName + " count", 1,
-							_getCount(companyId, viewName));
-					}
-					else {
-						Assert.assertEquals(
-							viewName + " count", 0,
-							_getCount(companyId, viewName));
-					}
-				}
-
-				Assert.assertEquals(
-					1, _getJobsCount(getPartitionName(companyId)));
-			}
-		}
-		finally {
-			deletePartitionRequiredData();
-
-			removeDBPartitions();
-		}
+		_testExtractDBPartition(false);
+		_testExtractDBPartition(true);
 	}
 
 	@Test
@@ -466,6 +492,13 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 	}
 
 	private int _getCount(long companyId, String tableName) throws Exception {
+		return _getCount(companyId, getPartitionName(companyId), tableName);
+	}
+
+	private int _getCount(
+			long companyId, String partitionName, String tableName)
+		throws Exception {
+
 		String whereClause = StringPool.BLANK;
 
 		if (dbInspector.hasColumn(tableName, "companyId")) {
@@ -474,8 +507,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
-					"select count(1) from ", getPartitionName(companyId),
-					StringPool.PERIOD, tableName, whereClause));
+					"select count(1) from ", partitionName, StringPool.PERIOD,
+					tableName, whereClause));
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			if (resultSet.next()) {
@@ -534,10 +567,16 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 	private List<String> _getObjectNames(String objectType, long companyId)
 		throws Exception {
 
+		return _getObjectNames(objectType, getPartitionName(companyId));
+	}
+
+	private List<String> _getObjectNames(
+			String objectType, String partitionName)
+		throws Exception {
+
 		List<String> objectNames = new ArrayList<>();
 
 		DatabaseMetaData databaseMetaData = connection.getMetaData();
-		String partitionName = getPartitionName(companyId);
 
 		try (ResultSet resultSet = databaseMetaData.getTables(
 				dbPartitionDB.getCatalog(connection, partitionName),
@@ -558,8 +597,20 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 		return tableNames.size();
 	}
 
+	private int _getTablesCount(String partitionName) throws Exception {
+		List<String> tableNames = _getObjectNames("TABLE", partitionName);
+
+		return tableNames.size();
+	}
+
 	private int _getViewsCount(long companyId) throws Exception {
 		List<String> viewNames = _getObjectNames("VIEW", companyId);
+
+		return viewNames.size();
+	}
+
+	private int _getViewsCount(String partitionName) throws Exception {
+		List<String> viewNames = _getObjectNames("VIEW", partitionName);
 
 		return viewNames.size();
 	}
@@ -595,6 +646,105 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 		_schedulerEngine.schedule(
 			trigger, StringPool.BLANK, _JOB_GROUP_NAME, message,
 			StorageType.PERSISTED);
+	}
+
+	private void _testExtractDBPartition(boolean copySchema) throws Exception {
+		addDBPartitions();
+
+		insertPartitionRequiredData();
+
+		try {
+			HashMap<Long, List<String>> viewNames = new HashMap<>();
+			HashMap<Long, Integer> tablesCount = new HashMap<>();
+
+			for (long companyId : COMPANY_IDS) {
+				List<String> views = _getObjectNames("VIEW", companyId);
+
+				viewNames.put(companyId, views);
+
+				Assert.assertNotEquals(0, views.size());
+
+				tablesCount.put(companyId, _getTablesCount(companyId));
+
+				_scheduleJob(companyId, _JOB_NAME_1);
+			}
+
+			Assert.assertEquals(
+				COMPANY_IDS.length + _JOBS_COUNT,
+				_getJobsCount(defaultPartitionName));
+
+			if (copySchema) {
+				copyDBPartitionsSchema();
+			}
+
+			extractDBPartitions();
+
+			for (long companyId : COMPANY_IDS) {
+				List<String> views = viewNames.get(companyId);
+
+				String schemaName = getPartitionName(companyId);
+
+				if (copySchema) {
+					schemaName = DBPartitionUtil.getExtractedPartitionName(
+						companyId);
+				}
+
+				Assert.assertEquals(
+					tablesCount.get(companyId) + views.size(),
+					_getTablesCount(schemaName));
+
+				Assert.assertEquals(0, _getViewsCount(schemaName));
+
+				if (copySchema) {
+					Assert.assertEquals(
+						(int)tablesCount.get(companyId),
+						_getTablesCount(companyId));
+
+					Assert.assertEquals(
+						views.size(), _getViewsCount(companyId));
+				}
+
+				for (String viewName : viewNames.get(companyId)) {
+					if (!isCopyableQuartzTable(viewName)) {
+						Assert.assertEquals(
+							viewName + " count",
+							_getCount(
+								PortalInstancePool.getDefaultCompanyId(),
+								viewName),
+							_getCount(companyId, schemaName, viewName));
+					}
+					else if (StringUtil.equalsIgnoreCase(
+								viewName, "QUARTZ_JOB_DETAILS") ||
+							 StringUtil.equalsIgnoreCase(
+								 viewName, "QUARTZ_SIMPROP_TRIGGERS") ||
+							 StringUtil.equalsIgnoreCase(
+								 viewName, "QUARTZ_TRIGGERS")) {
+
+						Assert.assertEquals(
+							viewName + " count", 1,
+							_getCount(companyId, schemaName, viewName));
+					}
+					else {
+						Assert.assertEquals(
+							viewName + " count", 0,
+							_getCount(companyId, schemaName, viewName));
+					}
+				}
+
+				Assert.assertEquals(1, _getJobsCount(schemaName));
+			}
+		}
+		finally {
+			for (long companyId : COMPANY_IDS) {
+				db.runSQL(
+					dbPartitionDB.getDropPartitionSQL(
+						DBPartitionUtil.getExtractedPartitionName(companyId)));
+			}
+
+			deletePartitionRequiredData();
+
+			removeDBPartitions();
+		}
 	}
 
 	private void _testForEachCompanyId(

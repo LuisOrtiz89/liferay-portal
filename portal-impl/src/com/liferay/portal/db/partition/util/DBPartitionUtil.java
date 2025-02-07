@@ -1355,7 +1355,8 @@ public class DBPartitionUtil {
 
 	private static void _moveCompanyData(
 			long companyId, String fromPartitionName, String toPartitionName,
-			String tableName, Statement statement, boolean hasExtractedPartition)
+			String tableName, Statement statement,
+			boolean hasExtractedPartition)
 		throws Exception {
 
 		_moveData(

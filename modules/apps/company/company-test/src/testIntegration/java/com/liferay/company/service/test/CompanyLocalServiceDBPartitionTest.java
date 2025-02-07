@@ -907,8 +907,8 @@ public class CompanyLocalServiceDBPartitionTest
 	}
 
 	private void _checkStandaloneDBPartitionTables(
-		String partitionName, boolean tablesExist,
-		String... expectedTableNames)
+			String partitionName, boolean tablesExist,
+			String... expectedTableNames)
 		throws Exception {
 
 		List<String> tableNames = new ArrayList<>();

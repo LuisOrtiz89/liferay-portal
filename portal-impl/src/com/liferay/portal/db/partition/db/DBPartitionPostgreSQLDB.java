@@ -202,7 +202,8 @@ public class DBPartitionPostgreSQLDB implements DBPartitionDB {
 	}
 
 	@Override
-	public boolean isPartitionCreated(Connection connection, String partitionName)
+	public boolean isPartitionCreated(
+			Connection connection, String partitionName)
 		throws SQLException {
 
 		DatabaseMetaData databaseMetaData = connection.getMetaData();

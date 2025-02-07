@@ -106,6 +106,16 @@ public abstract class BaseDBPartitionTestCase {
 		}
 	}
 
+	protected static void copyDBPartitionsSchema() throws Exception {
+		copyDBPartitionsSchema(COMPANY_IDS);
+	}
+
+	protected static void copyDBPartitionsSchema(long[] companyIds)
+		throws Exception {
+
+		_executeOnDBPartitions(companyIds, DBPartitionUtil::copySchema);
+	}
+
 	protected static void createControlTable(String tableName)
 		throws Exception {
 
