@@ -1,10 +1,17 @@
 definition {
 
 	@summary = "Extracts an integrated DB Partition into a standalone partition"
-	macro extractDBPartition(partitionCompanyId = null) {
-		OSGiConfig.deployOSGiConfigFile(
-			osgiConfigFileName = "com.liferay.portal.virtual.instances.internal.configuration.ExtractVirtualInstanceConfiguration.config",
-			osgiConfigs = "extractCompanyId=L\"${partitionCompanyId}\"");
+	macro extractDBPartition(partitionCompanyId = null, deleteCompany = null) {
+		if (isSet(deleteCompany)) {
+			OSGiConfig.deployOSGiConfigFile(
+				osgiConfigFileName = "com.liferay.portal.virtual.instances.internal.configuration.ExtractVirtualInstanceConfiguration.config",
+				osgiConfigs = "extractCompanyId=L\"${partitionCompanyId}\",deleteCompany=B\"${deleteCompany}\"");
+		}
+		else {
+			OSGiConfig.deployOSGiConfigFile(
+				osgiConfigFileName = "com.liferay.portal.virtual.instances.internal.configuration.ExtractVirtualInstanceConfiguration.config",
+				osgiConfigs = "extractCompanyId=L\"${partitionCompanyId}\"");
+		}
 
 		OSGiConfig.waitForOSGiConfigDeleted(osgiConfigFileName = "com.liferay.portal.virtual.instances.internal.configuration.ExtractVirtualInstanceConfiguration.config");
 	}
