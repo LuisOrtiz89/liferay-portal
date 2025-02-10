@@ -14,6 +14,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Alberto Chaparro
  */
@@ -61,6 +64,39 @@ public class DBPartitionMySQLDB implements DBPartitionDB {
 	@Override
 	public String getDropPartitionSQL(String partitionName) {
 		return "drop schema if exists " + partitionName;
+	}
+
+	@Override
+	public String[] getRenameSchemaSQL(
+			Connection connection, String sourceSchemaName,
+			String targetSchemaName)
+		throws SQLException {
+
+		List<String> queries = new ArrayList<>();
+
+		queries.add(getCreatePartitionSQL(connection, targetSchemaName));
+
+		DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+		try (ResultSet resultSet = databaseMetaData.getTables(
+				getCatalog(connection, sourceSchemaName),
+				getSchema(connection, sourceSchemaName), null,
+				new String[] {"TABLE"})) {
+
+			while (resultSet.next()) {
+				String tableName = resultSet.getString("TABLE_NAME");
+
+				queries.add(
+					StringBundler.concat(
+						"rename table ", sourceSchemaName + StringPool.PERIOD,
+						tableName, " to ", targetSchemaName, StringPool.PERIOD,
+						tableName, StringPool.SEMICOLON));
+			}
+		}
+
+		queries.add(getDropPartitionSQL(sourceSchemaName));
+
+		return queries.toArray(new String[0]);
 	}
 
 	@Override

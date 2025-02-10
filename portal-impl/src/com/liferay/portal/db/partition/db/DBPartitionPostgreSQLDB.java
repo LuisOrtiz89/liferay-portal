@@ -179,6 +179,18 @@ public class DBPartitionPostgreSQLDB implements DBPartitionDB {
 	}
 
 	@Override
+	public String[] getRenameSchemaSQL(
+		Connection connection, String sourceSchemaName,
+		String targetSchemaName) {
+
+		return new String[] {
+			StringBundler.concat(
+				"alter schema ", sourceSchemaName, " rename to ",
+				targetSchemaName)
+		};
+	}
+
+	@Override
 	public String getSafeAlterTable(String alterTableSQL) {
 		String lowerCaseAlterTableSQL = StringUtil.toLowerCase(alterTableSQL);
 
