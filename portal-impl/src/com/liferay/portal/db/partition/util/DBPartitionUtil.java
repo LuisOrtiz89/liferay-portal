@@ -1227,6 +1227,16 @@ public class DBPartitionUtil {
 			InfrastructureUtil.getDataSource());
 
 		try (Statement statement = connection.createStatement()) {
+			if (!_dbPartitionDB.isPartitionCreated(connection, partitionName)) {
+				for (String query :
+						_dbPartitionDB.getRenameSchemaSQL(
+							connection, getExtractedPartitionName(companyId),
+							partitionName)) {
+
+					statement.executeUpdate(query);
+				}
+			}
+
 			autoCloseable = _disableAutoCommit(connection);
 
 			DBInspector dbInspector = new DBInspector(connection);
