@@ -413,7 +413,9 @@ definition {
 		}
 
 		task ("Extract www.able.com partition and shutdown the server") {
-			DBPartition.extractDBPartition(partitionCompanyId = ${partitionCompanyId});
+			DBPartition.extractDBPartition(
+				deleteCompany = "true",
+				partitionCompanyId = ${partitionCompanyId});
 
 			Clustering.shutdownSpecificServer(nodePort = 8080);
 
