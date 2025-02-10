@@ -129,10 +129,14 @@ public class DBPartitionUtil {
 		Connection connection = CurrentConnectionUtil.getConnection(
 			InfrastructureUtil.getDataSource());
 
-		try (Statement statement = connection.createStatement()) {
+		try (AutoCloseable autoCloseable = _disableAutoCommit(connection);
+			Statement statement = connection.createStatement()) {
+
 			statement.executeUpdate(
 				_dbPartitionDB.getDropPartitionSQL(
 					getExtractedPartitionName(companyId)));
+
+			connection.commit();
 		}
 		catch (Exception exception) {
 			throw new PortalException(exception);
