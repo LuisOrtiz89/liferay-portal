@@ -1166,14 +1166,46 @@ public class DBPartitionUtil {
 	private static void _insertDBPartition(long companyId)
 		throws PortalException {
 
-		AutoCloseable autoCloseable = null;
-		List<String> copiedTableNames = new ArrayList<>();
-		String partitionName = getPartitionName(companyId);
+		String sourcePartitionName = getExtractedPartitionName(companyId);
+		String targetPartitionName = getPartitionName(companyId);
 
 		Connection connection = CurrentConnectionUtil.getConnection(
 			InfrastructureUtil.getDataSource());
 
 		try (Statement statement = connection.createStatement()) {
+			if (_dbPartitionDB.isPartitionCreated(
+					connection, targetPartitionName)) {
+
+				throw new IllegalArgumentException(
+					StringBundler.concat(
+						"Partition ", targetPartitionName,
+						" already exists. Delete it before inserting new ",
+						"partition."));
+			}
+
+			if (!_dbPartitionDB.isPartitionCreated(
+					connection, sourcePartitionName)) {
+
+				throw new IllegalArgumentException(
+					"Partition " + sourcePartitionName +
+						" does not exist. Partition can not be imported.");
+			}
+		}
+		catch (SQLException sqlException) {
+			throw new PortalException(sqlException);
+		}
+
+		AutoCloseable autoCloseable = null;
+		List<String> copiedTableNames = new ArrayList<>();
+
+		try (Statement statement = connection.createStatement()) {
+			for (String query :
+					_dbPartitionDB.getRenamePartitionSQL(
+						connection, sourcePartitionName, targetPartitionName)) {
+
+				statement.executeUpdate(query);
+			}
+
 			autoCloseable = _disableAutoCommit(connection);
 
 			DBInspector dbInspector = new DBInspector(connection);
@@ -1196,7 +1228,8 @@ public class DBPartitionUtil {
 					if (dbInspector.hasColumn(tableName, "companyId")) {
 						statement.executeUpdate(
 							_getCopyDataSQL(
-								partitionName, _defaultPartitionName, tableName,
+								targetPartitionName, _defaultPartitionName,
+								tableName,
 								_getColumnNames(connection, tableName),
 								" where companyId = " + companyId));
 
@@ -1205,7 +1238,8 @@ public class DBPartitionUtil {
 					else if (_isCopyableQuartzTable(tableName)) {
 						statement.executeUpdate(
 							_getCopyDataSQL(
-								partitionName, _defaultPartitionName, tableName,
+								targetPartitionName, _defaultPartitionName,
+								tableName,
 								_getColumnNames(connection, tableName),
 								_getQuartzWhereClauseSQL(
 									companyId, tableName)));
@@ -1215,11 +1249,12 @@ public class DBPartitionUtil {
 
 					statement.executeUpdate(
 						_dbPartitionDB.getDropTableSQL(
-							partitionName, tableName));
+							targetPartitionName, tableName));
 
 					statement.executeUpdate(
 						_dbPartitionDB.getCreateViewSQL(
-							_defaultPartitionName, partitionName, tableName));
+							_defaultPartitionName, targetPartitionName,
+							tableName));
 				}
 
 				connection.commit();
@@ -1232,6 +1267,14 @@ public class DBPartitionUtil {
 
 			try (Statement statement = connection.createStatement()) {
 				DBInspector dbInspector = new DBInspector(connection);
+
+				for (String query :
+						_dbPartitionDB.getRenamePartitionSQL(
+							connection, targetPartitionName,
+							sourcePartitionName)) {
+
+					statement.executeUpdate(query);
+				}
 
 				for (String copiedTableName : copiedTableNames) {
 					_extractTable(
@@ -1250,12 +1293,7 @@ public class DBPartitionUtil {
 					exception2);
 			}
 
-			throw new PortalException(
-				StringBundler.concat(
-					"Unable to roll back the insertion of database partition. ",
-					"Recover a backup of the database schema ", partitionName,
-					"."),
-				exception1);
+			throw new PortalException(exception1);
 		}
 		finally {
 			if (autoCloseable != null) {
@@ -1444,7 +1482,7 @@ public class DBPartitionUtil {
 					}
 
 					for (long companyId : PortalInstancePool.getCompanyIds()) {
-						if (companyId ==g _defaultCompanyId) {
+						if (companyId == _defaultCompanyId) {
 							continue;
 						}
 
