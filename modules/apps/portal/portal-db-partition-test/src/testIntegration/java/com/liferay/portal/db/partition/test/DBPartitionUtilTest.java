@@ -45,7 +45,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -226,7 +225,6 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 		}
 	}
 
-	@Ignore
 	@Test
 	public void testExtractAndInsertDBPartition() throws Exception {
 		try {
@@ -252,18 +250,35 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 			extractDBPartitions();
 
-			Assert.assertEquals(
-				_JOBS_COUNT, _getJobsCount(defaultPartitionName));
-
 			for (long companyId : COMPANY_IDS) {
 				Assert.assertEquals(
-					1, _getJobsCount(getPartitionName(companyId)));
+					COMPANY_IDS.length + _JOBS_COUNT,
+					_getJobsCount(getPartitionName(companyId)));
 			}
 
 			Assert.assertEquals(
-				companyCount, _getDefaultSchemaCount("Company"));
+				_JOBS_COUNT + COMPANY_IDS.length,
+				_getJobsCount(defaultPartitionName));
+
 			Assert.assertEquals(
-				virtualHostCount, _getDefaultSchemaCount("VirtualHost"));
+				companyCount + COMPANY_IDS.length,
+				_getDefaultSchemaCount("Company"));
+			Assert.assertEquals(
+				virtualHostCount + COMPANY_IDS.length,
+				_getDefaultSchemaCount("VirtualHost"));
+
+			try {
+				insertDBPartitions();
+
+				Assert.fail();
+			}
+			catch (Exception exception) {
+				Assert.assertTrue(
+					exception instanceof IllegalArgumentException);
+
+				deletePartitionRequiredData();
+				removeDBPartitions();
+			}
 
 			insertDBPartitions();
 
@@ -289,6 +304,12 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 				_getJobsCount(defaultPartitionName));
 		}
 		finally {
+			for (long companyId : COMPANY_IDS) {
+				db.runSQL(
+					dbPartitionDB.getDropPartitionSQL(
+						DBPartitionUtil.getExtractedPartitionName(companyId)));
+			}
+
 			deletePartitionRequiredData();
 			removeDBPartitions();
 		}
