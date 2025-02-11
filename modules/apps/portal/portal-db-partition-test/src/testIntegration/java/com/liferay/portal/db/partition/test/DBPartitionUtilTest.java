@@ -322,69 +322,8 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 
 	@Test
 	public void testExtractAndInsertDBPartition() throws Exception {
-		try {
-			int companyCount = _getDefaultSchemaCount("Company");
-			int virtualHostCount = _getDefaultSchemaCount("VirtualHost");
-
-			addDBPartitions();
-			insertPartitionRequiredData();
-
-			HashMap<Long, List<String>> viewNames = new HashMap<>();
-			HashMap<Long, Integer> tablesCount = new HashMap<>();
-
-			for (long companyId : COMPANY_IDS) {
-				viewNames.put(companyId, _getObjectNames("VIEW", companyId));
-				tablesCount.put(companyId, _getTablesCount(companyId));
-
-				_scheduleJob(companyId, _JOB_NAME_1);
-			}
-
-			Assert.assertEquals(
-				COMPANY_IDS.length + _JOBS_COUNT,
-				_getJobsCount(defaultPartitionName));
-
-			extractDBPartitions();
-
-			Assert.assertEquals(
-				_JOBS_COUNT, _getJobsCount(defaultPartitionName));
-
-			for (long companyId : COMPANY_IDS) {
-				Assert.assertEquals(
-					1, _getJobsCount(getPartitionName(companyId)));
-			}
-
-			Assert.assertEquals(
-				companyCount, _getDefaultSchemaCount("Company"));
-			Assert.assertEquals(
-				virtualHostCount, _getDefaultSchemaCount("VirtualHost"));
-
-			insertDBPartitions();
-
-			Assert.assertEquals(
-				companyCount + COMPANY_IDS.length,
-				_getDefaultSchemaCount("Company"));
-			Assert.assertEquals(
-				virtualHostCount + COMPANY_IDS.length,
-				_getDefaultSchemaCount("VirtualHost"));
-
-			for (long companyId : COMPANY_IDS) {
-				Assert.assertEquals(
-					viewNames.get(companyId),
-					_getObjectNames("VIEW", companyId));
-				Assert.assertEquals(
-					(int)tablesCount.get(companyId),
-					_getTablesCount(companyId));
-				Assert.assertEquals(1, _getJobsCountByCompany(companyId));
-			}
-
-			Assert.assertEquals(
-				COMPANY_IDS.length + _JOBS_COUNT,
-				_getJobsCount(defaultPartitionName));
-		}
-		finally {
-			deletePartitionRequiredData();
-			removeDBPartitions();
-		}
+		_testExtractAndInsertDBPartition(false);
+		_testExtractAndInsertDBPartition(true);
 	}
 
 	@Test
@@ -646,6 +585,112 @@ public class DBPartitionUtilTest extends BaseDBPartitionTestCase {
 		_schedulerEngine.schedule(
 			trigger, StringPool.BLANK, _JOB_GROUP_NAME, message,
 			StorageType.PERSISTED);
+	}
+
+	private void _testExtractAndInsertDBPartition(boolean deleteCompany)
+		throws Exception {
+
+		try {
+			int companyCount = _getDefaultSchemaCount("Company");
+			int virtualHostCount = _getDefaultSchemaCount("VirtualHost");
+
+			addDBPartitions();
+			insertPartitionRequiredData();
+
+			HashMap<Long, List<String>> viewNames = new HashMap<>();
+			HashMap<Long, Integer> tablesCount = new HashMap<>();
+
+			for (long companyId : COMPANY_IDS) {
+				viewNames.put(companyId, _getObjectNames("VIEW", companyId));
+				tablesCount.put(companyId, _getTablesCount(companyId));
+
+				_scheduleJob(companyId, _JOB_NAME_1);
+			}
+
+			Assert.assertEquals(
+				COMPANY_IDS.length + _JOBS_COUNT,
+				_getJobsCount(defaultPartitionName));
+
+			if (!deleteCompany) {
+				copyDBPartitionsSchema();
+			}
+
+			extractDBPartitions();
+
+			int jobsCountModifier = 0;
+
+			if (deleteCompany) {
+				for (long companyId : COMPANY_IDS) {
+					Assert.assertEquals(
+						1, _getJobsCount(getPartitionName(companyId)));
+				}
+			}
+			else {
+				for (long companyId : COMPANY_IDS) {
+					Assert.assertEquals(
+						COMPANY_IDS.length + _JOBS_COUNT,
+						_getJobsCount(getPartitionName(companyId)));
+				}
+
+				jobsCountModifier = COMPANY_IDS.length;
+			}
+
+			Assert.assertEquals(
+				_JOBS_COUNT + jobsCountModifier,
+				_getJobsCount(defaultPartitionName));
+
+			Assert.assertEquals(
+				companyCount + jobsCountModifier,
+				_getDefaultSchemaCount("Company"));
+			Assert.assertEquals(
+				virtualHostCount + jobsCountModifier,
+				_getDefaultSchemaCount("VirtualHost"));
+
+			if (!deleteCompany) {
+				try {
+					insertDBPartitions();
+
+					Assert.fail();
+				}
+				catch (Exception exception) {
+					deletePartitionRequiredData();
+					removeDBPartitions();
+				}
+			}
+
+			insertDBPartitions();
+
+			Assert.assertEquals(
+				companyCount + COMPANY_IDS.length,
+				_getDefaultSchemaCount("Company"));
+			Assert.assertEquals(
+				virtualHostCount + COMPANY_IDS.length,
+				_getDefaultSchemaCount("VirtualHost"));
+
+			for (long companyId : COMPANY_IDS) {
+				Assert.assertEquals(
+					viewNames.get(companyId),
+					_getObjectNames("VIEW", companyId));
+				Assert.assertEquals(
+					(int)tablesCount.get(companyId),
+					_getTablesCount(companyId));
+				Assert.assertEquals(1, _getJobsCountByCompany(companyId));
+			}
+
+			Assert.assertEquals(
+				COMPANY_IDS.length + _JOBS_COUNT,
+				_getJobsCount(defaultPartitionName));
+		}
+		finally {
+			for (long companyId : COMPANY_IDS) {
+				db.runSQL(
+					dbPartitionDB.getDropPartitionSQL(
+						DBPartitionUtil.getExtractedPartitionName(companyId)));
+			}
+
+			deletePartitionRequiredData();
+			removeDBPartitions();
+		}
 	}
 
 	private void _testExtractDBPartition(boolean copySchema) throws Exception {
