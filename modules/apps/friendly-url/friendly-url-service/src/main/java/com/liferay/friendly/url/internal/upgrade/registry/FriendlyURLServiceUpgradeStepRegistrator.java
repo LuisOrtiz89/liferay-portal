@@ -13,6 +13,7 @@ import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.upgrade.BaseSQLServerDatetimeUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
+import com.liferay.portal.kernel.upgrade.DummyUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
@@ -66,6 +67,8 @@ public class FriendlyURLServiceUpgradeStepRegistrator
 			new com.liferay.friendly.url.internal.upgrade.v3_4_1.
 				LayoutFriendlyURLEntryUpgradeProcess(
 					_classNameLocalService, _portal, _resourceActions));
+
+		registry.register("3.4.1", "3.4.2", new DummyUpgradeProcess());
 	}
 
 	@Reference
