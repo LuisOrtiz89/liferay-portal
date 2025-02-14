@@ -80,29 +80,70 @@
 			tofile="build/release_info/ReleaseInfo.java.original"
 		/>
 
-		<replace
-			file="src/com/liferay/portal/kernel/util/ReleaseInfo.java"
-		>
-			<replacefilter
-				token="@release.info.build@"
-				value="${release.info.build}"
-			/>
-			<replacefilter
-				token="@release.info.date@"
-				value="${release.info.date}"
-			/>
-			<replacefilter
-				token="@release.info.name@"
-				value="${release.info.name}"
-			/>
-			<replacefilter
-				token="@release.info.version@"
-				value="${release.info.version}"
-			/>
-			<replacefilter
-				token="@release.info.version.display.name@"
-				value="${release.info.version.display.name}"
-			/>
-		</replace>
+		<if>
+			<isset property="release.date.now" />
+			<then>
+				<tstamp>
+					<format pattern="MMMM d, yyyy" property="current.date.release" />
+				</tstamp>
+
+				<echo>Setting the release info date to: ${current.date.release}</echo>
+
+				<replace
+					file="src/com/liferay/portal/kernel/util/ReleaseInfo.java"
+				>
+					<replacefilter
+						token="@release.info.build@"
+						value="${release.info.build}"
+					/>
+					<replacefilter
+						token="@release.info.date@"
+						value="${release.info.date}"
+					/>
+					<replacefilter
+						token="@release.info.name@"
+						value="${release.info.name}"
+					/>
+
+					<replacefilter
+						token="@release.info.version@"
+						value="${current.date.release}"
+					/>
+
+					<replacefilter
+						token="@release.info.version.display.name@"
+						value="${release.info.version.display.name}"
+					/>
+				</replace>
+			</then>
+			<else>
+				<replace
+					file="src/com/liferay/portal/kernel/util/ReleaseInfo.java"
+				>
+					<replacefilter
+						token="@release.info.build@"
+						value="${release.info.build}"
+					/>
+					<replacefilter
+						token="@release.info.date@"
+						value="${release.info.date}"
+					/>
+					<replacefilter
+						token="@release.info.name@"
+						value="${release.info.name}"
+					/>
+
+					<replacefilter
+						token="@release.info.version@"
+						value="${release.info.version}"
+					/>
+
+					<replacefilter
+						token="@release.info.version.display.name@"
+						value="${release.info.version.display.name}"
+					/>
+				</replace>
+			</else>
+		</if>
 	</target>
 </project>
