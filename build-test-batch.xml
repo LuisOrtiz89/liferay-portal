@@ -1000,7 +1000,9 @@ app.server.type=@{app.server.type}]]></echo>
 
 			<record-git-commit-portal />
 
-			<antcall inheritAll="false" target="compile" />
+			<antcall inheritAll="false" target="compile">
+				<param name="release.date.now" value="true" />
+			</antcall>
 
 			<if>
 				<and>
