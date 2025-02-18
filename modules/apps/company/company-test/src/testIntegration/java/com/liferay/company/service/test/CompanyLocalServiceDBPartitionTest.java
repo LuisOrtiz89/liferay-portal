@@ -261,7 +261,7 @@ public class CompanyLocalServiceDBPartitionTest
 
 		String pid = configuration.getPid();
 
-		companyLocalService.extractDBPartitionCompany(company.getCompanyId());
+		companyLocalService.extractCompany(company.getCompanyId());
 
 		boolean companyExists = true;
 
@@ -335,8 +335,7 @@ public class CompanyLocalServiceDBPartitionTest
 		boolean companyExists = true;
 
 		try {
-			companyLocalService.extractDBPartitionCompany(
-				company.getCompanyId());
+			companyLocalService.extractCompany(company.getCompanyId());
 
 			_companyLocalService.deleteCompany(company);
 
@@ -385,8 +384,7 @@ public class CompanyLocalServiceDBPartitionTest
 		boolean companyExists = true;
 
 		try {
-			companyLocalService.extractDBPartitionCompany(
-				company.getCompanyId());
+			companyLocalService.extractCompany(company.getCompanyId());
 
 			_companyLocalService.deleteCompany(company);
 
@@ -678,7 +676,7 @@ public class CompanyLocalServiceDBPartitionTest
 	}
 
 	@Test
-	public void testExtractDBPartitionCompany() throws Exception {
+	public void testExtractCompany() throws Exception {
 		Company company = CompanyTestUtil.addCompany();
 
 		try {
@@ -687,8 +685,7 @@ public class CompanyLocalServiceDBPartitionTest
 
 			String pid = configuration.getPid();
 
-			companyLocalService.extractDBPartitionCompany(
-				company.getCompanyId());
+			companyLocalService.extractCompany(company.getCompanyId());
 
 			Assert.assertTrue(
 				ArrayUtil.contains(
@@ -722,9 +719,7 @@ public class CompanyLocalServiceDBPartitionTest
 	}
 
 	@Test
-	public void testExtractDBPartitionCompanyWhenDBPartitionUtilFails()
-		throws Exception {
-
+	public void testExtractCompanyWhenDBPartitionUtilFails() throws Exception {
 		Company company = CompanyTestUtil.addCompany();
 
 		int tablesCount = _getTablesCount(company.getCompanyId());
@@ -748,8 +743,7 @@ public class CompanyLocalServiceDBPartitionTest
 							return method.invoke(dbPartitionDB, args);
 						}))) {
 
-			companyLocalService.extractDBPartitionCompany(
-				company.getCompanyId());
+			companyLocalService.extractCompany(company.getCompanyId());
 
 			Assert.fail();
 		}
