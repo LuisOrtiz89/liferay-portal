@@ -22,11 +22,12 @@ public class ComponentEnabler {
 
 	@Activate
 	protected void activate(ComponentContext componentContext) {
+		componentContext.enableComponent(
+			ExtractPortalInstanceOperation.class.getName());
+
 		if (DBPartition.isPartitionEnabled()) {
 			componentContext.enableComponent(
 				CopyPortalInstanceOperation.class.getName());
-			componentContext.enableComponent(
-				ExtractPortalInstanceOperation.class.getName());
 			componentContext.enableComponent(
 				InsertPortalInstanceOperation.class.getName());
 		}
