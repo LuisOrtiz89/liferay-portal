@@ -420,6 +420,17 @@ definition {
 			Clustering.shutdownSpecificServer(nodePort = 9080);
 		}
 
+		task ("Removing the original schema") {
+			var databaseType = PropsUtil.get("database.type");
+
+			if (${databaseType} == "mysql") {
+				SQL.executeSQLStatement(sqlStatement = "drop schema if exists ltest_${partitionCompanyId};");
+			}
+			else if (${databaseType} == "postgresql") {
+				SQL.executeSQLStatement(sqlStatement = "drop schema if exists ltest_${partitionCompanyId} cascade;");
+			}
+		}
+
 		task ("Create an empty database") {
 			var databaseType = PropsUtil.get("database.type");
 
