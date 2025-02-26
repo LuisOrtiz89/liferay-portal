@@ -323,8 +323,8 @@ definition {
 
 		task ("Ensure the lextracted_ schemas have been created") {
 			SQL.assertDatabaseCount(
-				databaseFilter = "lextracted%",
-				databaseSubstring = "lextracted",
+				databaseFilter = "lextracted_%",
+				databaseSubstring = "lextracted_",
 				expectedCount = 2);
 		}
 
