@@ -205,12 +205,12 @@ public class Log4jLogContextLogWrapper extends LogWrapper {
 	}
 
 	private void _cleanThreadContext() {
-		for (String key : _getContext().keySet()) {
+		for (String key : _getContextMap().keySet()) {
 			ThreadContext.remove(key);
 		}
 	}
 
-	private Map<String, String> _getContext() {
+	private Map<String, String> _getContextMap() {
 		Map<String, String> contextMap = new HashMap<>();
 
 		ServiceTrackerList<LogContext> serviceTrackerList =
@@ -242,7 +242,7 @@ public class Log4jLogContextLogWrapper extends LogWrapper {
 
 	private void _populateThreadContext() {
 		for (Map.Entry<String, String> contextEntry :
-				_getContext().entrySet()) {
+				_getContextMap().entrySet()) {
 
 			ThreadContext.put(contextEntry.getKey(), contextEntry.getValue());
 		}
