@@ -19,6 +19,8 @@ definition {
 	macro executeExtraction(databaseCompanyId = null, databaseSchemaName = null, ignoreErrors = null) {
 		var databaseType = PropsUtil.get("database.type");
 
+		echo("Executing extract for company: ${databaseCompanyId}");
+
 		AntCommands.runCommand("modules/util/portal-tools-db-partition-migration-validator-test/src/testFunctional/ant/build-test-db-partition-migration-validator.xml", "execute-db-partition-migration-validator-tool-extraction -Ddatabase.company.id=${databaseCompanyId} -Ddatabase.schema.name=${databaseSchemaName} -Ddatabase.type=${databaseType} -Dignore.migration.errors=${ignoreErrors}");
 	}
 
@@ -75,7 +77,7 @@ definition {
 
 			var newDatabaseUrl = StringUtil.replace(${originalDatabaseUrl}, "lportal", "lportal_target");
 
-			echo("The new database URL is: ${jdbcURL}");
+			echo("The new database URL is: ${newDatabaseUrl}");
 
 			PropsUtil.set("database.mysql.url", "newDatabaseUrl");
 		}
@@ -86,7 +88,7 @@ definition {
 
 			var newDatabaseUrl = StringUtil.replace(${originalDatabaseUrl}, "lportal", "lportal_target");
 
-			echo("The new database URL is: ${jdbcURL}");
+			echo("The new database URL is: ${newDatabaseUrl}");
 
 			PropsUtil.set("database.postgresql.url", "newDatabaseUrl");
 		}
