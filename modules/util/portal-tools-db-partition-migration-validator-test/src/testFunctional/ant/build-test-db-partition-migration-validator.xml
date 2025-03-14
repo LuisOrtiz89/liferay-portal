@@ -34,6 +34,9 @@
 		<attribute default="" name="database.type" />
 
 		<sequential>
+			<echo>The schema name is ${database.schema.name}</echo>
+			<echo>The company ID is ${database.company.id}</echo>
+
 			<if>
 				<equals arg1="${database.type}" arg2="mysql" />
 				<then>

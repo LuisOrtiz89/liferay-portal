@@ -68,6 +68,8 @@ definition {
 
 	@summary = "Returns the company ID of the target database"
 	macro getTargetDatabaseCompanyId() {
+		var databaseType = PropsUtil.get("database.type");
+
 		var mysqlStatement = "SELECT companyId FROM Company LIMIT 1;";
 
 		if (${databaseType} == "mysql") {
