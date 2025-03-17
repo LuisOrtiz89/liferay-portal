@@ -109,7 +109,11 @@ public class DatabaseUtil {
 			ResultSet resultSet = preparedStatement.executeQuery()) {
 
 			while (resultSet.next()) {
-				if (companyId == resultSet.getLong(1)) {
+				long currentCompanyId = resultSet.getLong(1);
+
+				System.out.println("CompanyId " + currentCompanyId + " found in database");
+
+				if (companyId == currentCompanyId) {
 					return companyId;
 				}
 			}

@@ -101,6 +101,9 @@ public class DBPartitionMigrationValidator {
 			_exit(_LIFERAY_COMMON_EXIT_CODE_HELP);
 		}
 
+		System.out.println("The jdbc-url parameter has value: " + commandLine.getOptionValue("jdbc-url"));
+		System.out.println("The schema-name parameter has value: " + commandLine.getOptionValue("schema-name"));
+
 		String jdbcURL = DatabaseUtil.replaceSchemaName(
 			commandLine.getOptionValue("jdbc-url"),
 			commandLine.getOptionValue("schema-name"));
