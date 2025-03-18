@@ -80,8 +80,6 @@ definition {
 			var newDatabaseUrl = StringUtil.replace(${originalDatabaseUrl}, "lportal", "lportal_target");
 
 			echo("The new database URL is: ${newDatabaseUrl}");
-
-			PropsUtil.set("database.mysql.url", "newDatabaseUrl");
 		}
 		else {
 			var originalDatabaseUrl = PropsUtil.get("database.postgresql.url");
@@ -91,11 +89,9 @@ definition {
 			var newDatabaseUrl = StringUtil.replace(${originalDatabaseUrl}, "lportal", "lportal_target");
 
 			echo("The new database URL is: ${newDatabaseUrl}");
-
-			PropsUtil.set("database.postgresql.url", "newDatabaseUrl");
 		}
 
-		var companyId = SQL.executeSQLStatement(sqlStatement = ${mysqlStatement});
+		var companyId = SQL.executeSQLStatement(sqlStatement = ${mysqlStatement}, customDatabaseUrl = ${newDatabaseUrl});
 
 		if (${databaseType} == "mysql") {
 			PropsUtil.set("database.mysql.url", "originalDatabaseUrl");
