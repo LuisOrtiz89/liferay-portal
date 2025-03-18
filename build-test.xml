@@ -10953,8 +10953,6 @@ send_user $expect_out(buffer)]]></echo>
 		</if>
 
 		<if>
-
-		</if>
 			<isset property="custom.database.url" />
 			<then>
 				<if>
@@ -10986,6 +10984,7 @@ send_user $expect_out(buffer)]]></echo>
 					</then>
 				</if>
 			</else>
+		</if>
 	</target>
 
 	<target name="export-database-schema">
