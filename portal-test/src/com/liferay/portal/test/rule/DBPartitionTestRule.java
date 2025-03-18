@@ -48,10 +48,12 @@ public class DBPartitionTestRule implements TestRule {
 				if (GetterUtil.getBoolean(
 						TestPropsUtil.get("test.extract.and.insert"))) {
 
+					System.out.print("The property test.extract.and.insert is true!");
+
 					company = CompanyLocalServiceUtil.fetchCompanyByVirtualHost(
 						TestPropsValues.COMPANY_WEB_ID);
 
-					CompanyLocalServiceUtil.extractDBPartitionCompany(
+					CompanyLocalServiceUtil.extractCompany(
 						company.getCompanyId());
 
 					CompanyLocalServiceUtil.deleteCompany(
@@ -60,6 +62,8 @@ public class DBPartitionTestRule implements TestRule {
 					CompanyLocalServiceUtil.addDBPartitionCompany(
 						company.getCompanyId(), company.getName(),
 						company.getVirtualHostname(), company.getWebId());
+
+					System.out.print("The company " + company.getCompanyId() + " has been extracted and added");
 				}
 			}
 		}
