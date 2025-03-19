@@ -67,7 +67,7 @@ public class DBPartitionTestRule implements TestRule {
 						company.getVirtualHostname(), company.getWebId());
 
 					date = new Date();
-					System.out.print(date + " - The company " + company.getCompanyId() + " has been extracted and added");
+					System.out.println(date + " - The company " + company.getCompanyId() + " has been extracted and added");
 				}
 			}
 		}
