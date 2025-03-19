@@ -12238,7 +12238,7 @@ database.partition.enabled=true</echo>
 		<if>
 			<equals arg1="${test.extract.and.insert}" arg2="true" />
 			<then>
-				<echo append="true" file="portal-impl/src/portal-ext.properties">
+				<echo append="true" file="${project.dir}/portal-test/src/test-portal-impl.properties">
 					test.extract.and.insert=true</echo>
 			</then>
 		</if>
