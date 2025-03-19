@@ -18,6 +18,8 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.util.Date;
+
 /**
  * @author Jorge Avalos
  */
@@ -48,7 +50,8 @@ public class DBPartitionTestRule implements TestRule {
 				if (GetterUtil.getBoolean(
 						TestPropsUtil.get("test.extract.and.insert"))) {
 
-					System.out.print("The property test.extract.and.insert is true!");
+					Date date = new Date();
+					System.out.println(date + " - The property test.extract.and.insert is true!");
 
 					company = CompanyLocalServiceUtil.fetchCompanyByVirtualHost(
 						TestPropsValues.COMPANY_WEB_ID);
@@ -63,7 +66,8 @@ public class DBPartitionTestRule implements TestRule {
 						company.getCompanyId(), company.getName(),
 						company.getVirtualHostname(), company.getWebId());
 
-					System.out.print("The company " + company.getCompanyId() + " has been extracted and added");
+					date = new Date();
+					System.out.print(date + " - The company " + company.getCompanyId() + " has been extracted and added");
 				}
 			}
 		}
