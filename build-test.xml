@@ -11945,6 +11945,8 @@ ${update.properties}</echo>
 			</then>
 		</if>
 
+
+
 		<propertycopy from="database.partition.enabled[${env.CI_TEST_SUITE}]" name="database.partition.enabled" override="true" silent="true" />
 
 		<if>
@@ -12230,6 +12232,14 @@ upgrade.database.auto.run=true</echo>
 			<then>
 				<echo append="true" file="portal-impl/src/portal-ext.properties">
 database.partition.enabled=true</echo>
+			</then>
+		</if>
+
+		<if>
+			<equals arg1="${test.extract.and.insert}" arg2="true" />
+			<then>
+				<echo append="true" file="portal-impl/src/portal-ext.properties">
+					test.extract.and.insert=true</echo>
 			</then>
 		</if>
 
