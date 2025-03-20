@@ -44,7 +44,9 @@ public class DBPartitionTestRule implements TestRule {
 				String companyWebId;
 
 				if (GetterUtil.getBoolean(
-						TestPropsUtil.get("test.extract.and.insert.company"))) {
+						TestPropsUtil.get("test.extract.and.insert.company")) ||
+					GetterUtil.getBoolean(
+						TestPropsUtil.get("test.copy.company"))) {
 
 					companyWebId = RandomTestUtil.randomString() + ".com";
 				}
@@ -89,6 +91,36 @@ public class DBPartitionTestRule implements TestRule {
 							date.toString(), " - The company ",
 							String.valueOf(company.getCompanyId()),
 							" has been extracted and added"));
+				}
+				else if (GetterUtil.getBoolean(
+							TestPropsUtil.get("test.copy.company"))) {
+
+					Date date = new Date();
+
+					System.out.println(
+						date + " - The property test.copy.company is true!");
+
+					company = CompanyLocalServiceUtil.fetchCompanyByVirtualHost(
+						companyWebId);
+
+					CompanyLocalServiceUtil.copyDBPartitionCompany(
+						company.getCompanyId(),
+						RandomTestUtil.randomLong(
+							(long)Math.pow(10, 13), (long)Math.pow(10, 14)),
+						TestPropsValues.COMPANY_WEB_ID,
+						TestPropsValues.COMPANY_WEB_ID,
+						TestPropsValues.COMPANY_WEB_ID);
+
+					CompanyLocalServiceUtil.deleteCompany(
+						company.getCompanyId());
+
+					date = new Date();
+
+					System.out.println(
+						StringBundler.concat(
+							date.toString(), " - The company ",
+							String.valueOf(company.getCompanyId()),
+							" has been copied"));
 				}
 			}
 		}
