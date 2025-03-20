@@ -44,9 +44,10 @@ public class DBPartitionTestRule implements TestRule {
 				String companyWebId;
 
 				if (GetterUtil.getBoolean(
-						TestPropsUtil.get("test.extract.and.insert.company")) ||
+						TestPropsUtil.get(
+							_PROPERTY_TEST_EXTRACT_AND_INSERT_COMPANY)) ||
 					GetterUtil.getBoolean(
-						TestPropsUtil.get("test.copy.company"))) {
+						TestPropsUtil.get(_PROPERTY_TEST_COPY_COMPANY))) {
 
 					companyWebId = RandomTestUtil.randomString() + ".com";
 				}
@@ -61,14 +62,16 @@ public class DBPartitionTestRule implements TestRule {
 						true, null, null, null, null, null, null));
 
 				if (GetterUtil.getBoolean(
-						TestPropsUtil.get("test.extract.and.insert.company"))) {
+						TestPropsUtil.get(
+							_PROPERTY_TEST_EXTRACT_AND_INSERT_COMPANY))) {
 
 					Date date = new Date();
 
 					System.out.println(
-						date +
-							" - The property test.extract.and.insert.company " +
-								"is true!");
+						StringBundler.concat(
+							date.toString(), " - The property ",
+							_PROPERTY_TEST_EXTRACT_AND_INSERT_COMPANY,
+							" is true!"));
 
 					company = CompanyLocalServiceUtil.fetchCompanyByVirtualHost(
 						companyWebId);
@@ -93,12 +96,14 @@ public class DBPartitionTestRule implements TestRule {
 							" has been extracted and added"));
 				}
 				else if (GetterUtil.getBoolean(
-							TestPropsUtil.get("test.copy.company"))) {
+							TestPropsUtil.get(_PROPERTY_TEST_COPY_COMPANY))) {
 
 					Date date = new Date();
 
 					System.out.println(
-						date + " - The property test.copy.company is true!");
+						StringBundler.concat(
+							date.toString(), " - The property ",
+							_PROPERTY_TEST_COPY_COMPANY, " is true!"));
 
 					company = CompanyLocalServiceUtil.fetchCompanyByVirtualHost(
 						companyWebId);
@@ -130,5 +135,11 @@ public class DBPartitionTestRule implements TestRule {
 
 		return statement;
 	}
+
+	private static final String _PROPERTY_TEST_COPY_COMPANY =
+		"test.copy.company";
+
+	private static final String _PROPERTY_TEST_EXTRACT_AND_INSERT_COMPANY =
+		"test.extract.and.insert.company";
 
 }
