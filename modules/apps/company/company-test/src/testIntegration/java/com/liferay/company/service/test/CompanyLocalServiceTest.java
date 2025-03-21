@@ -107,6 +107,7 @@ import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
+import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -940,6 +941,7 @@ public class CompanyLocalServiceTest {
 		_companyLocalService.deleteCompany(companyId);
 	}
 
+	@FeatureFlags("LPD-11342")
 	@Test
 	public void testExtractCompany() throws Exception {
 		Company company = CompanyTestUtil.addCompany();
@@ -990,6 +992,7 @@ public class CompanyLocalServiceTest {
 		}
 	}
 
+	@FeatureFlags("LPD-11342")
 	@Test
 	public void testExtractCompanyDefaultCompany() {
 		try {
@@ -1003,6 +1006,7 @@ public class CompanyLocalServiceTest {
 		}
 	}
 
+	@FeatureFlags("LPD-11342")
 	@Test
 	public void testExtractCompanyWhenDBPartitionUtilFails() throws Exception {
 		Company company = CompanyTestUtil.addCompany();
