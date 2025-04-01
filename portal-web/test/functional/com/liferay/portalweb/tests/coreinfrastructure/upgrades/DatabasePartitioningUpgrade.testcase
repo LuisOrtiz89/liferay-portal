@@ -132,8 +132,6 @@ definition {
 
 	@priority = 4
 	test ExtractAndAddDBPartitionWithUpgradedDB {
-		property app.server.bundles.size = "1";
-		property cluster.enabled = "true";
 		property custom.properties = "feature.flag.LPD-11342=true${line.separator}virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com,www.baker.com";
 		property data.archive.type = "data-archive-portal-partition";
 		property portal.version = "7.4.13.u33";
@@ -159,21 +157,13 @@ definition {
 
 			DBPartition.extractDBPartition(partitionCompanyId = 44913);
 
-			Clustering.shutdownSpecificServer(nodePort = 8080);
-
-			Clustering.shutdownSpecificServer(nodePort = 9080);
+			Portlet.shutdownServer();
 		}
 
 		task ("Create an empty database") {
 			AntCommands.runCommand("build-test.xml", "rebuild-database -Ddatabase.type=mysql -Dsql.dir=sql/create-bare/ -Dsql.file=create-bare-mysql.sql");
 
-			Clustering.startSpecificServer(
-				deleteLiferayHome = "false",
-				nodePort = 8080);
-
-			Clustering.startSpecificServer(
-				deleteLiferayHome = "false",
-				nodePort = 9080);
+			Portlet.startServer(deleteLiferayHome = "false");
 		}
 
 		task ("Removing the original schemas") {

@@ -375,8 +375,6 @@ definition {
 
 	@priority = 4
 	test ExtractAndAddDBPartition {
-		property app.server.bundles.size = "1";
-		property cluster.enabled = "true";
 		property custom.properties = "feature.flag.LPD-11342=true${line.separator}virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com";
 		property test.assert.warning.exceptions = "true";
 		property test.liferay.virtual.instance = "false";
@@ -415,9 +413,7 @@ definition {
 		task ("Extract www.able.com partition and shutdown the server") {
 			DBPartition.extractDBPartition(partitionCompanyId = ${partitionCompanyId});
 
-			Clustering.shutdownSpecificServer(nodePort = 8080);
-
-			Clustering.shutdownSpecificServer(nodePort = 9080);
+			Portlet.shutdownServer();
 		}
 
 		task ("Removing the original schema") {
@@ -443,13 +439,7 @@ definition {
 				SQL.executeSQLStatement(sqlStatement = "create schema public;");
 			}
 
-			Clustering.startSpecificServer(
-				deleteLiferayHome = "false",
-				nodePort = 8080);
-
-			Clustering.startSpecificServer(
-				deleteLiferayHome = "false",
-				nodePort = 9080);
+			Portlet.startServer(deleteLiferayHome = "false");
 		}
 
 		task ("Add previously extracted www.able.com partition into new database") {
@@ -482,8 +472,6 @@ definition {
 	}
 
 	test ExtractNonPartitionedCompanyAndAddDBPartition {
-		property app.server.bundles.size = "1";
-		property cluster.enabled = "true";
 		property custom.properties = "database.partition.enabled=false${line.separator}database.partition.schema.name.prefix=ltest_${line.separator}feature.flag.LPD-11342=true${line.separator}virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com";
 		property database.partition.enabled = "false";
 		property liferay.online.properties = "false";
@@ -534,9 +522,7 @@ definition {
 
 			SignOut.signOut();
 
-			Clustering.shutdownSpecificServer(nodePort = 8080);
-
-			Clustering.shutdownSpecificServer(nodePort = 9080);
+			Portlet.shutdownServer();
 		}
 
 		task ("Create and start an empty database with DBPartition enabled") {
@@ -551,23 +537,11 @@ definition {
 				SQL.executeSQLStatement(sqlStatement = "create schema public;");
 			}
 
-			Clustering.updatePortalPropertiesOnSpecificServer(
-				nodePort = 8080,
-				propertiesOriginal = "database.partition.enabled=false",
-				propertiesUpdate = "database.partition.enabled=true");
+			TestCase.updatePortalProperties(
+				newProperty = "database.partition.enabled=true",
+				oldProperty = "database.partition.enabled=false");
 
-			Clustering.updatePortalPropertiesOnSpecificServer(
-				nodePort = 9080,
-				propertiesOriginal = "database.partition.enabled=false",
-				propertiesUpdate = "database.partition.enabled=true");
-
-			Clustering.startSpecificServer(
-				deleteLiferayHome = "false",
-				nodePort = 8080);
-
-			Clustering.startSpecificServer(
-				deleteLiferayHome = "false",
-				nodePort = 9080);
+			Portlet.startServer(deleteLiferayHome = "false");
 		}
 
 		task ("Add previously extracted www.able.com company into new database") {
