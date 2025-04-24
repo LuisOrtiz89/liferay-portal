@@ -5,7 +5,13 @@
 
 package com.liferay.portal.kernel.upgrade.util;
 
+import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -15,6 +21,66 @@ import java.util.Set;
  * @author Luis Ortiz
  */
 public class JakartaUpgradeProcessUtil {
+
+	public static Object[] getSelectResultSetData(
+			String columnName, String[] primaryKeyColumnNames,
+			ResultSet resultSet)
+		throws SQLException {
+
+		Object[] result = new Object[primaryKeyColumnNames.length + 1];
+
+		int i = 0;
+
+		for (String primaryKeyColumnName : primaryKeyColumnNames) {
+			result[i] = resultSet.getObject(primaryKeyColumnName);
+			i++;
+		}
+
+		result[i] = resultSet.getString(columnName);
+
+		return result;
+	}
+
+	public static String getSelectSQL(
+		String columnName, String[] primaryKeyColumnNames, String tableName) {
+
+		StringBundler sb = new StringBundler();
+
+		sb.append("select ");
+
+		for (String primaryKeyColumnName : primaryKeyColumnNames) {
+			sb.append(primaryKeyColumnName);
+			sb.append(", ");
+		}
+
+		sb.append(columnName);
+		sb.append(" from ");
+		sb.append(tableName);
+
+		return sb.toString();
+	}
+
+	public static String getUpdateSQL(
+		String columnName, String[] primaryKeyColumnNames, String tableName) {
+
+		StringBundler sb = new StringBundler();
+
+		sb.append("update ");
+		sb.append(tableName);
+		sb.append(" set ");
+		sb.append(columnName);
+		sb.append(" = ? where ");
+
+		for (String primaryKeyColumnName : primaryKeyColumnNames) {
+			sb.append(primaryKeyColumnName);
+			sb.append(" = ?");
+			sb.append(" and ");
+		}
+
+		sb.setIndex(sb.index() - 1);
+
+		return sb.toString();
+	}
 
 	public static String replace(String value) {
 		return _replace(value, _separators);
@@ -29,6 +95,47 @@ public class JakartaUpgradeProcessUtil {
 		separators.addAll(customSeparators);
 
 		return _replace(value, separators);
+	}
+
+	public static String updateJakartaValue(
+			Character[] customSeparators, PreparedStatement preparedStatement,
+			String[] primaryKeyColumnNames, Object[] values)
+		throws SQLException {
+
+		String jakartaValue;
+		String javaxValue = (String)values[values.length - 1];
+
+		if (customSeparators.length > 0) {
+			jakartaValue = replace(
+				javaxValue, SetUtil.fromArray(customSeparators));
+		}
+		else {
+			jakartaValue = replace(javaxValue);
+		}
+
+		if (javaxValue.length() != jakartaValue.length()) {
+			preparedStatement.setString(1, jakartaValue);
+
+			for (int i = 0; i < primaryKeyColumnNames.length; i++) {
+				preparedStatement.setObject(i + 2, values[i]);
+			}
+
+			preparedStatement.addBatch();
+
+			StringBundler sb = new StringBundler("(");
+
+			for (int i = 0; i < primaryKeyColumnNames.length; i++) {
+				sb.append(values[i]);
+				sb.append(", ");
+			}
+
+			sb.setIndex(sb.index() - 1);
+			sb.append(")");
+
+			return sb.toString();
+		}
+
+		return null;
 	}
 
 	private static String _replace(String value, Set<Character> separators) {
