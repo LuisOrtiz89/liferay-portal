@@ -85,19 +85,19 @@ public class JakartaUpgradeProcessUtil {
 		return sb.toString();
 	}
 
-	public static String replace(String value) {
-		return _replace(value, _separators);
-	}
-
 	public static String replace(
-		String value, Set<Character> customSeparators) {
+		Set<Character> customSeparators, String value) {
 
 		Set<Character> separators = new HashSet<>();
 
 		separators.addAll(_separators);
 		separators.addAll(customSeparators);
 
-		return _replace(value, separators);
+		return _replace(separators, value);
+	}
+
+	public static String replace(String value) {
+		return _replace(_separators, value);
 	}
 
 	public static String updateJakartaValue(
@@ -115,7 +115,7 @@ public class JakartaUpgradeProcessUtil {
 
 		if (customSeparators.length > 0) {
 			jakartaValue = replace(
-				javaxValue, SetUtil.fromArray(customSeparators));
+				SetUtil.fromArray(customSeparators), javaxValue);
 		}
 		else {
 			jakartaValue = replace(javaxValue);
@@ -146,10 +146,10 @@ public class JakartaUpgradeProcessUtil {
 		return null;
 	}
 
-	private static String _replace(String value, Set<Character> separators) {
+	private static String _replace(Set<Character> separators, String value) {
 		for (String subpackageName : _subpackageNames) {
-			String javaxPackage = "javax." + subpackageName;
 			String jakartaPackage = "jakarta." + subpackageName;
+			String javaxPackage = "javax." + subpackageName;
 
 			value = StringUtil.replace(value, javaxPackage, jakartaPackage);
 
@@ -161,8 +161,8 @@ public class JakartaUpgradeProcessUtil {
 		}
 
 		for (String fixupSubpackageName : _fixupSubpackageNames) {
-			String fixupJavaxPackage = "javax." + fixupSubpackageName;
 			String fixupJakartaPackage = "jakarta." + fixupSubpackageName;
+			String fixupJavaxPackage = "javax." + fixupSubpackageName;
 
 			value = StringUtil.replace(
 				value, fixupJakartaPackage, fixupJavaxPackage);

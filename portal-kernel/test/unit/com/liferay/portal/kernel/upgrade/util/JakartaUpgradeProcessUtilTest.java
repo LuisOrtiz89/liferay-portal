@@ -273,7 +273,7 @@ public class JakartaUpgradeProcessUtilTest {
 			Assert.assertEquals(
 				entry.getValue(),
 				JakartaUpgradeProcessUtil.replace(
-					entry.getKey(), customSeparators));
+					customSeparators, entry.getKey()));
 		}
 	}
 
