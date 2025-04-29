@@ -128,6 +128,11 @@ public class JakartaUpgradeProcessUtilTest {
 	}
 
 	@Test
+	public void testReplaceNullValue() {
+		Assert.assertNull(JakartaUpgradeProcessUtil.replace(null));
+	}
+
+	@Test
 	public void testReplaceWithCustomSeparators() {
 		_testReplace(
 			HashMapBuilder.put(
