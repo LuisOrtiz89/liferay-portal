@@ -19,6 +19,7 @@ import com.liferay.object.internal.upgrade.v10_8_0.util.ObjectDefinitionSettingT
 import com.liferay.object.internal.upgrade.v10_8_1.ObjectEntryAssetEntryTitleUpgradeProcess;
 import com.liferay.object.internal.upgrade.v10_9_0.util.ObjectEntryVersionTable;
 import com.liferay.object.internal.upgrade.v10_9_1.ClassNameUpgradeProcess;
+import com.liferay.object.internal.upgrade.v11_0_0.ObjectJakartaUpgradeProcess;
 import com.liferay.object.internal.upgrade.v1_2_0.util.ObjectViewColumnTable;
 import com.liferay.object.internal.upgrade.v1_2_0.util.ObjectViewTable;
 import com.liferay.object.internal.upgrade.v2_1_0.ObjectFieldBusinessTypeUpgradeProcess;
@@ -597,6 +598,9 @@ public class ObjectServiceUpgradeStepRegistrator
 			"10.14.0", "10.14.1",
 			UpgradeProcessFactory.alterColumnType(
 				"ObjectAction", "description", "STRING null"));
+
+		registry.register(
+			"10.14.1", "11.0.0", new ObjectJakartaUpgradeProcess());
 	}
 
 	@Reference
