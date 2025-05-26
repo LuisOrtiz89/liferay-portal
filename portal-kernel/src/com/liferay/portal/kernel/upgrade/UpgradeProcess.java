@@ -121,7 +121,7 @@ public abstract class UpgradeProcess
 
 					doUpgrade();
 
-					closeConnections();
+					closeConnections(this.connection);
 				});
 		}
 		catch (Throwable throwable) {
