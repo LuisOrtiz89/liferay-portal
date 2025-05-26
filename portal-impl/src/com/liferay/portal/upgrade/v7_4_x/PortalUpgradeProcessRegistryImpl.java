@@ -640,6 +640,8 @@ public class PortalUpgradeProcessRegistryImpl
 			new Version(32, 4, 0),
 			UpgradeProcessFactory.addColumns("Address", "status INTEGER"),
 			UpgradeProcessFactory.runSQL("update Address set status = 0"));
+
+		upgradeVersionTreeMap.put(new Version(33, 0, 0), new UpgradeJakarta());
 	}
 
 }
