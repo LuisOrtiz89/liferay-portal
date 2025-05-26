@@ -286,9 +286,9 @@ public abstract class BaseDBProcess implements DBProcess {
 				newTableName));
 	}
 
-	protected void closeConnections() {
+	protected void closeConnections(Connection connection) {
 		Map<Thread, Connection> connectionsMap = _connectionsMaps.get(
-			CompanyThreadLocal.getCompanyId());
+			_getConnectionKey(connection, CompanyThreadLocal.getCompanyId()));
 
 		_closeConnections(connectionsMap);
 	}
@@ -528,7 +528,7 @@ public abstract class BaseDBProcess implements DBProcess {
 	}
 
 	private PreparedStatement _getConcurrentPreparedStatement(
-		String updateSQL,
+		Connection connection, String updateSQL,
 		Map<Thread, PreparedStatement> preparedStatementHashMap) {
 
 		return preparedStatementHashMap.computeIfAbsent(
@@ -584,6 +584,10 @@ public abstract class BaseDBProcess implements DBProcess {
 		catch (Exception exception) {
 			return ReflectionUtil.throwException(exception);
 		}
+	}
+
+	private String _getConnectionKey(Object object, long companyId) {
+		return companyId + StringPool.AT + object.hashCode();
 	}
 
 	private int _getConnectionsCount() {
@@ -647,6 +651,8 @@ public abstract class BaseDBProcess implements DBProcess {
 		Map<Thread, PreparedStatement> preparedStatementHashMap =
 			new ConcurrentHashMap<>();
 
+		Connection innerConnection = getConnection();
+
 		try {
 			boolean notificationEnabled = NotificationThreadLocal.isEnabled();
 			boolean workflowEnabled = WorkflowThreadLocal.isEnabled();
@@ -671,7 +677,7 @@ public abstract class BaseDBProcess implements DBProcess {
 									unsafeBiConsumer.accept(
 										current,
 										_getConcurrentPreparedStatement(
-											updateSQL,
+											innerConnection, updateSQL,
 											preparedStatementHashMap));
 								}
 							}
@@ -699,42 +705,47 @@ public abstract class BaseDBProcess implements DBProcess {
 			}
 		}
 		finally {
-			executorService.shutdown();
+			try {
+				executorService.shutdown();
 
-			for (Future<Void> future : futures) {
-				future.get();
+				for (Future<Void> future : futures) {
+					future.get();
+				}
+
+				Throwable throwable = throwableCollector.getThrowable();
+
+				if (throwable != null) {
+					if (exceptionMessage != null) {
+						throw new Exception(exceptionMessage, throwable);
+					}
+
+					ReflectionUtil.throwException(throwable);
+				}
+
+				try {
+					for (PreparedStatement preparedStatement :
+							preparedStatementHashMap.values()) {
+
+						preparedStatement.executeBatch();
+
+						preparedStatement.close();
+					}
+				}
+				catch (Exception exception) {
+					_log.error(exceptionMessage, exception);
+
+					throw exception;
+				}
 			}
-		}
-
-		Throwable throwable = throwableCollector.getThrowable();
-
-		if (throwable != null) {
-			if (exceptionMessage != null) {
-				throw new Exception(exceptionMessage, throwable);
+			finally {
+				closeConnections(innerConnection);
 			}
-
-			ReflectionUtil.throwException(throwable);
-		}
-
-		try {
-			for (PreparedStatement preparedStatement :
-					preparedStatementHashMap.values()) {
-
-				preparedStatement.executeBatch();
-
-				preparedStatement.close();
-			}
-		}
-		catch (Exception exception) {
-			_log.error(exceptionMessage, exception);
-
-			throw exception;
 		}
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(BaseDBProcess.class);
 
-	private final Map<Long, Map<Thread, Connection>> _connectionsMaps =
+	private final Map<String, Map<Thread, Connection>> _connectionsMaps =
 		new ConcurrentHashMap<>();
 
 	private class ConnectionThreadProxyInvocationHandler
@@ -758,9 +769,13 @@ public abstract class BaseDBProcess implements DBProcess {
 				return null;
 			}
 
+			if (methodName.equals("hashCode")) {
+				return hashCode();
+			}
+
 			Map<Thread, Connection> connectionsMap =
 				_connectionsMaps.computeIfAbsent(
-					CompanyThreadLocal.getCompanyId(),
+					_getConnectionKey(this, CompanyThreadLocal.getCompanyId()),
 					key -> new ConcurrentHashMap<>());
 
 			return method.invoke(

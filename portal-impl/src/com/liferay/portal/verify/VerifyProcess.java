@@ -64,7 +64,7 @@ public abstract class VerifyProcess extends BaseDBProcess {
 
 					doVerify();
 
-					closeConnections();
+					closeConnections(this.connection);
 				});
 		}
 		catch (Exception exception) {

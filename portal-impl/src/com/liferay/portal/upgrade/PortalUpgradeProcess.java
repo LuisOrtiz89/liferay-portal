@@ -320,7 +320,7 @@ public class PortalUpgradeProcess extends UpgradeProcess {
 
 			doUpgrade();
 
-			closeConnections();
+			closeConnections(this.connection);
 		}
 		catch (Exception exception) {
 			message = "Failed upgrade process ";
