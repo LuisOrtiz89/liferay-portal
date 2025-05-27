@@ -291,6 +291,9 @@ public abstract class BaseDBProcess implements DBProcess {
 			_getConnectionKey(CompanyThreadLocal.getCompanyId(), connection));
 
 		_closeConnections(connectionsMap);
+
+		_connectionsMaps.remove(
+			_getConnectionKey(CompanyThreadLocal.getCompanyId(), connection));
 	}
 
 	/**
@@ -752,6 +755,8 @@ public abstract class BaseDBProcess implements DBProcess {
 
 						if (_keyBelongsThis(connectionsEntry.getKey())) {
 							_closeConnections(connectionsEntry.getValue());
+
+							_connectionsMaps.remove(connectionsEntry.getKey());
 						}
 					}
 				}
