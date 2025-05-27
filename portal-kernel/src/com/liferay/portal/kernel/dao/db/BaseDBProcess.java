@@ -590,18 +590,6 @@ public abstract class BaseDBProcess implements DBProcess {
 		return companyId + StringPool.AT + object.hashCode();
 	}
 
-	private int _getConnectionsCount() {
-		int connectionsCount = 0;
-
-		for (Map<Thread, Connection> connectionsMap :
-				_connectionsMaps.values()) {
-
-			connectionsCount += connectionsMap.size();
-		}
-
-		return connectionsCount;
-	}
-
 	private InputStream _getInputStream(String path) {
 		ClassLoader classLoader = PortalClassLoaderUtil.getClassLoader();
 
@@ -782,6 +770,18 @@ public abstract class BaseDBProcess implements DBProcess {
 				connectionsMap.computeIfAbsent(
 					Thread.currentThread(), thread -> _getConnection()),
 				args);
+		}
+
+		private int _getConnectionsCount() {
+			int connectionsCount = 0;
+
+			for (Map<Thread, Connection> connectionsMap :
+					_connectionsMaps.values()) {
+
+				connectionsCount += connectionsMap.size();
+			}
+
+			return connectionsCount;
 		}
 
 	}
