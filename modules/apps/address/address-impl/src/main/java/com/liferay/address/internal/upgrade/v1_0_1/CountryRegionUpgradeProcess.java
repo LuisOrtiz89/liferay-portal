@@ -52,9 +52,9 @@ public class CountryRegionUpgradeProcess extends UpgradeProcess {
 	@Override
 	protected void doUpgrade() throws Exception {
 		CompanyCountriesUtil.updateRegionCounter(
-			getConnection(), _counterLocalService);
+			connection, _counterLocalService);
 		CompanyCountriesUtil.updateRegionLocalizationCounter(
-			getConnection(), _counterLocalService);
+			connection, _counterLocalService);
 
 		_updateRegion("FR", "75C", "75", "Paris");
 		_updateRegion("MX", "CMX", "DIF", "Ciudad de México");
