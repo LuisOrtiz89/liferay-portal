@@ -288,7 +288,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 	protected void closeConnections(Connection connection) {
 		Map<Thread, Connection> connectionsMap = _connectionsMaps.get(
-			_getConnectionKey(connection, CompanyThreadLocal.getCompanyId()));
+			_getConnectionKey(CompanyThreadLocal.getCompanyId(), connection));
 
 		_closeConnections(connectionsMap);
 	}
@@ -586,7 +586,7 @@ public abstract class BaseDBProcess implements DBProcess {
 		}
 	}
 
-	private String _getConnectionKey(Object object, long companyId) {
+	private String _getConnectionKey(long companyId, Object object) {
 		return companyId + StringPool.AT + object.hashCode();
 	}
 
@@ -775,7 +775,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 			Map<Thread, Connection> connectionsMap =
 				_connectionsMaps.computeIfAbsent(
-					_getConnectionKey(this, CompanyThreadLocal.getCompanyId()),
+					_getConnectionKey(CompanyThreadLocal.getCompanyId(), this),
 					key -> new ConcurrentHashMap<>());
 
 			return method.invoke(
