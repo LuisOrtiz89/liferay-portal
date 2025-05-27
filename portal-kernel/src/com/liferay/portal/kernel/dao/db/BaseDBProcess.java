@@ -726,7 +726,7 @@ public abstract class BaseDBProcess implements DBProcess {
 				}
 			}
 			finally {
-				closeConnections(innerConnection);
+				innerConnection.close();
 			}
 		}
 	}
@@ -747,10 +747,12 @@ public abstract class BaseDBProcess implements DBProcess {
 
 			if (methodName.equals("close")) {
 				if (_getConnectionsCount() > 0) {
-					for (Map<Thread, Connection> connectionsMap :
-							_connectionsMaps.values()) {
+					for (Map.Entry<String, Map<Thread, Connection>>
+							connectionsEntry : _connectionsMaps.entrySet()) {
 
-						_closeConnections(connectionsMap);
+						if (_keyBelongsThis(connectionsEntry.getKey())) {
+							_closeConnections(connectionsEntry.getValue());
+						}
 					}
 				}
 
@@ -775,13 +777,20 @@ public abstract class BaseDBProcess implements DBProcess {
 		private int _getConnectionsCount() {
 			int connectionsCount = 0;
 
-			for (Map<Thread, Connection> connectionsMap :
-					_connectionsMaps.values()) {
+			for (Map.Entry<String, Map<Thread, Connection>> connectionsEntry :
+					_connectionsMaps.entrySet()) {
 
-				connectionsCount += connectionsMap.size();
+				if (_keyBelongsThis(connectionsEntry.getKey())) {
+					connectionsCount += connectionsEntry.getValue(
+					).size();
+				}
 			}
 
 			return connectionsCount;
+		}
+
+		private boolean _keyBelongsThis(String key) {
+			return key.contains(StringPool.AT + hashCode());
 		}
 
 	}
