@@ -14,6 +14,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -290,10 +291,18 @@ public abstract class BaseDBProcess implements DBProcess {
 	}
 
 	protected void closeConnections() {
-		Map<Thread, Connection> connectionsMap = _connectionsMaps.get(
-			CompanyThreadLocal.getCompanyId());
+		if (DBPartition.isPartitionEnabled()) {
+			Map<Thread, Connection> connectionsMap = _connectionsMaps.get(
+				CompanyThreadLocal.getCompanyId());
 
-		_closeConnections(connectionsMap);
+			_closeConnections(connectionsMap);
+
+			return;
+		}
+
+		for (Map<Thread, Connection> connectionMap : _connectionsMaps.values()) {
+			_closeConnections(connectionMap);
+		}
 	}
 
 	protected void closeConnections(Thread thread) {
@@ -799,7 +808,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 	private static final Log _log = LogFactoryUtil.getLog(BaseDBProcess.class);
 
-	private static final Map<Long, Map<Thread, Connection>> _connectionsMaps =
+	private final Map<Long, Map<Thread, Connection>> _connectionsMaps =
 		new ConcurrentHashMap<>();
 	private static final AtomicInteger _fixedThreadPoolSize = new AtomicInteger(
 		0);
@@ -825,7 +834,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 			Map<Thread, Connection> connectionsMap =
 				_connectionsMaps.computeIfAbsent(
-					CompanyThreadLocal.getCompanyId(),
+					DBPartition.isPartitionEnabled() ? CompanyThreadLocal.getCompanyId() : PortalInstancePool.getDefaultCompanyId(),
 					key -> new ConcurrentHashMap<>());
 
 			return method.invoke(
