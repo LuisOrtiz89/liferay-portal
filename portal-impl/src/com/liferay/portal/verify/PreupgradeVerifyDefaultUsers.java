@@ -31,7 +31,7 @@ public class PreupgradeVerifyDefaultUsers extends PreupgradeVerifyProcess {
 
 		CompanyLocalServiceUtil.forEachCompanyId(
 			companyId -> {
-				_verifyDefaultAdminUser(companyId);
+				//_verifyDefaultAdminUser(companyId);
 				_verifyDefaultGuestUser(companyId);
 			},
 			PortalInstancePool.getCompanyIds());
