@@ -5,6 +5,7 @@
 
 package com.liferay.portal.kernel.upgrade.util;
 
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.Arrays;
@@ -22,17 +23,34 @@ public class JakartaUpgradeProcessUtil {
 			String javaxPackage = "javax." + subpackageName;
 
 			value = StringUtil.replace(value, javaxPackage, jakartaPackage);
+			value = StringUtil.replace(
+				value, HtmlUtil.escapeJS(javaxPackage),
+				HtmlUtil.escapeJS(jakartaPackage));
 
 			for (char separator : _SEPARATORS) {
 				value = StringUtil.replace(
 					value, StringUtil.replace(javaxPackage, '.', separator),
 					StringUtil.replace(jakartaPackage, '.', separator));
+
+				value = StringUtil.replace(
+					value,
+					HtmlUtil.escapeJS(
+						StringUtil.replace(javaxPackage, '.', separator)),
+					HtmlUtil.escapeJS(
+						StringUtil.replace(jakartaPackage, '.', separator)));
 			}
 
 			for (Character separator : customSeparators) {
 				value = StringUtil.replace(
 					value, StringUtil.replace(javaxPackage, '.', separator),
 					StringUtil.replace(jakartaPackage, '.', separator));
+
+				value = StringUtil.replace(
+					value,
+					HtmlUtil.escapeJS(
+						StringUtil.replace(javaxPackage, '.', separator)),
+					HtmlUtil.escapeJS(
+						StringUtil.replace(jakartaPackage, '.', separator)));
 			}
 		}
 
@@ -42,12 +60,22 @@ public class JakartaUpgradeProcessUtil {
 
 			value = StringUtil.replace(
 				value, fixupJakartaPackage, fixupJavaxPackage);
+			value = StringUtil.replace(
+				value, HtmlUtil.escapeJS(fixupJakartaPackage),
+				HtmlUtil.escapeJS(fixupJavaxPackage));
 
 			for (char separator : _SEPARATORS) {
 				value = StringUtil.replace(
 					value,
 					StringUtil.replace(fixupJakartaPackage, '.', separator),
 					StringUtil.replace(fixupJavaxPackage, '.', separator));
+				value = StringUtil.replace(
+					value,
+					HtmlUtil.escapeJS(
+						StringUtil.replace(
+							fixupJakartaPackage, '.', separator)),
+					HtmlUtil.escapeJS(
+						StringUtil.replace(fixupJavaxPackage, '.', separator)));
 			}
 
 			for (Character separator : customSeparators) {
@@ -55,6 +83,13 @@ public class JakartaUpgradeProcessUtil {
 					value,
 					StringUtil.replace(fixupJakartaPackage, '.', separator),
 					StringUtil.replace(fixupJavaxPackage, '.', separator));
+				value = StringUtil.replace(
+					value,
+					HtmlUtil.escapeJS(
+						StringUtil.replace(
+							fixupJakartaPackage, '.', separator)),
+					HtmlUtil.escapeJS(
+						StringUtil.replace(fixupJavaxPackage, '.', separator)));
 			}
 		}
 
