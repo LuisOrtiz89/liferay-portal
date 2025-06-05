@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.security.auth.CompanyInheritableThreadLocalCallable;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
@@ -291,18 +292,10 @@ public abstract class BaseDBProcess implements DBProcess {
 	}
 
 	protected void closeConnections() {
-		if (DBPartition.isPartitionEnabled()) {
-			Map<Thread, Connection> connectionsMap = _connectionsMaps.get(
-				CompanyThreadLocal.getCompanyId());
-
-			_closeConnections(connectionsMap);
-
-			return;
-		}
-
-		for (Map<Thread, Connection> connectionMap : _connectionsMaps.values()) {
-			_closeConnections(connectionMap);
-		}
+		_closeConnections(
+			DBPartition.isPartitionEnabled() ?
+				_connectionsMaps.get(CompanyThreadLocal.getCompanyId()) :
+					_connectionsMaps.get(CompanyConstants.SYSTEM));
 	}
 
 	protected void closeConnections(Thread thread) {
@@ -808,10 +801,11 @@ public abstract class BaseDBProcess implements DBProcess {
 
 	private static final Log _log = LogFactoryUtil.getLog(BaseDBProcess.class);
 
-	private final Map<Long, Map<Thread, Connection>> _connectionsMaps =
-		new ConcurrentHashMap<>();
 	private static final AtomicInteger _fixedThreadPoolSize = new AtomicInteger(
 		0);
+
+	private final Map<Long, Map<Thread, Connection>> _connectionsMaps =
+		new ConcurrentHashMap<>();
 
 	private class ConnectionThreadProxyInvocationHandler
 		implements InvocationHandler {
@@ -834,7 +828,9 @@ public abstract class BaseDBProcess implements DBProcess {
 
 			Map<Thread, Connection> connectionsMap =
 				_connectionsMaps.computeIfAbsent(
-					DBPartition.isPartitionEnabled() ? CompanyThreadLocal.getCompanyId() : PortalInstancePool.getDefaultCompanyId(),
+					DBPartition.isPartitionEnabled() ?
+						CompanyThreadLocal.getCompanyId() :
+							CompanyConstants.SYSTEM,
 					key -> new ConcurrentHashMap<>());
 
 			return method.invoke(
