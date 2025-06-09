@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -190,7 +189,7 @@ public class BaseJakartaUpgradeProcessTest extends BaseJakartaUpgradeProcess {
 			Assert.assertEquals(
 				logEntries.toString(), logEntriesSize, logEntries.size());
 
-			AtomicInteger i = new AtomicInteger();
+			int i = 0;
 
 			long[] companyIds = ReflectionTestUtil.invoke(
 				PortalInstancePool.class, "_getCompanyIdsBySQL", null);
@@ -210,7 +209,7 @@ public class BaseJakartaUpgradeProcessTest extends BaseJakartaUpgradeProcess {
 						" has been updated for records with primary keys ",
 						"(mvccVersion, uuid_): "),
 					logEntries.get(
-						i.getAndIncrement()
+						i++
 					).toString());
 
 				_assertLogEntry(
@@ -221,7 +220,7 @@ public class BaseJakartaUpgradeProcessTest extends BaseJakartaUpgradeProcess {
 						" has been updated for records with primary keys ",
 						"(mvccVersion, uuid_): "),
 					logEntries.get(
-						i.getAndIncrement()
+						i++
 					).toString());
 
 				_assertLogEntry(
@@ -232,7 +231,7 @@ public class BaseJakartaUpgradeProcessTest extends BaseJakartaUpgradeProcess {
 						" has been updated for records with primary keys ",
 						"(mvccVersion, uuid_): "),
 					logEntries.get(
-						i.getAndIncrement()
+						i++
 					).toString());
 
 				_assertLogEntry(
@@ -242,7 +241,7 @@ public class BaseJakartaUpgradeProcessTest extends BaseJakartaUpgradeProcess {
 						companyIdMessage,
 						" has not been updated for any record"),
 					logEntries.get(
-						i.getAndIncrement()
+						i++
 					).toString());
 			}
 		}
