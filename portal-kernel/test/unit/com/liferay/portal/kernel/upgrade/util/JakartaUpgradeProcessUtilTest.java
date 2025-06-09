@@ -6,6 +6,7 @@
 package com.liferay.portal.kernel.upgrade.util;
 
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HtmlUtil;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -88,6 +89,17 @@ public class JakartaUpgradeProcessUtilTest {
 				"javax@annotation@processing@Processor"
 			).build(),
 			new char[] {'@', '$'});
+	}
+
+	@Test
+	public void testReplaceWithJSCode() {
+		_testReplace(
+			HashMapBuilder.put(
+				HtmlUtil.escapeJS(
+					"onclick=openWindow(\"javax.portlet.Action\")"),
+				HtmlUtil.escapeJS(
+					"onclick=openWindow(\"jakarta.portlet.Action\")")
+			).build());
 	}
 
 	@Test
