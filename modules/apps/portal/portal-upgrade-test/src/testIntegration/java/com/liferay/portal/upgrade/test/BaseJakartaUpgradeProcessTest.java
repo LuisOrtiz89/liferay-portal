@@ -110,12 +110,12 @@ public class BaseJakartaUpgradeProcessTest extends BaseJakartaUpgradeProcess {
 	}
 
 	private void _assertLogEntry(
-		String expectedMessage, Set<String> expectedKeys, String logEntry) {
+		Set<String> expectedKeys, String expectedMessage, String message) {
 
-		Assert.assertTrue(logEntry, logEntry.contains(expectedMessage));
+		Assert.assertTrue(message, message.contains(expectedMessage));
 
-		for (String key : expectedKeys) {
-			Assert.assertTrue(logEntry, logEntry.contains(key));
+		for (String expectedKey : expectedKeys) {
+			Assert.assertTrue(message, message.contains(expectedKey));
 		}
 	}
 
@@ -203,37 +203,44 @@ public class BaseJakartaUpgradeProcessTest extends BaseJakartaUpgradeProcess {
 				}
 
 				_assertLogEntry(
-					StringBundler.concat(
-						"Table/column ", _TABLE_NAME, "/", _COLUMN_NAME_1,
-						companyIdMessage, " has been upgraded for next IDs:"),
 					new HashSet<>(Arrays.asList("(0, uuid1)", "(1, uuid2)")),
+					StringBundler.concat(
+						"Table ", _TABLE_NAME, " column ", _COLUMN_NAME_1,
+						companyIdMessage,
+						" has been updated for records with primary keys ",
+						"(mvccVersion, uuid_): "),
 					logEntries.get(
 						i.getAndIncrement()
 					).toString());
 
 				_assertLogEntry(
-					StringBundler.concat(
-						"Table/column ", _TABLE_NAME, "/", _COLUMN_NAME_2,
-						companyIdMessage, " has been upgraded for next IDs: "),
 					new HashSet<>(Arrays.asList("(0, uuid1)", "(1, uuid2)")),
+					StringBundler.concat(
+						"Table ", _TABLE_NAME, " column ", _COLUMN_NAME_2,
+						companyIdMessage,
+						" has been updated for records with primary keys ",
+						"(mvccVersion, uuid_): "),
 					logEntries.get(
 						i.getAndIncrement()
 					).toString());
 
 				_assertLogEntry(
-					StringBundler.concat(
-						"Table/column ", _TABLE_NAME, "/", _COLUMN_NAME_3,
-						companyIdMessage, " has been upgraded for next IDs: "),
 					new HashSet<>(Arrays.asList("(0, uuid1)")),
+					StringBundler.concat(
+						"Table ", _TABLE_NAME, " column ", _COLUMN_NAME_3,
+						companyIdMessage,
+						" has been updated for records with primary keys ",
+						"(mvccVersion, uuid_): "),
 					logEntries.get(
 						i.getAndIncrement()
 					).toString());
 
 				_assertLogEntry(
-					StringBundler.concat(
-						"Table/column ", _TABLE_NAME, "/", _COLUMN_NAME_4,
-						companyIdMessage, " has not been upgraded for any ID"),
 					new HashSet<>(),
+					StringBundler.concat(
+						"Table ", _TABLE_NAME, " column ", _COLUMN_NAME_4,
+						companyIdMessage,
+						" has not been updated for any record"),
 					logEntries.get(
 						i.getAndIncrement()
 					).toString());
