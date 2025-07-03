@@ -10,6 +10,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.datacleanup.DataCleanupPreupgradeProcess;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -41,6 +42,7 @@ public class DataCleanupPreupgradeProcessSuite {
 		DataCleanupPreupgradeProcessSuite.class);
 
 	private final List<DataCleanupPreupgradeProcess>
-		_dataCleanupPreupgradeProcesses = new ArrayList<>();
+		_dataCleanupPreupgradeProcesses = new ArrayList<>(
+			Arrays.asList(new CompanyIdDataCleanupPreupgradeProcess()));
 
 }
