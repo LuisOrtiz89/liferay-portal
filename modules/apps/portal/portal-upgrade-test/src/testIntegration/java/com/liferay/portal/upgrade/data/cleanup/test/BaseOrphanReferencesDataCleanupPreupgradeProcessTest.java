@@ -11,22 +11,18 @@ import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
-import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.data.cleanup.BaseOrphanReferencesDataCleanupPreupgradeProcess;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
-import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import java.sql.Connection;
 
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -34,12 +30,8 @@ import org.junit.runner.RunWith;
  * @author Luis Ortiz
  */
 @RunWith(Arquillian.class)
-public class BaseOrphanReferencesDataCleanupPreupgradeProcessTest {
-
-	@ClassRule
-	@Rule
-	public static final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
+public class BaseOrphanReferencesDataCleanupPreupgradeProcessTest
+	extends BaseOrphanReferencesDataCleanupPreupgradeProcessTestCase {
 
 	@Test
 	public void testUpgrade() throws Exception {
