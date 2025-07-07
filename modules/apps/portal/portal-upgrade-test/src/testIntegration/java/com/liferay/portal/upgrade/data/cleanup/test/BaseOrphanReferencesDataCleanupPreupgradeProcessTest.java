@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-package com.liferay.portal.upgrade.datacleanup.test;
+package com.liferay.portal.upgrade.data.cleanup.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.string.StringBundler;
@@ -13,12 +13,12 @@ import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
-import com.liferay.portal.kernel.upgrade.datacleanup.BaseOrphanReferencesDataCleanupPreupgradeProcess;
+import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.upgrade.data.cleanup.BaseOrphanReferencesDataCleanupPreupgradeProcess;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.upgrade.datacleanup.CompanyIdDataCleanupPreupgradeProcess;
 
 import java.sql.Connection;
 
@@ -34,8 +34,7 @@ import org.junit.runner.RunWith;
  * @author Luis Ortiz
  */
 @RunWith(Arquillian.class)
-public class CompanyIdDataCleanupPreupgradeProcessTest
-	extends CompanyIdDataCleanupPreupgradeProcess {
+public class BaseOrphanReferencesDataCleanupPreupgradeProcessTest {
 
 	@ClassRule
 	@Rule
@@ -59,7 +58,11 @@ public class CompanyIdDataCleanupPreupgradeProcessTest
 			_insertEntry(connection, db, companyId1);
 			_insertEntry(connection, db, companyId2);
 
-			upgrade();
+			UpgradeProcess upgradeProcess =
+				new BaseOrphanReferencesDataCleanupPreupgradeProcess(
+					"companyId", "Company");
+
+			upgradeProcess.upgrade();
 
 			List<LogEntry> logEntries = logCapture.getLogEntries();
 
