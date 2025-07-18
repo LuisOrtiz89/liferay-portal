@@ -26,11 +26,11 @@ public class GroupDataCleanupPreupgradeProcess
 				"groupId", "Group_"));
 		upgrade(
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
-				"ownerId = " + PortletKeys.PREFS_OWNER_TYPE_GROUP, "ownerId",
+				"ownerType = " + PortletKeys.PREFS_OWNER_TYPE_GROUP, "ownerId",
 				"PortalPreferences", "groupId", "Group_"));
 		upgrade(
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
-				"ownerId = " + PortletKeys.PREFS_OWNER_TYPE_GROUP, "ownerId",
+				"ownerType = " + PortletKeys.PREFS_OWNER_TYPE_GROUP, "ownerId",
 				"PortletPreferences", "groupId", "Group_"));
 		upgrade(
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
