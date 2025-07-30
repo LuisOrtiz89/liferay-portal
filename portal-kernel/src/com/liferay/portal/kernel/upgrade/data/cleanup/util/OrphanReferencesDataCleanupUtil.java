@@ -75,14 +75,16 @@ public class OrphanReferencesDataCleanupUtil {
 			}
 
 			while (resultSet.next()) {
+				long count = resultSet.getLong(2);
+
 				_log.info(
 					StringBundler.concat(
-						String.valueOf(resultSet.getLong(2)),
-						" orphan entries from table ", sourceTableName,
-						" have been deleted because value ",
+						"Table: ", sourceTableName, ", ", String.valueOf(count),
+						(count == 1) ? " entry " : " entries ",
+						"deleted. Reason: ", sourceColumnName, StringPool.SPACE,
 						String.valueOf(resultSet.getObject(1)),
-						" was not found in the origin table ", targetTableName,
-						" and column ", targetColumnName));
+						" was not found in ", targetTableName,
+						StringPool.PERIOD, targetColumnName));
 			}
 		}
 	}
@@ -132,6 +134,7 @@ public class OrphanReferencesDataCleanupUtil {
 
 			while (resultSet.next()) {
 				long companyId = resultSet.getLong(2);
+				long count = resultSet.getLong(3);
 				long userId = resultSet.getLong(1);
 
 				if (_isPartOfUniqueIndex(
@@ -145,13 +148,13 @@ public class OrphanReferencesDataCleanupUtil {
 					if (_log.isInfoEnabled()) {
 						_log.info(
 							StringBundler.concat(
-								String.valueOf(resultSet.getLong(3)),
-								" orphan entries from table ", sourceTableName,
-								" have been deleted because value ",
-								String.valueOf(userId),
-								" was not found in the origin table ",
-								targetTableName, " and column ",
-								targetColumnName));
+								"Table: ", sourceTableName, ", ",
+								String.valueOf(count),
+								(count == 1) ? " entry " : " entries ",
+								"deleted. Reason: ", sourceColumnName,
+								StringPool.SPACE, String.valueOf(userId),
+								" was not found in ", targetTableName,
+								StringPool.PERIOD, targetColumnName));
 					}
 				}
 				else {
@@ -167,14 +170,15 @@ public class OrphanReferencesDataCleanupUtil {
 					if (_log.isInfoEnabled()) {
 						_log.info(
 							StringBundler.concat(
-								String.valueOf(resultSet.getLong(3)),
-								" orphan entries from table ", sourceTableName,
-								" have been updated to value ",
-								String.valueOf(newUserId), " because value ",
-								String.valueOf(userId),
-								" was not found in the origin table ",
-								targetTableName, " and column ",
-								targetColumnName));
+								"Table: ", sourceTableName, ", ",
+								String.valueOf(count),
+								(count == 1) ? " entry " : " entries ",
+								"updated column ", sourceColumnName,
+								" to value ", String.valueOf(newUserId),
+								". Reason: ", sourceColumnName,
+								StringPool.SPACE, String.valueOf(userId),
+								" was not found in ", targetTableName,
+								StringPool.PERIOD, targetColumnName));
 					}
 				}
 			}
