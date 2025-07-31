@@ -60,19 +60,23 @@ public class AllTablesOrphanReferencesDataCleanupPreupgradeProcessTest
 			Assert.assertTrue(
 				logMessages.contains(
 					getExpectedMessage(
-						2, "Image", "companyId", "Company", _companyId1)));
+						2, "companyId", "Image", "companyId", "Company",
+						_companyId1)));
 			Assert.assertTrue(
 				logMessages.contains(
 					getExpectedMessage(
-						1, "Image", "companyId", "Company", _companyId2)));
+						1, "companyId", "Image", "companyId", "Company",
+						_companyId2)));
 			Assert.assertTrue(
 				logMessages.contains(
 					getExpectedMessage(
-						2, "Portlet", "companyId", "Company", _companyId1)));
+						2, "companyId", "Portlet", "companyId", "Company",
+						_companyId1)));
 			Assert.assertTrue(
 				logMessages.contains(
 					getExpectedMessage(
-						1, "Portlet", "companyId", "Company", _companyId2)));
+						1, "companyId", "Portlet", "companyId", "Company",
+						_companyId2)));
 		};
 	}
 

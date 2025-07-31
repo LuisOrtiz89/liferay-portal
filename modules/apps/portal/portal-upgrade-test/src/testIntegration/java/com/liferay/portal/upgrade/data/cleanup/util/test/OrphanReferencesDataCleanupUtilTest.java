@@ -9,6 +9,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -94,7 +95,8 @@ public class OrphanReferencesDataCleanupUtilTest {
 
 				Assert.assertEquals(
 					_getCleanUpTableExpectedMessage(
-						2, _dbInspector.normalizeName("Portlet"),
+						2, _dbInspector.normalizeName("companyId"),
+						_dbInspector.normalizeName("Portlet"),
 						_dbInspector.normalizeName("companyId"),
 						_dbInspector.normalizeName("Company"), companyId),
 					logEntry.getMessage());
@@ -138,7 +140,8 @@ public class OrphanReferencesDataCleanupUtilTest {
 
 				Assert.assertEquals(
 					_getCleanUpTableExpectedMessage(
-						2, _dbInspector.normalizeName("PortletPreferences"),
+						2, _dbInspector.normalizeName("ownerId"),
+						_dbInspector.normalizeName("PortletPreferences"),
 						_dbInspector.normalizeName("companyId"),
 						_dbInspector.normalizeName("Company"), companyId),
 					logEntry.getMessage());
@@ -195,8 +198,8 @@ public class OrphanReferencesDataCleanupUtilTest {
 
 				Assert.assertEquals(
 					_getUserDeletedExpectedMessage(
-						1, _dbInspector.normalizeName("Users_Roles"),
-						_dbInspector.normalizeName("userId"),
+						_dbInspector.normalizeName("userId"), 1,
+						_dbInspector.normalizeName("Users_Roles"),
 						_dbInspector.normalizeName("User_"), userId),
 					logEntry.getMessage());
 			},
@@ -255,9 +258,9 @@ public class OrphanReferencesDataCleanupUtilTest {
 
 				Assert.assertEquals(
 					_getUserUpdatedExpectedMessage(
-						1, adminUser.getUserId(),
+						_dbInspector.normalizeName("userId"), 1,
+						adminUser.getUserId(),
 						_dbInspector.normalizeName("Layout"),
-						_dbInspector.normalizeName("userId"),
 						_dbInspector.normalizeName("User_"), userId),
 					logEntry.getMessage());
 			},
@@ -275,45 +278,46 @@ public class OrphanReferencesDataCleanupUtilTest {
 	}
 
 	private String _getCleanUpTableExpectedMessage(
-			long count, String sourceTableName, String targetColumn,
-			String targetTable, long targetValue)
+			long count, String sourceColumnName, String sourceTableName,
+			String targetColumnName, String targetTableName, long targetValue)
 		throws Exception {
 
 		return StringBundler.concat(
-			count, " orphan entries from table ",
-			_dbInspector.normalizeName(sourceTableName),
-			" have been deleted because value ", targetValue,
-			" was not found in the origin table ",
-			_dbInspector.normalizeName(targetTable), " and column ",
-			_dbInspector.normalizeName(targetColumn));
+			"Table: ", _dbInspector.normalizeName(sourceTableName), ", ", count,
+			(count == 1) ? " entry " : " entries ", "deleted. Reason: ",
+			_dbInspector.normalizeName(sourceColumnName), StringPool.SPACE,
+			targetValue, " was not found in ",
+			_dbInspector.normalizeName(targetTableName), StringPool.PERIOD,
+			_dbInspector.normalizeName(targetColumnName));
 	}
 
 	private String _getUserDeletedExpectedMessage(
-			long count, String sourceTableName, String targetColumn,
-			String targetTable, long targetValue)
+			String columnName, long count, String sourceTableName,
+			String targetTableName, long targetValue)
 		throws Exception {
 
 		return StringBundler.concat(
-			count, " orphan entries from table ",
-			_dbInspector.normalizeName(sourceTableName),
-			" have been deleted because value ", targetValue,
-			" was not found in the origin table ",
-			_dbInspector.normalizeName(targetTable), " and column ",
-			_dbInspector.normalizeName(targetColumn));
+			"Table: ", _dbInspector.normalizeName(sourceTableName), ", ", count,
+			(count == 1) ? " entry " : " entries ", "deleted. Reason: ",
+			_dbInspector.normalizeName(columnName), StringPool.SPACE,
+			targetValue, " was not found in ",
+			_dbInspector.normalizeName(targetTableName), StringPool.PERIOD,
+			_dbInspector.normalizeName(columnName));
 	}
 
 	private String _getUserUpdatedExpectedMessage(
-			long count, long newValue, String sourceTableName,
-			String targetColumn, String targetTable, long targetValue)
+			String columnName, long count, long newValue,
+			String sourceTableName, String targetTableName, long targetValue)
 		throws Exception {
 
 		return StringBundler.concat(
-			count, " orphan entries from table ",
-			_dbInspector.normalizeName(sourceTableName),
-			" have been updated to value ", newValue, " because value ",
-			targetValue, " was not found in the origin table ",
-			_dbInspector.normalizeName(targetTable), " and column ",
-			_dbInspector.normalizeName(targetColumn));
+			"Table: ", _dbInspector.normalizeName(sourceTableName), ", ", count,
+			(count == 1) ? " entry " : " entries ", "updated column ",
+			_dbInspector.normalizeName(columnName), " to value ", newValue,
+			". Reason: ", _dbInspector.normalizeName(columnName),
+			StringPool.SPACE, targetValue, " was not found in ",
+			_dbInspector.normalizeName(targetTableName), StringPool.PERIOD,
+			_dbInspector.normalizeName(columnName));
 	}
 
 	private void _testCleanUpTables(
