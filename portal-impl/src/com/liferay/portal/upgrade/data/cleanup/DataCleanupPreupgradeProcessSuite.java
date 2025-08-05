@@ -88,6 +88,7 @@ public class DataCleanupPreupgradeProcessSuite {
 
 			//
 
+			new AnalyticsMessageDataCleanupPreupgradeProcess(),
 			new DDMStructureDataCleanupPreupgradeProcess(),
 			new DLFileEntryDataCleanupPreupgradeProcess(),
 			new QuartzJobDetailsDataCleanupPreupgradeProcess());

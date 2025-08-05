@@ -15,8 +15,8 @@ import java.sql.PreparedStatement;
 /**
  * @author Luis Ortiz
  */
-public class AnalyticsMessageDataCleanupPreupgradeProcess extends
-	DataCleanupPreupgradeProcess {
+public class AnalyticsMessageDataCleanupPreupgradeProcess
+	extends DataCleanupPreupgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
@@ -27,11 +27,11 @@ public class AnalyticsMessageDataCleanupPreupgradeProcess extends
 		}
 
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
-			"truncate table AnalyticsMessage")) {
+				"truncate table AnalyticsMessage")) {
 
 			int deletedRowCount = preparedStatement.executeUpdate();
 
-			if (deletedRowCount > 0 && _log.isInfoEnabled()) {
+			if ((deletedRowCount > 0) && _log.isInfoEnabled()) {
 				_log.info(
 					"Deleted content of table " +
 						dbInspector.normalizeName("AnalyticsMessage"));
@@ -41,4 +41,5 @@ public class AnalyticsMessageDataCleanupPreupgradeProcess extends
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		AnalyticsMessageDataCleanupPreupgradeProcess.class);
+
 }
