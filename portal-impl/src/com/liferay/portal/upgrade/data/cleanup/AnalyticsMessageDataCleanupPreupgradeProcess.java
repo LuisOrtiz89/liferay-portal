@@ -11,6 +11,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.data.cleanup.DataCleanupPreupgradeProcess;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 /**
  * @author Luis Ortiz
@@ -26,15 +27,24 @@ public class AnalyticsMessageDataCleanupPreupgradeProcess
 			return;
 		}
 
-		try (PreparedStatement preparedStatement = connection.prepareStatement(
-				"truncate table AnalyticsMessage")) {
+		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+				"select count(1) from AnalyticsMessage");
+			PreparedStatement preparedStatement2 = connection.prepareStatement(
+				"truncate table AnalyticsMessage");
+			ResultSet resultSet = preparedStatement1.executeQuery()) {
 
-			int deletedRowCount = preparedStatement.executeUpdate();
+			resultSet.next();
 
-			if ((deletedRowCount > 0) && _log.isInfoEnabled()) {
-				_log.info(
-					"Deleted content of table " +
-						dbInspector.normalizeName("AnalyticsMessage"));
+			int rowCount = resultSet.getInt(1);
+
+			if (rowCount > 0) {
+				preparedStatement2.executeUpdate();
+
+				if (_log.isInfoEnabled()) {
+					_log.info(
+						"Deleted content of table " +
+							dbInspector.normalizeName("AnalyticsMessage"));
+				}
 			}
 		}
 	}
