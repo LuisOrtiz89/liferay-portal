@@ -5,7 +5,10 @@
 
 package com.liferay.portal.upgrade.data.cleanup;
 
+import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.data.cleanup.DataCleanupPreupgradeProcess;
@@ -26,8 +29,16 @@ public class AnalyticsMessageDataCleanupPreupgradeProcess
 			return;
 		}
 
+		String sql = "truncate table AnalyticsMessage";
+
+		DB db = DBManagerUtil.getDB();
+
+		if (db.getDBType() == DBType.DB2) {
+			sql += " immediate";
+		}
+
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
-				"truncate table AnalyticsMessage")) {
+				sql)) {
 
 			int rowCount = preparedStatement.executeUpdate();
 
