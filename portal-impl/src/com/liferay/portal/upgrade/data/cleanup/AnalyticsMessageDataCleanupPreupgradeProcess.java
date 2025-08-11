@@ -27,7 +27,7 @@ public class AnalyticsMessageDataCleanupPreupgradeProcess
 		}
 
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
-				"delete from AnalyticsMessage")) {
+				"truncate table AnalyticsMessage")) {
 
 			int rowCount = preparedStatement.executeUpdate();
 
