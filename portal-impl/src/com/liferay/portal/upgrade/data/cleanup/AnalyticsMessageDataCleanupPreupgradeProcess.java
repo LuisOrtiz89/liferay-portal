@@ -31,12 +31,10 @@ public class AnalyticsMessageDataCleanupPreupgradeProcess
 
 			int rowCount = preparedStatement.executeUpdate();
 
-			if (rowCount > 0) {
-				if (_log.isInfoEnabled()) {
-					_log.info(
-						"Deleted content of table " +
-							dbInspector.normalizeName("AnalyticsMessage"));
-				}
+			if (_log.isInfoEnabled() && (rowCount > 0)) {
+				_log.info(
+					"Deleted content of table " +
+						dbInspector.normalizeName("AnalyticsMessage"));
 			}
 		}
 	}
