@@ -80,7 +80,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.WriterAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.apache.logging.log4j.message.SimpleMessage;
@@ -274,6 +277,16 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	public void testDataCleanupMessages() throws Exception {
 		Thread currentThread = Thread.currentThread();
 
+		LoggerContext loggerContext = (LoggerContext)LogManager.getContext(
+			false);
+
+		Configuration configuration = loggerContext.getConfiguration();
+
+		Appender appender = configuration.getAppender("CONSOLE");
+		LoggerConfig loggerConfig = configuration.getRootLogger();
+
+		loggerConfig.removeAppender(appender.getName());
+
 		ClassLoader originalclassLoader =
 			ReflectionTestUtil.getAndSetFieldValue(
 				PortalClassLoaderUtil.class, "_classLoader",
@@ -358,6 +371,10 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 					dbInspector.normalizeName("companyId")));
 		}
 		finally {
+			loggerConfig.addAppender(appender, null, null);
+
+			loggerContext.updateLoggers();
+
 			_db.runSQL(
 				"create unique index IX_D1846D13 on PortalPreferences " +
 					"(ownerType, ownerId)");
