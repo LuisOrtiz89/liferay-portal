@@ -92,7 +92,9 @@ public class DataCleanupPreupgradeProcessSuite {
 
 			// Company, then user, then group, and then the rest for optimal
 			// performance since cleaning companies will remove its users,
-			// groups, and related data
+			// groups, and related data. As DDMStructure and DLFileEntry are
+			// executed in the rest, we need to run at the very end their
+			// specific clean up processes to remove the related data
 
 			new CompanyDataCleanupPreupgradeProcess(),
 
@@ -110,6 +112,10 @@ public class DataCleanupPreupgradeProcessSuite {
 			new ConfigurationDataCleanupPreupgradeProcess(),
 			new DDMStructureDataCleanupPreupgradeProcess(),
 			new DLFileEntryDataCleanupPreupgradeProcess(),
-			new QuartzJobDetailsDataCleanupPreupgradeProcess());
+			new QuartzJobDetailsDataCleanupPreupgradeProcess(),
+
+			//
+
+			new JournalDataCleanupPreupgradeProcess());
 
 }
