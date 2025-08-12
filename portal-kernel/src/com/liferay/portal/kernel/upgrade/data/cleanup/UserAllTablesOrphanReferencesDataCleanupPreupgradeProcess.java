@@ -36,7 +36,7 @@ public class UserAllTablesOrphanReferencesDataCleanupPreupgradeProcess
 	@Override
 	protected void cleanUp(
 			String sourceColumnName, String sourceTableName,
-			String targetColumnName, String targetTableName)
+			String[] targetColumnNames, String targetTableName)
 		throws Exception {
 
 		List<String> excludedTableNames =
@@ -59,7 +59,7 @@ public class UserAllTablesOrphanReferencesDataCleanupPreupgradeProcess
 					sourceTableName,
 					OrphanReferencesDataCleanupUtil.getWhereClause(
 						connection, null, sourceColumnName, sourceTableName,
-						targetColumnName, targetTableName),
+						targetColumnNames, targetTableName),
 					" group by ", sourceColumnName, ", companyId"));
 			PreparedStatement preparedStatement2 = connection.prepareStatement(
 				StringBundler.concat(
@@ -90,8 +90,10 @@ public class UserAllTablesOrphanReferencesDataCleanupPreupgradeProcess
 								" orphan entries from table ", sourceTableName,
 								" have been deleted because value ", userId,
 								" was not found in the origin table ",
-								targetTableName, " and column ",
-								targetColumnName));
+								targetTableName, " and ",
+								(targetColumnNames.length == 1) ? "column " :
+									"columns ",
+								String.join(", ", targetColumnNames)));
 					}
 
 					continue;
@@ -113,7 +115,10 @@ public class UserAllTablesOrphanReferencesDataCleanupPreupgradeProcess
 							sourceTableName, " have been updated to value ",
 							newUserId, " because value ", userId,
 							" was not found in the origin table ",
-							targetTableName, " and column ", targetColumnName));
+							targetTableName, " and ",
+							(targetColumnNames.length == 1) ? "column " :
+								"columns ",
+							String.join(", ", targetColumnNames)));
 				}
 			}
 		}
