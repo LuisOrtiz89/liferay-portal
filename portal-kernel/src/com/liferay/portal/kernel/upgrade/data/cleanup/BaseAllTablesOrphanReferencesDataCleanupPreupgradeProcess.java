@@ -21,13 +21,24 @@ public abstract class BaseAllTablesOrphanReferencesDataCleanupPreupgradeProcess
 	public BaseAllTablesOrphanReferencesDataCleanupPreupgradeProcess(
 		String targetColumnName, String targetTableName) {
 
-		_targetColumnName = targetColumnName;
+		_targetTableName = targetTableName;
+
+		_sourceColumnName = targetColumnName;
+		_targetColumnNames = new String[] {targetColumnName};
+	}
+
+	public BaseAllTablesOrphanReferencesDataCleanupPreupgradeProcess(
+		String sourceColumnName, String[] targetColumnNames,
+		String targetTableName) {
+
+		_sourceColumnName = sourceColumnName;
+		_targetColumnNames = targetColumnNames;
 		_targetTableName = targetTableName;
 	}
 
 	protected abstract void cleanUp(
 			String sourceColumnName, String sourceTableName,
-			String targetColumnName, String targetTableName)
+			String[] targetColumnNames, String targetTableName)
 		throws Exception;
 
 	@Override
@@ -44,30 +55,37 @@ public abstract class BaseAllTablesOrphanReferencesDataCleanupPreupgradeProcess
 			return;
 		}
 
-		String targetColumnName = dbInspector.normalizeName(_targetColumnName);
+		String[] targetColumnNames = new String[_targetColumnNames.length];
 
-		if (!dbInspector.hasColumn(targetTableName, targetColumnName)) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(
-					StringBundler.concat(
-						"Table ", targetTableName, " does not have column ",
-						targetColumnName));
+		for (int i = 0; i < _targetColumnNames.length; i++) {
+			targetColumnNames[i] = dbInspector.normalizeName(
+				_targetColumnNames[i]);
+
+			if (!dbInspector.hasColumn(targetTableName, targetColumnNames[i])) {
+				if (_log.isDebugEnabled()) {
+					_log.debug(
+						StringBundler.concat(
+							"Table ", targetTableName, " does not have column ",
+							targetColumnNames[i]));
+				}
+
+				return;
 			}
-
-			return;
 		}
 
 		List<String> tableNames = dbInspector.getTableNames(null);
 
 		tableNames.remove(targetTableName);
 
+		String sourceColumnName = dbInspector.normalizeName(_sourceColumnName);
+
 		for (String sourceTableName : tableNames) {
-			if (!dbInspector.hasColumn(sourceTableName, targetColumnName)) {
+			if (!dbInspector.hasColumn(sourceTableName, sourceColumnName)) {
 				continue;
 			}
 
 			cleanUp(
-				targetColumnName, sourceTableName, targetColumnName,
+				sourceColumnName, sourceTableName, targetColumnNames,
 				targetTableName);
 		}
 	}
@@ -75,7 +93,8 @@ public abstract class BaseAllTablesOrphanReferencesDataCleanupPreupgradeProcess
 	private static final Log _log = LogFactoryUtil.getLog(
 		BaseAllTablesOrphanReferencesDataCleanupPreupgradeProcess.class);
 
-	private final String _targetColumnName;
+	private final String _sourceColumnName;
+	private final String[] _targetColumnNames;
 	private final String _targetTableName;
 
 }
