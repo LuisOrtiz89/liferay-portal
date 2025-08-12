@@ -81,7 +81,7 @@ public class TableOrphanReferencesDataCleanupPreupgradeProcess
 
 		OrphanReferencesDataCleanupUtil.cleanUpTable(
 			connection, _sourceAdditionalWhereClause, sourceColumnName,
-			sourceTableName, targetColumnName, targetTableName);
+			sourceTableName, new String[] {targetColumnName}, targetTableName);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
