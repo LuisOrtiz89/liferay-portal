@@ -34,11 +34,32 @@ public class JournalDataCleanupPreupgradeProcess
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
 				null, "articleId", "JournalArticleResource", "articleId",
 				"JournalArticle"));
+
+		// Upgrade from 7.4
+
 		upgrade(
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
 				"classNameId = (select classNameId from ClassName_ where " +
 					"value = 'com.liferay.journal.model.JournalArticle')",
 				"structureId", "DDMStructure", "DDMStructureId",
+				"JournalArticle"));
+
+		// Upgrade from 7.0 to 7.3
+
+		upgrade(
+			new TableOrphanReferencesDataCleanupPreupgradeProcess(
+				"classNameId = (select classNameId from ClassName_ where " +
+					"value = 'com.liferay.journal.model.JournalArticle')",
+				"structureKey", "DDMStructure", "DDMStructureKey",
+				"JournalArticle"));
+
+		// Upgrade from 6.2
+
+		upgrade(
+			new TableOrphanReferencesDataCleanupPreupgradeProcess(
+				"classNameId = (select classNameId from ClassName_ where " +
+					"value = 'com.liferay.journal.model.JournalArticle')",
+				"structureKey", "DDMStructure", "structureId",
 				"JournalArticle"));
 
 		// Then delete all JournalFeed related data
