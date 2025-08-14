@@ -43,7 +43,8 @@ public class JournalDataCleanupPreupgradeProcess
 		upgrade(
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
 				"classNameId = (select classNameId from ClassName_ where " +
-					"value = 'com.liferay.journal.model.JournalArticle') and structureKey != 'BASIC-WEB-CONTENT'",
+					"value = 'com.liferay.journal.model.JournalArticle') and " +
+						"structureKey != 'BASIC-WEB-CONTENT'",
 				"structureId", "DDMStructure", "DDMStructureId",
 				"JournalArticle"));
 
@@ -52,7 +53,8 @@ public class JournalDataCleanupPreupgradeProcess
 		upgrade(
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
 				"classNameId = (select classNameId from ClassName_ where " +
-					"value = 'com.liferay.journal.model.JournalArticle') and structureKey != 'BASIC-WEB-CONTENT'",
+					"value = 'com.liferay.journal.model.JournalArticle') and " +
+						"structureKey != 'BASIC-WEB-CONTENT'",
 				"structureKey", "DDMStructure", "DDMStructureKey",
 				"JournalArticle"));
 
@@ -61,7 +63,8 @@ public class JournalDataCleanupPreupgradeProcess
 		upgrade(
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
 				"classNameId = (select classNameId from ClassName_ where " +
-					"value = 'com.liferay.journal.model.JournalArticle') and structureKey != 'BASIC-WEB-CONTENT'",
+					"value = 'com.liferay.journal.model.JournalArticle') and " +
+						"structureKey != 'BASIC-WEB-CONTENT'",
 				"structureKey", "DDMStructure", "structureId",
 				"JournalArticle"));
 
