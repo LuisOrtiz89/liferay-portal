@@ -147,6 +147,16 @@ public class JournalDataCleanupPreupgradeProcess
 			new TableOrphanReferencesDataCleanupPreupgradeProcess(
 				null, "structureVersionId", "DDMStructureLayout",
 				"structureVersionId", "DDMStructureVersion"));
+
+		upgrade(
+			new TableOrphanReferencesDataCleanupPreupgradeProcess(
+				null, "tableId", "ExpandoColumn", "tableId", "ExpandoTable"));
+		upgrade(
+			new TableOrphanReferencesDataCleanupPreupgradeProcess(
+				null, "tableId", "ExpandoRow", "tableId", "ExpandoTable"));
+		upgrade(
+			new TableOrphanReferencesDataCleanupPreupgradeProcess(
+				null, "tableId", "ExpandoValue", "tableId", "ExpandoTable"));
 	}
 
 }
