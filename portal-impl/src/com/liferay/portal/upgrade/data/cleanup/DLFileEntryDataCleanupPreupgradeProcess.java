@@ -5,10 +5,15 @@
 
 package com.liferay.portal.upgrade.data.cleanup;
 
+import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.upgrade.data.cleanup.DataCleanupPreupgradeProcess;
+import com.liferay.portal.kernel.upgrade.data.cleanup.DefaultAllTablesOrphanReferencesDataCleanupPreupgradeProcess;
+import com.liferay.portal.kernel.upgrade.data.cleanup.FilterableAllTablesOrphanReferencesDataCleanupPreupgradeProcess;
+import com.liferay.portal.kernel.upgrade.data.cleanup.TableOrphanReferencesDataCleanupPreupgradeProcess;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,6 +62,23 @@ public class DLFileEntryDataCleanupPreupgradeProcess
 				}
 
 			});
+
+		upgrade(
+			new FilterableAllTablesOrphanReferencesDataCleanupPreupgradeProcess(
+				StringBundler.concat(
+					"classNameId = (select classNameId from ClassName_ where ",
+					"value = '", FileEntry.class.getName(), "')"),
+				new String[] {"classNameId"}, "classPK",
+				new String[] {"fileEntryId"}, "DLFileEntry"));
+
+		upgrade(
+			new DefaultAllTablesOrphanReferencesDataCleanupPreupgradeProcess(
+				"fileEntryId", "DLFileEntry"));
+
+		upgrade(
+			new TableOrphanReferencesDataCleanupPreupgradeProcess(
+				"name = '" + DLFileEntry.class.getName() + "'", "primKeyId",
+				"ResourcePermission", "fileEntryId", "DLFileEntry"));
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
