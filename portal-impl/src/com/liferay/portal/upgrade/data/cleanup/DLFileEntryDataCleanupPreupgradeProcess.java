@@ -21,30 +21,42 @@ public class DLFileEntryDataCleanupPreupgradeProcess
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
-				"select fileEntryId, name from DLFileEntry where name is " +
-					"null or name = ''");
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
-				"delete from DLFileEntry where name is null or name = ''");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+		upgrade(
+			new DataCleanupPreupgradeProcess() {
 
-			preparedStatement2.execute();
+				@Override
+				protected void doUpgrade() throws Exception {
+					try (PreparedStatement preparedStatement1 =
+							connection.prepareStatement(
+								"select fileEntryId, name from DLFileEntry " +
+									"where name is null or name = ''");
+						PreparedStatement preparedStatement2 =
+							connection.prepareStatement(
+								"delete from DLFileEntry where name is null " +
+									"or name = ''");
+						ResultSet resultSet =
+							preparedStatement1.executeQuery()) {
 
-			if (!_log.isInfoEnabled()) {
-				return;
-			}
+						preparedStatement2.execute();
 
-			while (resultSet.next()) {
-				long fileEntryId = resultSet.getLong("fileEntryId");
-				String name = resultSet.getString("name");
+						if (!_log.isInfoEnabled()) {
+							return;
+						}
 
-				_log.info(
-					StringBundler.concat(
-						"Deleted document library file entry ", fileEntryId,
-						" because its name was ",
-						(name == null) ? "null" : "empty"));
-			}
-		}
+						while (resultSet.next()) {
+							long fileEntryId = resultSet.getLong("fileEntryId");
+							String name = resultSet.getString("name");
+
+							_log.info(
+								StringBundler.concat(
+									"Deleted document library file entry ",
+									fileEntryId, " because its name was ",
+									(name == null) ? "null" : "empty"));
+						}
+					}
+				}
+
+			});
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
