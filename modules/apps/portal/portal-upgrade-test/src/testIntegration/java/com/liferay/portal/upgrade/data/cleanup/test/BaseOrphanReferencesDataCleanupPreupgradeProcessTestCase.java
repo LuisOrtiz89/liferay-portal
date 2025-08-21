@@ -85,7 +85,7 @@ public abstract class BaseOrphanReferencesDataCleanupPreupgradeProcessTestCase {
 			" have been deleted because value ", targetValue,
 			" was not found in the origin table ",
 			dbInspector.normalizeName(targetTable), " and ",
-			(targetColumns.length == 1) ? "colum " : "columns ",
+			(targetColumns.length == 1) ? "column " : "columns ",
 			String.join(", ", targetColumns));
 	}
 
