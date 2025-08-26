@@ -110,7 +110,7 @@ public class DataCleanupPreupgradeProcessSuite {
 
 			new AnalyticsMessageDataCleanupPreupgradeProcess(),
 			new ConfigurationDataCleanupPreupgradeProcess(),
-			new DDMStructureDataCleanupPreupgradeProcess(),
+			new DDMDataCleanupPreupgradeProcess(),
 			new DLFileEntryDataCleanupPreupgradeProcess(),
 			new NullUnicodeContentDataCleanupPreupgradeProcess(),
 			new QuartzJobDetailsDataCleanupPreupgradeProcess(),
