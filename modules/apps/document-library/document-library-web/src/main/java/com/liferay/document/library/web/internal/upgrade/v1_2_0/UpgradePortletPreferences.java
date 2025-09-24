@@ -73,12 +73,12 @@ public class UpgradePortletPreferences
 				rootFolderExternalReferenceCode =
 					folder.getExternalReferenceCode();
 			}
-			catch (PortalException portalException) {
+			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						StringBundler.concat(
 							"Unable to get root folder ID ", rootFolderId, ": ",
-							portalException));
+							exception));
 				}
 
 				return _toXML(portletPreferences);

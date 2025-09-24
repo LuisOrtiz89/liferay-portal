@@ -61,7 +61,7 @@ public class LayoutClassedModelUsageUpgradeProcess extends UpgradeProcess {
 				StringBundler.concat(
 					"insert into LayoutClassedModelUsage (ctCollectionId, ",
 					"uuid_, layoutClassedModelUsageId, groupId, companyId, ",
-					"createDate, modifiedDate, classExternalReferenceCode, ",
+					"createDate, modifiedDate, cmExternalReferenceCode, ",
 					"classNameId, classPK, containerKey, containerType, plid, ",
 					"type_ ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?",
 					")"),
