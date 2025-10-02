@@ -7,12 +7,15 @@ package com.liferay.portal.kernel.upgrade.data.cleanup.util;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBInspector;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.util.PropsValues;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -130,6 +133,13 @@ public class OrphanReferencesDataCleanupUtil {
 		}
 
 		sb.setIndex(sb.index() - 1);
+
+		if (StringUtil.equalsIgnoreCase("Company", targetTableName) &&
+			PropsValues.DATABASE_PARTITION_ENABLED) {
+
+			sb.append(" and companyId = ");
+			sb.append(CompanyThreadLocal.getCompanyId());
+		}
 
 		sb.append(")");
 
