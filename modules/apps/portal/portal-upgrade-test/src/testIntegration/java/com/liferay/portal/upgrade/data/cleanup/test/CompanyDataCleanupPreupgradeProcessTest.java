@@ -7,6 +7,7 @@ package com.liferay.portal.upgrade.data.cleanup.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
@@ -19,6 +20,7 @@ import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DataGuard;
+import com.liferay.portal.kernel.test.util.PropsValuesTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.test.rule.Inject;
@@ -97,6 +99,20 @@ public class CompanyDataCleanupPreupgradeProcessTest
 		}
 
 		upgrade();
+
+		try (SafeCloseable safeCloseable =
+				PropsValuesTestUtil.swapWithSafeCloseable(
+					"DATABASE_PARTITION_ENABLED", true)) {
+
+			runSQL(
+				StringBundler.concat(
+					"insert into DLFileEntry (mvccVersion, ctCollectionId, ",
+					"fileEntryId, companyId) values (0, 0,",
+					RandomTestUtil.nextLong(), ", ", RandomTestUtil.nextLong(),
+					")"));
+
+			upgrade();
+		}
 
 		runSQL(
 			"delete from SystemEvent where companyId = " +
