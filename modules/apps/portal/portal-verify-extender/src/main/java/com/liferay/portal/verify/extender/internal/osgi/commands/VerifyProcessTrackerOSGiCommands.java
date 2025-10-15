@@ -223,7 +223,10 @@ public class VerifyProcessTrackerOSGiCommands {
 						(StartupHelperUtil.isRunOnPortalUpgradeVerifiers() &&
 						 GetterUtil.getBoolean(
 							 serviceReference.getProperty(
-								 "run.on.portal.upgrade")))) {
+								 "run.on.portal.upgrade"))) ||
+						GetterUtil.getBoolean(
+							serviceReference.getProperty(
+								"run.on.portal.startup"))) {
 
 						_executeVerifyProcess(
 							verifyProcessHolder.getVerifyProcess(), release);
