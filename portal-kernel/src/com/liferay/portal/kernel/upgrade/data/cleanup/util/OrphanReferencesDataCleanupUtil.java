@@ -39,7 +39,13 @@ public class OrphanReferencesDataCleanupUtil {
 		List<String> excludedTableNames = getNormalizedExcludedTableNames(
 			connection);
 
-		if (excludedTableNames.contains(sourceTableName)) {
+		DBInspector dbInspector = new DBInspector(connection);
+
+		if (excludedTableNames.contains(sourceTableName) ||
+			(StringUtil.equalsIgnoreCase("Company", targetTableName) &&
+			 PropsValues.DATABASE_PARTITION_ENABLED &&
+			 dbInspector.isControlTable(sourceTableName))) {
+
 			return;
 		}
 
