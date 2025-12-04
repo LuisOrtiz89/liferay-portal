@@ -83,6 +83,12 @@ public interface DataRemovalConfiguration {
 	public boolean removeNullUnicodeContentData();
 
 	@Meta.AD(
+		deflt = "false", name = "remove-portlet-preferences-orphan-data",
+		required = false
+	)
+	public boolean removePortletPreferencesOrphanData();
+
+	@Meta.AD(
 		deflt = "false", name = "remove-publications-older-than-6-months",
 		required = false
 	)
