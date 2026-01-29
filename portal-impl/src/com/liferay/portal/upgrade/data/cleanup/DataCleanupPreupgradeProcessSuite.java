@@ -112,6 +112,8 @@ public class DataCleanupPreupgradeProcessSuite {
 		DataCleanupPreupgradeProcess
 			quartzJobDetailsDataCleanupPreupgradeProcess =
 				new QuartzJobDetailsDataCleanupPreupgradeProcess();
+		DataCleanupPreupgradeProcess roleDataCleanupPreupgradeProcess =
+			new RoleDataCleanupPreupgradeProcess();
 		DataCleanupPreupgradeProcess
 			updateAllPrimaryKeysDataCleanupPreupgradeProcess =
 				new DataCleanupPreupgradeProcess() {
@@ -158,6 +160,7 @@ public class DataCleanupPreupgradeProcessSuite {
 					portalPreferencesDataCleanupPreupgradeProcess,
 					portletPreferencesDataCleanupPreupgradeProcess,
 					quartzJobDetailsDataCleanupPreupgradeProcess,
+					roleDataCleanupPreupgradeProcess,
 					updateAllPrimaryKeysDataCleanupPreupgradeProcess,
 					userDataCleanupPreupgradeProcess)
 			).put(
@@ -211,6 +214,11 @@ public class DataCleanupPreupgradeProcessSuite {
 				quartzJobDetailsDataCleanupPreupgradeProcess,
 				DataCleanupPreupgradeProcess.dependsOn(
 					databaseTableAndColumnCaseDataCleanupPreupgradeProcess)
+			).put(
+				roleDataCleanupPreupgradeProcess,
+				DataCleanupPreupgradeProcess.dependsOn(
+					companyDataCleanupPreupgradeProcess,
+					userDataCleanupPreupgradeProcess)
 			).put(
 				updateAllPrimaryKeysDataCleanupPreupgradeProcess,
 				DataCleanupPreupgradeProcess.dependsOn(
