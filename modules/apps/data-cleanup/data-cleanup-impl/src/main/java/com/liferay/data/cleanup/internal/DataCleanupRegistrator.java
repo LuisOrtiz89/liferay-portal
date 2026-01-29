@@ -92,6 +92,7 @@ import com.liferay.portal.upgrade.data.cleanup.JournalDataCleanupPreupgradeProce
 import com.liferay.portal.upgrade.data.cleanup.NullUnicodeContentDataCleanupPreupgradeProcess;
 import com.liferay.portal.upgrade.data.cleanup.PortalPreferencesDataCleanupPreupgradeProcess;
 import com.liferay.portal.upgrade.data.cleanup.QuartzJobDetailsDataCleanupPreupgradeProcess;
+import com.liferay.portal.upgrade.data.cleanup.RoleDataCleanupPreupgradeProcess;
 import com.liferay.portal.upgrade.data.cleanup.UserDataCleanupPreupgradeProcess;
 import com.liferay.portal.verify.VerifyProcess;
 import com.liferay.ratings.kernel.service.RatingsStatsLocalService;
@@ -563,6 +564,8 @@ public class DataCleanupRegistrator {
 		).put(
 			QuartzJobDetailsDataCleanupPreupgradeProcess.class,
 			"remove-quartz-job-details-data"
+		).put(
+			RoleDataCleanupPreupgradeProcess.class, "remove-role-orphan-data"
 		).put(
 			UserDataCleanupPreupgradeProcess.class, "remove-user-orphan-data"
 		).build();
