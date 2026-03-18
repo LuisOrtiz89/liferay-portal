@@ -8,10 +8,14 @@ package com.liferay.portal.kernel.upgrade.recorder;
 import com.liferay.petra.lang.HashUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.jdbc.util.CallableStatementWrapper;
 import com.liferay.portal.kernel.dao.jdbc.util.ConnectionWrapper;
 import com.liferay.portal.kernel.dao.jdbc.util.PreparedStatementWrapper;
+import com.liferay.portal.kernel.dao.jdbc.util.ResultSetWrapper;
 import com.liferay.portal.kernel.dao.jdbc.util.StatementWrapper;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -289,6 +293,24 @@ public class UpgradeSQLRecorder {
 
 	}
 
+	private static long _countQueryResults(Object object) throws SQLException {
+		String sql = _extractSQL(object);
+
+		sql = "select count(1) from (" + sql + ")";
+
+		try (Connection connection = DataAccess.getConnection();
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql);
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			if (resultSet.next()) {
+				return resultSet.getLong(1);
+			}
+		}
+
+		return -1;
+	}
+
 	private static <T> T _execute(SQLCallable<T> sqlCallable, Object object)
 		throws SQLException {
 
@@ -385,7 +407,9 @@ public class UpgradeSQLRecorder {
 
 				@Override
 				public ResultSet executeQuery() throws SQLException {
-					return _execute(() -> super.executeQuery(), statement);
+					return _wrapResultSet(
+						_countQueryResults(statement),
+						_execute(() -> super.executeQuery(), statement));
 				}
 
 				@Override
@@ -411,7 +435,9 @@ public class UpgradeSQLRecorder {
 
 				@Override
 				public ResultSet executeQuery() throws SQLException {
-					return _execute(() -> super.executeQuery(), statement);
+					return _wrapResultSet(
+						_countQueryResults(statement),
+						_execute(() -> super.executeQuery(), statement));
 				}
 
 				@Override
@@ -458,7 +484,9 @@ public class UpgradeSQLRecorder {
 
 			@Override
 			public ResultSet executeQuery(String sql) throws SQLException {
-				return _execute(() -> super.executeQuery(sql), sql);
+				return _wrapResultSet(
+					_countQueryResults(sql),
+					_execute(() -> super.executeQuery(sql), sql));
 			}
 
 			@Override
@@ -492,6 +520,29 @@ public class UpgradeSQLRecorder {
 
 		};
 	}
+
+	private static ResultSet _wrapResultSet(long count, ResultSet resultSet) {
+		return new ResultSetWrapper(resultSet) {
+
+			@Override
+			public boolean next() throws SQLException {
+				if (_log.isInfoEnabled()) {
+					_log.info(
+						StringBundler.concat(
+							"Processing row ", resultSet.getRow(), " of ",
+							_count));
+				}
+
+				return resultSet.next();
+			}
+
+			private long _count = count;
+
+		};
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		UpgradeSQLRecorder.class);
 
 	private static boolean _enabled;
 	private static final List<FailedSQL> _failedSQLs =
