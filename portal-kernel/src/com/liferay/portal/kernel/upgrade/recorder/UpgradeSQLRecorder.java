@@ -294,21 +294,25 @@ public class UpgradeSQLRecorder {
 	}
 
 	private static long _countQueryResults(Object object) throws SQLException {
-		String sql = _extractSQL(object);
 
-		sql = "select count(1) from (" + sql + ")";
+		return 0;
 
-		try (Connection connection = DataAccess.getConnection();
-			PreparedStatement preparedStatement = connection.prepareStatement(
-				sql);
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+		/*String sql = _extractSQL(object);
 
-			if (resultSet.next()) {
-				return resultSet.getLong(1);
-			}
-		}
+		if (StringUtil.startsWith(sql, "select")) {
+			sql = "select count(1) from (" + sql + ") as t";
 
-		return -1;
+			try (Connection connection = DataAccess.getConnection();
+				PreparedStatement preparedStatement = connection.prepareStatement(
+					sql);
+				ResultSet resultSet = preparedStatement.executeQuery()) {
+
+				if (resultSet.next()) {
+					return resultSet.getLong(1);
+				}
+			}}
+
+		return 0;*/
 	}
 
 	private static <T> T _execute(SQLCallable<T> sqlCallable, Object object)
@@ -526,10 +530,10 @@ public class UpgradeSQLRecorder {
 
 			@Override
 			public boolean next() throws SQLException {
-				if (_log.isInfoEnabled()) {
+				if (/*_count > 0 && */_log.isInfoEnabled()) {
 					_log.info(
 						StringBundler.concat(
-							"Processing row ", resultSet.getRow(), " of ",
+							"Processing row ", resultSet.getRow() + 1, " of ",
 							_count));
 				}
 
