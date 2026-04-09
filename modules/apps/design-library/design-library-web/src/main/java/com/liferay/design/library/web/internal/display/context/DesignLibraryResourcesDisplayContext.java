@@ -15,8 +15,10 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 
+import com.liferay.style.book.model.StyleBookEntry;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
@@ -36,9 +38,8 @@ public class DesignLibraryResourcesDisplayContext {
 	}
 
 	public String getAPIURL() {
-		return "/o/search/v1.0/search?cmsRoot=true&cmsSection='files'" +
-			"&emptySearch=true&filter=cmsRoot eq true and cmsSection eq " +
-				"'files'&nestedFields=embedded&page=1&pageSize=20";
+		return "/o/search/v1.0/search?emptySearch=true&entryClassNames=" +
+		       HtmlUtil.escapeURL(StyleBookEntry.class.getName()) + "&page=1&pageSize=20";
 	}
 
 	public Map<String, Object> getBreadcrumbProps(long designLibraryEntryId)
