@@ -5,6 +5,8 @@
 
 package com.liferay.design.library.web.internal.display.context;
 
+import com.liferay.depot.model.DepotEntry;
+import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.depot.service.DepotEntryLocalServiceUtil;
 import com.liferay.frontend.data.set.model.FDSActionDropdownItem;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -14,12 +16,15 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.style.book.model.StyleBookEntry;
 import jakarta.servlet.http.HttpServletRequest;
+import org.osgi.service.component.annotations.Reference;
 
 import java.util.List;
 import java.util.Map;
@@ -31,15 +36,23 @@ public class DesignLibraryResourcesDisplayContext {
 
 	public DesignLibraryResourcesDisplayContext(
 		HttpServletRequest httpServletRequest,
-		LiferayPortletResponse liferayPortletResponse) {
+		LiferayPortletResponse liferayPortletResponse) throws PortalException {
 
 		_httpServletRequest = httpServletRequest;
 		_liferayPortletResponse = liferayPortletResponse;
+
+		String designLibraryEntryId = httpServletRequest.getParameter("designLibraryEntryId");
+
+		DepotEntry depotEntry = DepotEntryLocalServiceUtil.getDepotEntry(Long.parseLong(designLibraryEntryId));
+
+		_groupId = depotEntry.getGroupId();
 	}
 
 	public String getAPIURL() {
 		return "/o/search/v1.0/search?emptySearch=true&entryClassNames=" +
-		       HtmlUtil.escapeURL(StyleBookEntry.class.getName()) + "&page=1&pageSize=20";
+		       HtmlUtil.escapeURL(StyleBookEntry.class.getName()) + "&nestedFields=embedded&page=1&pageSize=20" +
+		       "& filter=" +String.format(
+				   "groupIds/any(g:g eq %s)", _groupId);
 	}
 
 	public Map<String, Object> getBreadcrumbProps(long designLibraryEntryId)
@@ -168,6 +181,7 @@ public class DesignLibraryResourcesDisplayContext {
 			));
 	}
 
+	private final long _groupId;
 	private final HttpServletRequest _httpServletRequest;
 	private final LiferayPortletResponse _liferayPortletResponse;
 
