@@ -1,6 +1,6 @@
-package com.liferay.headless.delivery.internal.dto.v1_0.converter;
+package com.liferay.headless.admin.site.internal.dto.v1_0.converter;
 
-import com.liferay.headless.delivery.dto.v1_0.StyleBook;
+import com.liferay.headless.admin.site.dto.v1_0.StyleBook;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
 import com.liferay.style.book.model.StyleBookEntry;

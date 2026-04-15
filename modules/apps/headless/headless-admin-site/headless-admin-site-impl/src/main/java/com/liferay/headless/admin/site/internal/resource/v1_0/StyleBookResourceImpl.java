@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.aggregation.Aggregation;
+import com.liferay.portal.vulcan.crud.VulcanCRUDItemDelegate;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.style.book.constants.StyleBookActionKeys;
@@ -50,12 +51,22 @@ import org.osgi.service.component.annotations.ServiceScope;
 @Component(
 	properties = "OSGI-INF/liferay/rest/v1_0/style-book.properties",
 	property = {
-		"crud.entity.class.name=com.liferay.headless.delivery.dto.v1_0.SitePage",
+		"crud.entity.class.name=com.liferay.headless.admin.site.dto.v1_0.StyleBook",
 	    "crud.item.delegate=true"
 	},
 	scope = ServiceScope.PROTOTYPE, service = StyleBookResource.class
 )
-public class StyleBookResourceImpl extends BaseStyleBookResourceImpl {
+public class StyleBookResourceImpl extends BaseStyleBookResourceImpl
+	implements VulcanCRUDItemDelegate<StyleBook> {
+
+	@Override
+	public StyleBook getItem(Long id) throws Exception {
+
+		StyleBookEntry styleBookEntry =
+			_styleBookEntryService.getStyleBookEntry(id);
+
+		return _toStyleBook(styleBookEntry);
+	}
 
 	@Override
 	public void deleteSiteStyleBook(
