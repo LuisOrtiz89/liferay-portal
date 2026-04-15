@@ -49,6 +49,10 @@ import org.osgi.service.component.annotations.ServiceScope;
  */
 @Component(
 	properties = "OSGI-INF/liferay/rest/v1_0/style-book.properties",
+	property = {
+		"crud.entity.class.name=com.liferay.headless.delivery.dto.v1_0.SitePage",
+	    "crud.item.delegate=true"
+	},
 	scope = ServiceScope.PROTOTYPE, service = StyleBookResource.class
 )
 public class StyleBookResourceImpl extends BaseStyleBookResourceImpl {
