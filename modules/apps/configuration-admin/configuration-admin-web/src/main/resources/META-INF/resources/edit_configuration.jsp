@@ -199,10 +199,10 @@ renderResponse.setTitle(categoryDisplayName);
 							<aui:button-row>
 								<c:choose>
 									<c:when test="<%= configurationModel.hasScopeConfiguration(configurationScopeDisplayContext.getScope()) %>">
-										<aui:button data-qa-id="submitConfiguration" name="update" type="submit" value="update" />
+										<aui:button data-qa-id="submitConfiguration" disabled="<%= true %>" name="update" type="submit" value="update" />
 									</c:when>
 									<c:otherwise>
-										<aui:button data-qa-id="submitConfiguration" name="save" type="submit" value="save" />
+										<aui:button data-qa-id="submitConfiguration" disabled="<%= true %>" name="save" type="submit" value="save" />
 									</c:otherwise>
 								</c:choose>
 
@@ -222,3 +222,36 @@ renderResponse.setTitle(categoryDisplayName);
 		</clay:col>
 	</clay:row>
 </clay:container-fluid>
+
+<aui:script use="aui-base">
+	AUI().ready(function () {
+		var formId = '<portlet:namespace />fm';
+		var saveBtnId = '#<portlet:namespace />save';
+		var updateBtnId = '#<portlet:namespace />update';
+
+		var pollingId = setInterval(function () {
+			var form = document.getElementById(formId);
+
+			if (form) {
+				var visibleInputs = form.querySelectorAll(
+					'input:not([type="hidden"]), select, textarea'
+				);
+
+				if (visibleInputs.length > 0) {
+					var saveBtn = A.one(saveBtnId);
+					var updateBtn = A.one(updateBtnId);
+
+					if (saveBtn) {
+						Liferay.Util.toggleDisabled(saveBtn, false);
+					}
+
+					if (updateBtn) {
+						Liferay.Util.toggleDisabled(updateBtn, false);
+					}
+
+					clearInterval(pollingId);
+				}
+			}
+		}, 200);
+	});
+</aui:script>
