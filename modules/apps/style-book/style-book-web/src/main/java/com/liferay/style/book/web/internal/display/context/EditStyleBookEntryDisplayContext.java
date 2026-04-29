@@ -654,7 +654,16 @@ public class EditStyleBookEntryDisplayContext {
 
 		portletDisplay.setShowBackIcon(true);
 		portletDisplay.setURLBack(_getRedirect());
-		portletDisplay.setURLBackTitle(portletDisplay.getPortletDisplayName());
+
+		Group entryGroup = _getStyleBookEntryGroup();
+
+		if ((entryGroup != null) && entryGroup.isDepot()) {
+			portletDisplay.setURLBackTitle(_getStyleBookEntryTitle());
+		}
+		else {
+			portletDisplay.setURLBackTitle(
+				portletDisplay.getPortletDisplayName());
+		}
 
 		_renderResponse.setTitle(_getStyleBookEntryTitle());
 	}
