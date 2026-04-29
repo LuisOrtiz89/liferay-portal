@@ -53,6 +53,7 @@ public class StyleBookDTOConverter
 
 		return new StyleBook() {
 			{
+				setActions(dtoConverterContext::getActions);
 				setCreator(
 					() -> {
 						User user = _userLocalService.fetchUser(

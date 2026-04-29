@@ -14,6 +14,8 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -28,7 +30,6 @@ import com.liferay.portal.vulcan.dto.converter.DTOConverterRegistry;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
-import com.liferay.portal.vulcan.util.UriInfoUtil;
 import com.liferay.style.book.constants.StyleBookActionKeys;
 import com.liferay.style.book.constants.StyleBookConstants;
 import com.liferay.style.book.model.StyleBookEntry;
@@ -39,7 +40,9 @@ import com.liferay.style.book.util.comparator.StyleBookEntryNameComparator;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -208,6 +211,56 @@ public class StyleBookResourceImpl
 		}
 	}
 
+	private Map<String, Map<String, String>> _getActions(
+		StyleBookEntry styleBookEntry) {
+
+		if (!_portletResourcePermission.contains(
+				PermissionThreadLocal.getPermissionChecker(),
+				styleBookEntry.getGroupId(),
+				StyleBookActionKeys.MANAGE_STYLE_BOOK_ENTRIES)) {
+
+			return Collections.emptyMap();
+		}
+
+		Long siteId = styleBookEntry.getGroupId();
+		String styleBookExternalReferenceCode =
+			styleBookEntry.getExternalReferenceCode();
+
+		return HashMapBuilder.<String, Map<String, String>>put(
+			"delete",
+			_resolveStyleBookERC(
+				addAction(
+					StyleBookActionKeys.MANAGE_STYLE_BOOK_ENTRIES,
+					"deleteSiteStyleBook", StyleBookConstants.RESOURCE_NAME,
+					siteId),
+				styleBookExternalReferenceCode)
+		).put(
+			"get",
+			_resolveStyleBookERC(
+				addAction(
+					StyleBookActionKeys.MANAGE_STYLE_BOOK_ENTRIES,
+					"getSiteStyleBook", StyleBookConstants.RESOURCE_NAME,
+					siteId),
+				styleBookExternalReferenceCode)
+		).put(
+			"replace",
+			_resolveStyleBookERC(
+				addAction(
+					StyleBookActionKeys.MANAGE_STYLE_BOOK_ENTRIES,
+					"putSiteStyleBook", StyleBookConstants.RESOURCE_NAME,
+					siteId),
+				styleBookExternalReferenceCode)
+		).put(
+			"update",
+			_resolveStyleBookERC(
+				addAction(
+					StyleBookActionKeys.MANAGE_STYLE_BOOK_ENTRIES,
+					"patchSiteStyleBook", StyleBookConstants.RESOURCE_NAME,
+					siteId),
+				styleBookExternalReferenceCode)
+		).build();
+	}
+
 	private long _getGroupId(String siteExternalReferenceCode) {
 		Group group = _groupLocalService.fetchGroupByExternalReferenceCode(
 			siteExternalReferenceCode, contextCompany.getCompanyId());
@@ -296,14 +349,30 @@ public class StyleBookResourceImpl
 		return orderByComparator;
 	}
 
+	private Map<String, String> _resolveStyleBookERC(
+		Map<String, String> action, String styleBookExternalReferenceCode) {
+
+		String href = action.get("href");
+
+		if (href != null) {
+			action.put(
+				"href",
+				StringUtil.replace(
+					href, "{styleBookExternalReferenceCode}",
+					styleBookExternalReferenceCode));
+		}
+
+		return action;
+	}
+
 	private StyleBook _toStyleBook(StyleBookEntry styleBookEntry)
 		throws Exception {
 
 		return _styleBookDTOConverter.toDTO(
 			new DefaultDTOConverterContext(
-				contextAcceptLanguage.isAcceptAllLanguages(), null,
-				_dtoConverterRegistry, contextHttpServletRequest,
-				styleBookEntry.getStyleBookEntryId(),
+				contextAcceptLanguage.isAcceptAllLanguages(),
+				_getActions(styleBookEntry), _dtoConverterRegistry,
+				contextHttpServletRequest, styleBookEntry.getStyleBookEntryId(),
 				contextAcceptLanguage.getPreferredLocale(), contextUriInfo,
 				contextUser),
 			styleBookEntry);
@@ -317,6 +386,11 @@ public class StyleBookResourceImpl
 
 	@Reference
 	private GroupLocalService _groupLocalService;
+
+	@Reference(
+		target = "(resource.name=" + StyleBookConstants.RESOURCE_NAME + ")"
+	)
+	private PortletResourcePermission _portletResourcePermission;
 
 	@Reference(
 		target = "(component.name=com.liferay.headless.admin.site.internal.dto.v1_0.converter.StyleBookDTOConverter)"

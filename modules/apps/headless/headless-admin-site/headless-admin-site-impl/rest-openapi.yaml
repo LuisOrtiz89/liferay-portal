@@ -3777,6 +3777,16 @@ components:
         StyleBook:
             # @review
             properties:
+                actions:
+                    additionalProperties:
+                        additionalProperties:
+                            type: string
+                        type: object
+                    # @review
+                    description:
+                        Block of actions allowed by the user making the request.
+                    readOnly: true
+                    type: object
                 creator:
                     $ref: ../../headless-admin-user/headless-admin-user-impl/rest-openapi.yaml#Creator
                     description:
