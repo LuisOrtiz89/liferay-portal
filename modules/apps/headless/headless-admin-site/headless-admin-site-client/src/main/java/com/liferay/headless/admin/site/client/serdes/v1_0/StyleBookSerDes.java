@@ -50,6 +50,16 @@ public class StyleBookSerDes {
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ssXX");
 
+		if (styleBook.getActions() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"actions\": ");
+
+			sb.append(_toJSON(styleBook.getActions()));
+		}
+
 		if (styleBook.getCreator() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -216,6 +226,13 @@ public class StyleBookSerDes {
 		DateFormat liferayToJSONDateFormat = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ssXX");
 
+		if (styleBook.getActions() == null) {
+			map.put("actions", null);
+		}
+		else {
+			map.put("actions", String.valueOf(styleBook.getActions()));
+		}
+
 		if (styleBook.getCreator() == null) {
 			map.put("creator", null);
 		}
@@ -323,7 +340,10 @@ public class StyleBookSerDes {
 
 		@Override
 		protected boolean parseMaps(String jsonParserFieldName) {
-			if (Objects.equals(jsonParserFieldName, "creator")) {
+			if (Objects.equals(jsonParserFieldName, "actions")) {
+				return true;
+			}
+			else if (Objects.equals(jsonParserFieldName, "creator")) {
 				return false;
 			}
 			else if (Objects.equals(jsonParserFieldName, "dateCreated")) {
@@ -372,7 +392,13 @@ public class StyleBookSerDes {
 			StyleBook styleBook, String jsonParserFieldName,
 			Object jsonParserFieldValue) {
 
-			if (Objects.equals(jsonParserFieldName, "creator")) {
+			if (Objects.equals(jsonParserFieldName, "actions")) {
+				if (jsonParserFieldValue != null) {
+					styleBook.setActions(
+						(Map<String, Map<String, String>>)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "creator")) {
 				if (jsonParserFieldValue != null) {
 					styleBook.setCreator(
 						CreatorSerDes.toDTO((String)jsonParserFieldValue));
@@ -522,4 +548,4 @@ public class StyleBookSerDes {
 	}
 
 }
-// LIFERAY-REST-BUILDER-HASH:1024823242
+// LIFERAY-REST-BUILDER-HASH:-841545486
