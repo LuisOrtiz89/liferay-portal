@@ -12,6 +12,8 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
 
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +30,8 @@ public class StyleBookResourceTest extends BaseStyleBookResourceTestCase {
 	@Test
 	public void testGetSiteStyleBook() throws Exception {
 		super.testGetSiteStyleBook();
+
+		_testGetSiteStyleBookExposesActions();
 
 		try {
 			styleBookResource.getSiteStyleBook(
@@ -66,6 +70,22 @@ public class StyleBookResourceTest extends BaseStyleBookResourceTestCase {
 
 		return styleBookResource.postSiteStyleBook(
 			testGroup.getExternalReferenceCode(), styleBook);
+	}
+
+	private void _testGetSiteStyleBookExposesActions() throws Exception {
+		StyleBook postStyleBook = testGetSiteStyleBook_addStyleBook();
+
+		StyleBook getStyleBook = styleBookResource.getSiteStyleBook(
+			testGetSiteStyleBook_getSiteExternalReferenceCode(),
+			postStyleBook.getExternalReferenceCode());
+
+		Map<String, Map<String, String>> actions = getStyleBook.getActions();
+
+		Assert.assertNotNull(actions);
+		Assert.assertTrue(actions.containsKey("delete"));
+		Assert.assertTrue(actions.containsKey("get"));
+		Assert.assertTrue(actions.containsKey("replace"));
+		Assert.assertTrue(actions.containsKey("update"));
 	}
 
 	private void _testPatchSiteStyleBook() throws Exception {
