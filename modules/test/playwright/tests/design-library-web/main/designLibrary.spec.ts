@@ -336,6 +336,101 @@ test(
 );
 
 test(
+	'Design Library content screen lists the style books added to it',
+	{tag: '@LPD-74829'},
+	async ({apiHelpers, designLibrariesPage, page}) => {
+		const designLibraryName = getRandomString();
+		const styleBookName = getRandomString();
+
+		const createdDesignLibrary =
+			await test.step('Create a new design library via headless', async () => {
+				return await apiHelpers.headlessAssetLibrary.createAssetLibrary(
+					{
+						name: designLibraryName,
+						settings: {},
+						type: 'DesignLibrary',
+					}
+				);
+			});
+
+		const createdStyleBook =
+			await test.step('Add a style book to the design library via headless', async () => {
+				return await apiHelpers.headlessAdminSite.postSiteStyleBook(
+					createdDesignLibrary.externalReferenceCode,
+					{
+						defaultStyleBook: false,
+						key: getRandomString(),
+						name: styleBookName,
+						themeId: 'classic',
+					}
+				);
+			});
+
+		await test.step('Navigate to the design library content screen', async () => {
+			await designLibrariesPage.goToDesignLibrary(designLibraryName);
+		});
+
+		await test.step('Check that the style book is listed', async () => {
+			const contentTable = page.locator(
+				'.design-library-fds-wrapper--resources table'
+			);
+
+			await expect(
+				contentTable.getByRole('row', {name: styleBookName})
+			).toBeVisible();
+		});
+
+		await test.step('Check that the author column shows the creator name', async () => {
+			const contentTable = page.locator(
+				'.design-library-fds-wrapper--resources table'
+			);
+
+			const styleBookRow = contentTable.getByRole('row', {
+				name: styleBookName,
+			});
+
+			await expect(
+				styleBookRow.getByRole('cell', {name: 'Test Test'})
+			).toBeVisible();
+		});
+
+		await test.step('Check that the row action menu exposes Edit and Delete', async () => {
+			const contentTable = page.locator(
+				'.design-library-fds-wrapper--resources table'
+			);
+
+			const styleBookRow = contentTable.getByRole('row', {
+				name: styleBookName,
+			});
+
+			await styleBookRow.getByRole('button', {name: /Actions$/}).click();
+
+			await expect(
+				page.getByRole('menuitem', {
+					exact: true,
+					name: 'Edit in Style Book Editor',
+				})
+			).toBeVisible();
+
+			await expect(
+				page.getByRole('menuitem', {exact: true, name: 'Delete'})
+			).toBeVisible();
+		});
+
+		await test.step('Remove created style book and design library', async () => {
+			await apiHelpers.headlessAdminSite.deleteSiteStyleBook(
+				createdDesignLibrary.externalReferenceCode,
+				createdStyleBook.externalReferenceCode
+			);
+
+			await apiHelpers.headlessAssetLibrary.deleteAssetLibrary(
+				createdDesignLibrary.externalReferenceCode
+			);
+		});
+	}
+);
+
+test(
 	'Can view and edit a design library settings',
 	{tag: '@LPD-79533'},
 	async ({apiHelpers, designLibrariesPage, page}) => {

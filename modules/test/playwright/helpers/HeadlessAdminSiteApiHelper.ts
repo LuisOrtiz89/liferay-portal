@@ -82,6 +82,16 @@ export class HeadlessAdminSiteApiHelper {
 		);
 	}
 
+	async deleteSiteStyleBook(
+		siteExternalReferenceCode: string,
+		styleBookExternalReferenceCode: string
+	): Promise<any> {
+		return this.apiHelpers.delete(
+			`${this.apiHelpers.baseUrl}${this.basePath}/sites/${siteExternalReferenceCode}/style-books/${styleBookExternalReferenceCode}`,
+			{failOnStatusCode: true}
+		);
+	}
+
 	async getPage(
 		siteExternalReferenceCode: string,
 		pageExternalReferenceCode: string
