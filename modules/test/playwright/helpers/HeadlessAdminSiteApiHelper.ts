@@ -46,6 +46,15 @@ export type TSite = {
 	templateType?: string;
 };
 
+export type TStyleBook = {
+	defaultStyleBook?: boolean;
+	externalReferenceCode?: string;
+	frontendTokensValues?: string;
+	key?: string;
+	name: string;
+	themeId: string;
+};
+
 export class HeadlessAdminSiteApiHelper {
 	apiHelpers: ApiHelpers | DataApiHelpers;
 	basePath: string;
@@ -152,6 +161,16 @@ export class HeadlessAdminSiteApiHelper {
 		}
 
 		return postNavigationMenu;
+	}
+
+	async postSiteStyleBook(
+		siteExternalReferenceCode: string,
+		styleBook: TStyleBook
+	): Promise<any> {
+		return this.apiHelpers.post(
+			`${this.apiHelpers.baseUrl}${this.basePath}/sites/${siteExternalReferenceCode}/style-books`,
+			{data: styleBook, failOnStatusCode: true}
+		);
 	}
 
 	async postSiteSiteInitializer(
