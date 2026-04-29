@@ -128,6 +128,16 @@ public class StyleBookSerDes {
 			sb.append("\"");
 		}
 
+		if (styleBook.getId() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"id\": ");
+
+			sb.append(styleBook.getId());
+		}
+
 		if (styleBook.getKey() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -258,6 +268,13 @@ public class StyleBookSerDes {
 				String.valueOf(styleBook.getFrontendTokensValues()));
 		}
 
+		if (styleBook.getId() == null) {
+			map.put("id", null);
+		}
+		else {
+			map.put("id", String.valueOf(styleBook.getId()));
+		}
+
 		if (styleBook.getKey() == null) {
 			map.put("key", null);
 		}
@@ -328,6 +345,9 @@ public class StyleBookSerDes {
 
 				return false;
 			}
+			else if (Objects.equals(jsonParserFieldName, "id")) {
+				return false;
+			}
 			else if (Objects.equals(jsonParserFieldName, "key")) {
 				return false;
 			}
@@ -390,6 +410,11 @@ public class StyleBookSerDes {
 				if (jsonParserFieldValue != null) {
 					styleBook.setFrontendTokensValues(
 						(String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "id")) {
+				if (jsonParserFieldValue != null) {
+					styleBook.setId(Long.valueOf((String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "key")) {
@@ -497,4 +522,4 @@ public class StyleBookSerDes {
 	}
 
 }
-// LIFERAY-REST-BUILDER-HASH:57398793
+// LIFERAY-REST-BUILDER-HASH:1024823242

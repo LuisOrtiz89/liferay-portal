@@ -887,6 +887,10 @@ public abstract class BaseStyleBookResourceTestCase {
 			valid = false;
 		}
 
+		if (styleBook.getId() == null) {
+			valid = false;
+		}
+
 		for (String additionalAssertFieldName :
 				getAdditionalAssertFieldNames()) {
 
@@ -1023,6 +1027,8 @@ public abstract class BaseStyleBookResourceTestCase {
 
 		graphQLFields.add(new GraphQLField("externalReferenceCode"));
 
+		graphQLFields.add(new GraphQLField("id"));
+
 		for (java.lang.reflect.Field field :
 				getDeclaredFields(
 					com.liferay.headless.admin.site.dto.v1_0.StyleBook.class)) {
@@ -1143,6 +1149,16 @@ public abstract class BaseStyleBookResourceTestCase {
 				if (!Objects.deepEquals(
 						styleBook1.getFrontendTokensValues(),
 						styleBook2.getFrontendTokensValues())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("id", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						styleBook1.getId(), styleBook2.getId())) {
 
 					return false;
 				}
@@ -1462,6 +1478,11 @@ public abstract class BaseStyleBookResourceTestCase {
 			return sb.toString();
 		}
 
+		if (entityFieldName.equals("id")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("key")) {
 			Object object = styleBook.getKey();
 
@@ -1699,6 +1720,7 @@ public abstract class BaseStyleBookResourceTestCase {
 					RandomTestUtil.randomString());
 				frontendTokensValues = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
+				id = RandomTestUtil.randomLong();
 				key = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				name = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				previewFileEntryExternalReferenceCode = StringUtil.toLowerCase(
@@ -1951,4 +1973,4 @@ public abstract class BaseStyleBookResourceTestCase {
 		_styleBookResource;
 
 }
-// LIFERAY-REST-BUILDER-HASH:-1445790421
+// LIFERAY-REST-BUILDER-HASH:161368764
