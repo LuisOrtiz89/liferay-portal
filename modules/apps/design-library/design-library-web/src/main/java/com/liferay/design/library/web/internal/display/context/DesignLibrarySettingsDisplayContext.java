@@ -68,7 +68,7 @@ public class DesignLibrarySettingsDisplayContext {
 				group.getName(_getThemeDisplay().getLocale()), false));
 	}
 
-	private String _getBackURL() {
+	private String _getBackURL() throws PortalException {
 		return PortletURLBuilder.createRenderURL(
 			_liferayPortletResponse
 		).setMVCRenderCommandName(
@@ -76,6 +76,9 @@ public class DesignLibrarySettingsDisplayContext {
 		).setParameter(
 			DesignLibraryConstants.DESIGN_LIBRARY_ENTRY_ID_KEY,
 			_designLibraryEntryId
+		).setParameter(
+			DesignLibraryConstants.DESIGN_LIBRARY_SITE_ID_KEY,
+			_getGroup().getGroupId()
 		).buildString();
 	}
 

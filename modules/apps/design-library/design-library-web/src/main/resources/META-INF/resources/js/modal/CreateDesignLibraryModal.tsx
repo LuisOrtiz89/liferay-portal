@@ -20,11 +20,13 @@ export default function CreateDesignLibraryModal({
 	entryIdKey,
 	onClose,
 	redirectURL: baseRedirectURL,
+	siteIdKey,
 }: {
 	dataSetId: string;
 	entryIdKey: string;
 	onClose: () => void;
 	redirectURL: string;
+	siteIdKey: string;
 }) {
 	const [nameInputError, setNameInputError] = useState<string>('');
 
@@ -65,6 +67,7 @@ export default function CreateDesignLibraryModal({
 				navigate(
 					createPortletURL(baseRedirectURL, {
 						[entryIdKey]: (data as {id: string}).id,
+						[siteIdKey]: String((data as {siteId: number}).siteId),
 					})
 				);
 			}

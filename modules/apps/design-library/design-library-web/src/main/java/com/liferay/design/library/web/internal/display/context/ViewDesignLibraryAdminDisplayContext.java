@@ -69,6 +69,9 @@ public class ViewDesignLibraryAdminDisplayContext {
 					"/design_library/design_library_resources"
 				).setParameter(
 					DesignLibraryConstants.DESIGN_LIBRARY_ENTRY_ID_KEY, "{id}"
+				).setParameter(
+					DesignLibraryConstants.DESIGN_LIBRARY_SITE_ID_KEY,
+					"{siteId}"
 				).buildString(),
 				"pencil", "edit", LanguageUtil.get(_httpServletRequest, "edit"),
 				null, null, "link"),
@@ -88,6 +91,8 @@ public class ViewDesignLibraryAdminDisplayContext {
 			).setMVCRenderCommandName(
 				"/design_library/design_library_resources"
 			).buildString()
+		).put(
+			"siteIdKey", DesignLibraryConstants.DESIGN_LIBRARY_SITE_ID_KEY
 		).build();
 	}
 

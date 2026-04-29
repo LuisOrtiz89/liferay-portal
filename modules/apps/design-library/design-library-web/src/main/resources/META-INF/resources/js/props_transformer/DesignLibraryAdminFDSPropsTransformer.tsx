@@ -19,13 +19,14 @@ import {
 } from './cell_renderers';
 
 export default function DesignLibraryAdminFDSPropsTransformer({
-	additionalProps: {entryIdKey, redirectURL},
+	additionalProps: {entryIdKey, redirectURL, siteIdKey},
 	id,
 	...props
 }: {
 	additionalProps: {
 		entryIdKey: string;
 		redirectURL: string;
+		siteIdKey: string;
 	};
 
 	id: string;
@@ -43,6 +44,7 @@ export default function DesignLibraryAdminFDSPropsTransformer({
 								entryIdKey,
 								onClose: closeModal,
 								redirectURL,
+								siteIdKey,
 							}),
 						size: 'md',
 					});

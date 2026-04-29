@@ -8,6 +8,7 @@ package com.liferay.design.library.web.internal.display.context;
 import com.liferay.depot.service.DepotEntryLocalServiceUtil;
 import com.liferay.design.library.web.internal.constants.DesignLibraryConstants;
 import com.liferay.frontend.data.set.model.FDSActionDropdownItem;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -36,10 +37,12 @@ public class DesignLibraryResourcesDisplayContext {
 		_liferayPortletResponse = liferayPortletResponse;
 	}
 
-	public String getAPIURL() {
-		return "/o/search/v1.0/search?cmsRoot=true&cmsSection='files'" +
-			"&emptySearch=true&filter=cmsRoot eq true and cmsSection eq " +
-				"'files'&nestedFields=embedded&page=1&pageSize=20";
+	public String getAPIURL(long designLibrarySiteId) {
+		return StringBundler.concat(
+			"/o/search/v1.0/search?emptySearch=true",
+			"&entryClassNames=com.liferay.style.book.model.StyleBookEntry",
+			"&filter=groupIds/any(g:g eq ", designLibrarySiteId, ")",
+			"&nestedFields=embedded&page=1&pageSize=20");
 	}
 
 	public Map<String, Object> getBreadcrumbProps(long designLibraryEntryId)

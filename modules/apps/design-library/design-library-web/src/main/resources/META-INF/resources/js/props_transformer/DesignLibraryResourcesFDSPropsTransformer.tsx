@@ -8,6 +8,7 @@ import React from 'react';
 
 import {TableCellContentType} from '../constants';
 import {
+	AuthorRenderer,
 	FromNowDateTimeRenderer,
 	LinkRenderer,
 	createSetItemComponentProps,
@@ -41,6 +42,11 @@ export default function DesignLibraryResourcesFDSPropsTransformer(
 					type: 'internal',
 				},
 				{
+					component: AuthorRenderer,
+					name: TableCellContentType.AUTHOR,
+					type: 'internal',
+				},
+				{
 					component: () => (
 						<span>{Liferay.Language.get('style-book')}</span>
 					),
@@ -68,13 +74,13 @@ export default function DesignLibraryResourcesFDSPropsTransformer(
 							actionId: 'edit',
 							contentRenderer:
 								TableCellContentType.DESIGN_LIBRARY_LINK,
-							fieldName: 'title',
+							fieldName: 'embedded.name',
 							label: Liferay.Language.get('title'),
 							localizeLabel: true,
-							sortable: true,
 						},
 						{
-							fieldName: 'creatorUserId',
+							contentRenderer: TableCellContentType.AUTHOR,
+							fieldName: 'embedded.creator.name',
 							label: Liferay.Language.get('author'),
 							localizeLabel: true,
 							truncate: true,
@@ -105,7 +111,7 @@ export default function DesignLibraryResourcesFDSPropsTransformer(
 				schema: {
 					description: 'dateModified',
 					symbol: '',
-					title: 'title',
+					title: 'embedded.name',
 				},
 				setItemComponentProps: createSetItemComponentProps('book'),
 				thumbnail: 'cards2',

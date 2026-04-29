@@ -39,6 +39,13 @@ public class DesignLibraryResourcesMVCRenderCommand
 			DesignLibraryConstants.DESIGN_LIBRARY_ENTRY_ID_KEY,
 			designLibraryEntryId);
 
+		long designLibrarySiteId = ParamUtil.getLong(
+			renderRequest, DesignLibraryConstants.DESIGN_LIBRARY_SITE_ID_KEY);
+
+		renderRequest.setAttribute(
+			DesignLibraryConstants.DESIGN_LIBRARY_SITE_ID_KEY,
+			designLibrarySiteId);
+
 		return "/view_resources.jsp";
 	}
 

@@ -13,4 +13,7 @@ public class DesignLibraryConstants {
 	public static final String DESIGN_LIBRARY_ENTRY_ID_KEY =
 		"designLibraryEntryId";
 
+	public static final String DESIGN_LIBRARY_SITE_ID_KEY =
+		"designLibrarySiteId";
+
 }
