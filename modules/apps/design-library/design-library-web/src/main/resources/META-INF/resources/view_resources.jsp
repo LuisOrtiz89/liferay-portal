@@ -26,7 +26,7 @@ DesignLibraryResourcesDisplayContext designLibraryResourcesDisplayContext = new 
 		<frontend-data-set:headless-display
 			apiURL="<%= designLibraryResourcesDisplayContext.getAPIURL(designLibrarySiteId) %>"
 			emptyState="<%= designLibraryResourcesDisplayContext.getEmptyState() %>"
-			fdsActionDropdownItems="<%= designLibraryResourcesDisplayContext.getFDSActionDropdownItems() %>"
+			fdsActionDropdownItems="<%= designLibraryResourcesDisplayContext.getFDSActionDropdownItems(designLibraryEntryId, designLibrarySiteId) %>"
 			formName="fm"
 			id="<%= DesignLibraryAdminFDSNames.DESIGN_LIBRARY_RESOURCES %>"
 			propsTransformer="{DesignLibraryResourcesFDSPropsTransformer} from design-library-web"

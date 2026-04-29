@@ -16,8 +16,14 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.style.book.constants.StyleBookPortletKeys;
+import com.liferay.style.book.model.StyleBookEntry;
+
+import jakarta.portlet.PortletRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -73,16 +79,48 @@ public class DesignLibraryResourcesDisplayContext {
 		).build();
 	}
 
-	public List<FDSActionDropdownItem> getFDSActionDropdownItems() {
+	public List<FDSActionDropdownItem> getFDSActionDropdownItems(
+			long designLibraryEntryId, long designLibrarySiteId)
+		throws PortalException {
+
+		Group depotGroup = GroupLocalServiceUtil.getGroup(designLibrarySiteId);
+
+		String editStyleBookEntryURL = PortletURLBuilder.create(
+			PortalUtil.getControlPanelPortletURL(
+				_httpServletRequest, depotGroup,
+				StyleBookPortletKeys.STYLE_BOOK, 0, 0,
+				PortletRequest.RENDER_PHASE)
+		).setMVCRenderCommandName(
+			"/style_book/edit_style_book_entry"
+		).setRedirect(
+			() -> PortletURLBuilder.createRenderURL(
+				_liferayPortletResponse
+			).setMVCRenderCommandName(
+				"/design_library/design_library_resources"
+			).setParameter(
+				DesignLibraryConstants.DESIGN_LIBRARY_ENTRY_ID_KEY,
+				designLibraryEntryId
+			).setParameter(
+				DesignLibraryConstants.DESIGN_LIBRARY_SITE_ID_KEY,
+				designLibrarySiteId
+			).buildString()
+		).setParameter(
+			"styleBookEntryId", "{embedded.id}"
+		).buildString();
+
 		return ListUtil.fromArray(
 			new FDSActionDropdownItem(
-				"#edit/{embedded.id}", "pencil", "edit",
-				LanguageUtil.get(_httpServletRequest, "edit"), null, null,
-				"link"),
+				editStyleBookEntryURL, "pencil", "edit",
+				LanguageUtil.get(
+					_httpServletRequest, "edit-in-style-book-editor"),
+				null, "update", "link",
+				HashMapBuilder.<String, Object>put(
+					"entryClassName", StyleBookEntry.class.getName()
+				).build()),
 			new FDSActionDropdownItem(
-				"#remove/{embedded.id}", "trash", "remove",
-				LanguageUtil.get(_httpServletRequest, "remove"), null, null,
-				"link"));
+				"{actions.delete.href}", "trash", "delete",
+				LanguageUtil.get(_httpServletRequest, "delete"), "delete",
+				"delete", "async"));
 	}
 
 	private JSONArray _getActionItemsJSONArray(
