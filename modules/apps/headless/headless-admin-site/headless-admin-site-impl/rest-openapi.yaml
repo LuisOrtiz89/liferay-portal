@@ -3804,6 +3804,12 @@ components:
                     description:
                         The style book's tokens values.
                     type: string
+                id:
+                    description:
+                        The style book's identifier.
+                    format: int64
+                    readOnly: true
+                    type: integer
                 key:
                     description:
                         The style book's key.

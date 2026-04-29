@@ -8,25 +8,27 @@ package com.liferay.headless.admin.site.internal.resource.v1_0;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.headless.admin.site.dto.v1_0.StyleBook;
 import com.liferay.headless.admin.site.resource.v1_0.StyleBookResource;
-import com.liferay.headless.admin.user.dto.v1_0.Creator;
 import com.liferay.headless.common.spi.service.context.ServiceContextBuilder;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.aggregation.Aggregation;
+import com.liferay.portal.vulcan.crud.VulcanCRUDItemDelegate;
+import com.liferay.portal.vulcan.dto.converter.DTOConverter;
+import com.liferay.portal.vulcan.dto.converter.DTOConverterRegistry;
+import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
+import com.liferay.portal.vulcan.util.UriInfoUtil;
 import com.liferay.style.book.constants.StyleBookActionKeys;
 import com.liferay.style.book.constants.StyleBookConstants;
 import com.liferay.style.book.model.StyleBookEntry;
@@ -49,9 +51,15 @@ import org.osgi.service.component.annotations.ServiceScope;
  */
 @Component(
 	properties = "OSGI-INF/liferay/rest/v1_0/style-book.properties",
+	property = {
+		"crud.entity.class.name=com.liferay.headless.admin.site.dto.v1_0.StyleBook",
+		"crud.item.delegate=true"
+	},
 	scope = ServiceScope.PROTOTYPE, service = StyleBookResource.class
 )
-public class StyleBookResourceImpl extends BaseStyleBookResourceImpl {
+public class StyleBookResourceImpl
+	extends BaseStyleBookResourceImpl
+	implements VulcanCRUDItemDelegate<StyleBook> {
 
 	@Override
 	public void deleteSiteStyleBook(
@@ -66,6 +74,11 @@ public class StyleBookResourceImpl extends BaseStyleBookResourceImpl {
 
 		_styleBookEntryService.deleteStyleBookEntry(
 			styleBookEntry.getStyleBookEntryId());
+	}
+
+	@Override
+	public StyleBook getItem(Long id) throws Exception {
+		return _toStyleBook(_styleBookEntryService.getStyleBookEntry(id));
 	}
 
 	@Override
@@ -283,67 +296,34 @@ public class StyleBookResourceImpl extends BaseStyleBookResourceImpl {
 		return orderByComparator;
 	}
 
-	private StyleBook _toStyleBook(StyleBookEntry styleBookEntry) {
-		StyleBook styleBook = new StyleBook();
+	private StyleBook _toStyleBook(StyleBookEntry styleBookEntry)
+		throws Exception {
 
-		styleBook.setCreator(
-			() -> {
-				User user = _userLocalService.fetchUser(
-					styleBookEntry.getUserId());
-
-				if (user == null) {
-					return null;
-				}
-
-				return new Creator() {
-					{
-						setExternalReferenceCode(
-							user::getExternalReferenceCode);
-					}
-				};
-			});
-		styleBook.setDateCreated(styleBookEntry::getCreateDate);
-		styleBook.setDateModified(styleBookEntry::getModifiedDate);
-		styleBook.setDefaultStyleBook(styleBookEntry::getDefaultStyleBookEntry);
-		styleBook.setExternalReferenceCode(
-			styleBookEntry::getExternalReferenceCode);
-		styleBook.setFrontendTokensValues(
-			styleBookEntry::getFrontendTokensValues);
-		styleBook.setKey(styleBookEntry::getStyleBookEntryKey);
-		styleBook.setName(styleBookEntry::getName);
-		styleBook.setPreviewFileEntryExternalReferenceCode(
-			() -> {
-				long previewFileEntryId =
-					styleBookEntry.getPreviewFileEntryId();
-
-				if (previewFileEntryId == 0) {
-					return null;
-				}
-
-				FileEntry fileEntry = _dlAppLocalService.getFileEntry(
-					previewFileEntryId);
-
-				if (fileEntry == null) {
-					return null;
-				}
-
-				return fileEntry.getExternalReferenceCode();
-			});
-		styleBook.setThemeId(styleBookEntry::getThemeId);
-
-		return styleBook;
+		return _styleBookDTOConverter.toDTO(
+			new DefaultDTOConverterContext(
+				contextAcceptLanguage.isAcceptAllLanguages(), null,
+				_dtoConverterRegistry, contextHttpServletRequest,
+				styleBookEntry.getStyleBookEntryId(),
+				contextAcceptLanguage.getPreferredLocale(), contextUriInfo,
+				contextUser),
+			styleBookEntry);
 	}
 
 	@Reference
 	private DLAppLocalService _dlAppLocalService;
 
 	@Reference
+	private DTOConverterRegistry _dtoConverterRegistry;
+
+	@Reference
 	private GroupLocalService _groupLocalService;
+
+	@Reference(
+		target = "(component.name=com.liferay.headless.admin.site.internal.dto.v1_0.converter.StyleBookDTOConverter)"
+	)
+	private DTOConverter<StyleBookEntry, StyleBook> _styleBookDTOConverter;
 
 	@Reference
 	private StyleBookEntryService _styleBookEntryService;
-
-	@Reference
-	private UserLocalService _userLocalService;
 
 }
