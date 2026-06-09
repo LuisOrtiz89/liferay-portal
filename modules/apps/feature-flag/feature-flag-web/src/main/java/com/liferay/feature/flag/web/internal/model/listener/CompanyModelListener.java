@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.service.PortalPreferencesLocalService;
 import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portlet.PortalPreferencesWrapper;
 
 import java.util.List;
@@ -86,8 +87,14 @@ public class CompanyModelListener extends BaseModelListener<Company> {
 				FeatureFlagType.DEPRECATION.getPredicate());
 
 		for (FeatureFlag deprecationFeatureFlag : deprecationFeatureFlags) {
+			String key = deprecationFeatureFlag.getKey();
+
 			_featureFlagsBagProvider.setEnabled(
-				companyId, deprecationFeatureFlag.getKey(), false);
+				companyId, key,
+				GetterUtil.getBoolean(
+					PropsUtil.get(
+						FeatureFlagConstants.getKey(
+							key, "initial", "enabled"))));
 		}
 
 		portalPreferences = _getPortalPreferences(companyId);
