@@ -15,8 +15,10 @@ import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.portlet.PortalPreferences;
 import com.liferay.portal.kernel.service.PortalPreferencesLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portlet.PortalPreferencesWrapper;
@@ -57,19 +59,19 @@ public class CompanyModelListenerTest {
 				FeatureFlagConstants.PREFERENCE_NAMESPACE,
 				FeatureFlagConstants.PREFERENCE_KEY_DEPRECATION_PROCESSED));
 
-		Company company = CompanyTestUtil.addCompany();
+		_company1 = CompanyTestUtil.addCompany();
 
 		portalPreferencesWrapper =
 			(PortalPreferencesWrapper)
 				_portalPreferencesLocalService.getPreferences(
-					company.getCompanyId(),
+					_company1.getCompanyId(),
 					PortletKeys.PREFS_OWNER_TYPE_COMPANY);
 
 		portalPreferences = portalPreferencesWrapper.getPortalPreferencesImpl();
 
 		List<FeatureFlag> deprecationFeatureFlags =
 			_featureFlagManager.getFeatureFlags(
-				company.getCompanyId(),
+				_company1.getCompanyId(),
 				FeatureFlagType.DEPRECATION.getPredicate());
 
 		for (FeatureFlag deprecationFeatureFlag : deprecationFeatureFlags) {
@@ -81,6 +83,49 @@ public class CompanyModelListenerTest {
 			Assert.assertFalse(deprecationFeatureFlag.isEnabled());
 		}
 	}
+
+	@Test
+	public void testNewCompanyHonorsInitialEnabledValue() throws Exception {
+		_company1 = CompanyTestUtil.addCompany();
+
+		List<FeatureFlag> deprecationFeatureFlags =
+			_featureFlagManager.getFeatureFlags(
+				_company1.getCompanyId(),
+				FeatureFlagType.DEPRECATION.getPredicate());
+
+		Assert.assertFalse(
+			deprecationFeatureFlags.toString(),
+			deprecationFeatureFlags.isEmpty());
+
+		FeatureFlag deprecationFeatureFlag = deprecationFeatureFlags.get(0);
+
+		String key = deprecationFeatureFlag.getKey();
+
+		Assert.assertFalse(
+			key, _featureFlagManager.isEnabled(_company1.getCompanyId(), key));
+
+		String propertyKey = FeatureFlagConstants.getKey(
+			key, "initial", "enabled");
+
+		PropsUtil.set(propertyKey, "true");
+
+		try {
+			_company2 = CompanyTestUtil.addCompany();
+
+			Assert.assertTrue(
+				key,
+				_featureFlagManager.isEnabled(_company2.getCompanyId(), key));
+		}
+		finally {
+			PropsUtil.set(propertyKey, "false");
+		}
+	}
+
+	@DeleteAfterTestRun
+	private Company _company1;
+
+	@DeleteAfterTestRun
+	private Company _company2;
 
 	@Inject
 	private FeatureFlagManager _featureFlagManager;
