@@ -103,6 +103,24 @@ components:
                     readOnly: true
                     type: string
             type: object
+        AssetListCollection:
+            allOf:
+                -   $ref: "#/components/schemas/ContentSet"
+                -   properties:
+                        classNameId:
+                            format: int64
+                            readOnly: true
+                            type: integer
+                        classPK:
+                            format: int64
+                            readOnly: true
+                            type: integer
+                        externalReferenceCode:
+                            readOnly: true
+                            type: string
+            description:
+                A content set backed by a persisted asset list.
+            type: object
         BlogPosting:
             description:
                 Represents a blog post. See [BlogPosting](https://www.schema.org/BlogPosting) for more information.
@@ -404,6 +422,16 @@ components:
                         The client extension's name.
                     readOnly: true
                     type: string
+            type: object
+        CollectionProvider:
+            allOf:
+                -   $ref: "#/components/schemas/ContentSet"
+                -   properties:
+                        key:
+                            readOnly: true
+                            type: string
+            description:
+                A content set backed by a collection provider.
             type: object
         CollectionViewport:
             # @review
@@ -730,6 +758,38 @@ components:
                     description:
                         The field's visible value
                     type: string
+        ContentSet:
+            description:
+                Represents a content set available in the Item Selector, covering persisted collections, collection providers, related providers, and repeatable field providers.
+            discriminator:
+                mapping:
+                    AssetListCollection: "#/components/schemas/AssetListCollection"
+                    CollectionProvider: "#/components/schemas/CollectionProvider"
+                    RelatedCollectionProvider: "#/components/schemas/RelatedCollectionProvider"
+                    RepeatableFieldsCollectionProvider: "#/components/schemas/RepeatableFieldsCollectionProvider"
+                propertyName: collectionType
+            properties:
+                collectionType:
+                    description:
+                        The content set's type (AssetListCollection, CollectionProvider, RelatedCollectionProvider, RepeatableFieldsCollectionProvider).
+                    enum: [AssetListCollection, CollectionProvider, RelatedCollectionProvider, RepeatableFieldsCollectionProvider]
+                    type: string
+                itemSubtype:
+                    description:
+                        The content set's item subtype.
+                    readOnly: true
+                    type: string
+                itemType:
+                    description:
+                        The fully qualified class name of the content set's items.
+                    readOnly: true
+                    type: string
+                title:
+                    description:
+                        The content set's localized title.
+                    readOnly: true
+                    type: string
+            type: object
         ContentSetElement:
             description:
                 Represents each member of a content set and can contain different types of assets.
@@ -4978,6 +5038,19 @@ components:
                     readOnly: true
                     type: number
             type: object
+        RelatedCollectionProvider:
+            allOf:
+                -   $ref: "#/components/schemas/ContentSet"
+                -   properties:
+                        key:
+                            readOnly: true
+                            type: string
+                        sourceItemType:
+                            readOnly: true
+                            type: string
+            description:
+                A content set backed by a related collection provider.
+            type: object
         RelatedContent:
             # @review
             description:
@@ -5069,6 +5142,19 @@ components:
                     description:
                         An absolute URL to the rendered page.
                     type: string
+            type: object
+        RepeatableFieldsCollectionProvider:
+            allOf:
+                -   $ref: "#/components/schemas/ContentSet"
+                -   properties:
+                        fieldName:
+                            readOnly: true
+                            type: string
+                        key:
+                            readOnly: true
+                            type: string
+            description:
+                A content set backed by a repeatable field collection provider.
             type: object
         RowViewport:
             # @review
@@ -6394,6 +6480,56 @@ paths:
                                     $ref: "#/components/schemas/ContentElement"
                                 type: array
             tags: ["ContentElement"]
+    "/asset-libraries/{assetLibraryId}/content-sets":
+        get:
+            description:
+                Lists the content sets available in an asset library, including persisted collections, collection providers, related providers, and repeatable field providers. Results are sorted by title.
+            operationId: getAssetLibraryContentSetsPage
+            parameters:
+                -   in: path
+                    name: assetLibraryId
+                    required: true
+                    schema:
+                        format: int64
+                        type: integer
+                -   in: query
+                    name: itemSubtype
+                    schema:
+                        type: string
+                -   in: query
+                    name: itemType
+                    schema:
+                        type: string
+                -   in: query
+                    name: keywords
+                    schema:
+                        type: string
+                -   in: query
+                    name: page
+                    schema:
+                        type: integer
+                -   in: query
+                    name: pageSize
+                    schema:
+                        type: integer
+                -   in: header
+                    name: Accept-Language
+                    schema:
+                        type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/ContentSet"
+                                type: array
+                        application/xml:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/ContentSet"
+                                type: array
+            tags: ["ContentSet"]
     "/asset-libraries/{assetLibraryId}/content-sets/by-key/{key}/content-set-elements":
         get:
             operationId: getAssetLibraryContentSetByKeyContentSetElementsPage
@@ -13100,6 +13236,56 @@ paths:
                                     $ref: "#/components/schemas/ContentSetElement"
                                 type: array
             tags: ["ContentSetElement"]
+    "/sites/{siteId}/content-sets":
+        get:
+            description:
+                Lists the content sets available in a site, including persisted collections, collection providers, related providers, and repeatable field providers. Results are sorted by title.
+            operationId: getSiteContentSetsPage
+            parameters:
+                -   in: path
+                    name: siteId
+                    required: true
+                    schema:
+                        format: int64
+                        type: integer
+                -   in: query
+                    name: itemSubtype
+                    schema:
+                        type: string
+                -   in: query
+                    name: itemType
+                    schema:
+                        type: string
+                -   in: query
+                    name: keywords
+                    schema:
+                        type: string
+                -   in: query
+                    name: page
+                    schema:
+                        type: integer
+                -   in: query
+                    name: pageSize
+                    schema:
+                        type: integer
+                -   in: header
+                    name: Accept-Language
+                    schema:
+                        type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/ContentSet"
+                                type: array
+                        application/xml:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/ContentSet"
+                                type: array
+            tags: ["ContentSet"]
     "/sites/{siteId}/content-sets/by-key/{key}/content-set-elements":
         get:
             description:
