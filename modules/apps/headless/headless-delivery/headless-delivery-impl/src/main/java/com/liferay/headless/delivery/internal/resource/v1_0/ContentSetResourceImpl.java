@@ -30,6 +30,7 @@ import com.liferay.info.search.InfoSearchClassMapperRegistry;
 import com.liferay.portal.events.ServicePreAction;
 import com.liferay.portal.events.ThemeServicePreAction;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -129,6 +130,12 @@ public class ContentSetResourceImpl extends BaseContentSetResourceImpl {
 			Long groupId, String itemSubtype, String itemType, String keywords,
 			Pagination pagination)
 		throws Exception {
+
+		if (!FeatureFlagManagerUtil.isEnabled(
+				contextCompany.getCompanyId(), "LPD-88505")) {
+
+			throw new UnsupportedOperationException();
+		}
 
 		ServiceContextThreadLocal.pushServiceContext(
 			_getServiceContext(groupId));
