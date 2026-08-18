@@ -18,13 +18,41 @@ const showUnexpectedErrorToast = () => {
 	});
 };
 
+const startOperation = (url) =>
+	fetch(url, {method: 'POST'})
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error(response.status);
+			}
+
+			return response.json();
+		})
+		.then((responseJSON) => {
+			if (responseJSON.successMessage) {
+				openToast({
+					message: responseJSON.successMessage,
+					type: 'success',
+				});
+			}
+			else if (responseJSON.error) {
+				openToast({
+					message: responseJSON.error,
+					type: 'danger',
+				});
+			}
+			else {
+				showUnexpectedErrorToast();
+			}
+		})
+		.catch(() => {
+			showUnexpectedErrorToast();
+		});
+
 const ACTIONS = {
 	deleteInstance(itemData) {
 		openDeleteCompanyModal({
 			onDelete: () => {
-				fetch(itemData.deleteURL, {method: 'POST'}).then(() => {
-					window.location.reload();
-				});
+				startOperation(itemData.deleteURL);
 			},
 		});
 	},
@@ -45,37 +73,9 @@ const ACTIONS = {
 			onExport: () => {
 				pendingExportURLs.add(itemData.exportURL);
 
-				fetch(itemData.exportURL, {method: 'POST'})
-					.then((response) => {
-						if (!response.ok) {
-							throw new Error(response.status);
-						}
-
-						return response.json();
-					})
-					.then((responseJSON) => {
-						if (responseJSON.successMessage) {
-							openToast({
-								message: responseJSON.successMessage,
-								type: 'success',
-							});
-						}
-						else if (responseJSON.error) {
-							openToast({
-								message: responseJSON.error,
-								type: 'danger',
-							});
-						}
-						else {
-							showUnexpectedErrorToast();
-						}
-					})
-					.catch(() => {
-						showUnexpectedErrorToast();
-					})
-					.finally(() => {
-						pendingExportURLs.delete(itemData.exportURL);
-					});
+				startOperation(itemData.exportURL).finally(() => {
+					pendingExportURLs.delete(itemData.exportURL);
+				});
 			},
 		});
 	},

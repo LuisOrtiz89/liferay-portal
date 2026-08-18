@@ -31,9 +31,10 @@ public enum PortalInstancesOperationType {
 			"Unknown portal instances operation type \"" + value + "\"");
 	}
 
-	public String getBackgroundTaskName(String webId) {
+	public String getBackgroundTaskName(String identifier) {
 		return StringBundler.concat(
-			StringUtil.upperCaseFirstLetter(_value), "VirtualInstance#", webId);
+			StringUtil.upperCaseFirstLetter(_value), "VirtualInstance#",
+			identifier);
 	}
 
 	public String getValue() {
