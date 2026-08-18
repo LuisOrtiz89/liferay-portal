@@ -12,6 +12,8 @@ public class PortalInstancesBackgroundTaskConstants {
 
 	public static final String ACTIVE = "active";
 
+	public static final String COMPANY_ID = "companyId";
+
 	public static final String DEFAULT_ADMIN_EMAIL_ADDRESS =
 		"defaultAdminEmailAddress";
 
