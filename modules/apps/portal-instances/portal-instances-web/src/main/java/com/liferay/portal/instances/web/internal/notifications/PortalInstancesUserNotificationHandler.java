@@ -96,11 +96,10 @@ public class PortalInstancesUserNotificationHandler
 		String status = jsonObject.getString(
 			PortalInstancesNotificationPayload.STATUS);
 
-		if (portalInstancesOperationType == PortalInstancesOperationType.ADD) {
-			String webId = HtmlUtil.escape(
-				jsonObject.getString(
-					PortalInstancesNotificationPayload.WEB_ID));
+		String webId = HtmlUtil.escape(
+			jsonObject.getString(PortalInstancesNotificationPayload.WEB_ID));
 
+		if (portalInstancesOperationType == PortalInstancesOperationType.ADD) {
 			if (status.equals(BackgroundTaskConstants.LABEL_SUCCESSFUL)) {
 				return _language.format(
 					locale, "the-virtual-instance-x-was-added-successfully",
@@ -111,6 +110,23 @@ public class PortalInstancesUserNotificationHandler
 				return StringBundler.concat(
 					_language.format(
 						locale, "the-virtual-instance-x-could-not-be-added",
+						webId, false),
+					StringPool.SPACE, _getErrorMessage(jsonObject, locale));
+			}
+		}
+		else if (portalInstancesOperationType ==
+					PortalInstancesOperationType.DELETE) {
+
+			if (status.equals(BackgroundTaskConstants.LABEL_SUCCESSFUL)) {
+				return _language.format(
+					locale, "the-virtual-instance-x-was-deleted-successfully",
+					webId, false);
+			}
+
+			if (status.equals(BackgroundTaskConstants.LABEL_FAILED)) {
+				return StringBundler.concat(
+					_language.format(
+						locale, "the-virtual-instance-x-could-not-be-deleted",
 						webId, false),
 					StringPool.SPACE, _getErrorMessage(jsonObject, locale));
 			}

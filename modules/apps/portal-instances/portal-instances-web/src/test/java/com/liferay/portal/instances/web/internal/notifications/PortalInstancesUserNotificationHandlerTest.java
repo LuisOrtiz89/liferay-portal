@@ -80,11 +80,37 @@ public class PortalInstancesUserNotificationHandlerTest {
 		);
 
 		Mockito.when(
+			language.format(
+				Mockito.any(Locale.class),
+				Mockito.eq("the-virtual-instance-x-was-deleted-successfully"),
+				Mockito.eq(_WEB_ID_MATCHING_LANGUAGE_KEY), Mockito.eq(false))
+		).thenReturn(
+			_DELETED_MESSAGE
+		);
+
+		Mockito.when(
+			language.format(
+				Mockito.any(Locale.class),
+				Mockito.eq("the-virtual-instance-x-could-not-be-deleted"),
+				Mockito.eq(_WEB_ID_MATCHING_LANGUAGE_KEY), Mockito.eq(false))
+		).thenReturn(
+			_NOT_DELETED_MESSAGE
+		);
+
+		Mockito.when(
 			language.get(
 				Mockito.any(Locale.class),
 				Mockito.eq("please-enter-a-valid-web-id"))
 		).thenReturn(
 			_ERROR_MESSAGE
+		);
+
+		Mockito.when(
+			language.get(
+				Mockito.any(Locale.class),
+				Mockito.eq("the-default-company-is-required"))
+		).thenReturn(
+			_DEFAULT_COMPANY_REQUIRED_MESSAGE
 		);
 
 		ReflectionTestUtil.setFieldValue(
@@ -132,12 +158,40 @@ public class PortalInstancesUserNotificationHandlerTest {
 	}
 
 	@Test
+	public void testGetBodyWhenOperationTypeIsDeleteAndStatusIsFailed()
+		throws Exception {
+
+		Assert.assertEquals(
+			_getExpectedBody(
+				_NOT_DELETED_MESSAGE + " " + _DEFAULT_COMPANY_REQUIRED_MESSAGE),
+			_portalInstancesUserNotificationHandler.getBody(
+				_createUserNotificationEvent(
+					PortalInstancesOperationType.DELETE,
+					BackgroundTaskConstants.STATUS_FAILED,
+					"the-default-company-is-required"),
+				_serviceContext));
+	}
+
+	@Test
+	public void testGetBodyWhenOperationTypeIsDeleteAndStatusIsSuccessful()
+		throws Exception {
+
+		Assert.assertEquals(
+			_getExpectedBody(_DELETED_MESSAGE),
+			_portalInstancesUserNotificationHandler.getBody(
+				_createUserNotificationEvent(
+					PortalInstancesOperationType.DELETE,
+					BackgroundTaskConstants.STATUS_SUCCESSFUL, null),
+				_serviceContext));
+	}
+
+	@Test
 	public void testGetBodyWhenOperationTypeIsNotSupported() {
 		Assert.assertThrows(
 			IllegalArgumentException.class,
 			() -> _portalInstancesUserNotificationHandler.getBody(
 				_createUserNotificationEvent(
-					PortalInstancesOperationType.DELETE,
+					PortalInstancesOperationType.COPY,
 					BackgroundTaskConstants.STATUS_SUCCESSFUL, null),
 				_serviceContext));
 	}
@@ -178,10 +232,19 @@ public class PortalInstancesUserNotificationHandlerTest {
 	private static final String _ADDED_MESSAGE =
 		"The virtual instance test was added successfully.";
 
+	private static final String _DEFAULT_COMPANY_REQUIRED_MESSAGE =
+		"The default company is required.";
+
+	private static final String _DELETED_MESSAGE =
+		"The virtual instance test was deleted successfully.";
+
 	private static final String _ERROR_MESSAGE = "Please enter a valid web ID.";
 
 	private static final String _NOT_ADDED_MESSAGE =
 		"The virtual instance test could not be added.";
+
+	private static final String _NOT_DELETED_MESSAGE =
+		"The virtual instance test could not be deleted.";
 
 	private static final String _PORTLET_TITLE = "Virtual Instances";
 
