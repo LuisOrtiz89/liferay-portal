@@ -98,11 +98,9 @@ definition {
 			key_text = "Delete",
 			locator1 = "Modal#MODAL_FOOTER_BUTTON");
 
-		Alert.viewSuccessMessage();
+		Alert.viewSuccessMessageText(successMessage = "is being deleted. You will be notified when it is done.");
 
-		AssertTextNotPresent(
-			locator1 = "PortalInstances#INSTANCE_TABLE_VIRTUAL_HOST",
-			value1 = ${virtualHost});
+		PortalInstances.waitForDeletionCP(virtualHost = ${virtualHost});
 	}
 
 	@summary = "Default summary"
@@ -218,6 +216,29 @@ definition {
 
 		AssertTextEquals.assertText(
 			locator1 = "PortalInstances#INSTANCE_TABLE_MAIL_DOMAIN",
+			value1 = ${virtualHost});
+	}
+
+	@summary = "Wait until the Delete background task removes ${virtualHost} from the instances table"
+	macro waitForDeletionCP(virtualHost = null) {
+		var key_virtualHost = ${virtualHost};
+		var deletionPauseCount = 0;
+
+		while ((IsElementPresent(locator1 = "PortalInstances#INSTANCE_TABLE_VIRTUAL_HOST")) && (${deletionPauseCount} != 60)) {
+
+			// We need to pause because the Delete operation runs in a background task and the instances table is only refreshed on demand. See LPD-93374
+
+			Pause(value1 = 5000);
+
+			Refresh();
+
+			var deletionPauseCount = ${deletionPauseCount} + 1;
+
+			echo("Deletion pause count: ${deletionPauseCount}");
+		}
+
+		AssertTextNotPresent(
+			locator1 = "PortalInstances#INSTANCE_TABLE_VIRTUAL_HOST",
 			value1 = ${virtualHost});
 	}
 

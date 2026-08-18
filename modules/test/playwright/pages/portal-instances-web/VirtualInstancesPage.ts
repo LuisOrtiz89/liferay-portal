@@ -21,6 +21,7 @@ export class VirtualInstancesPage {
 	readonly addInstanceVirtualHost: Locator;
 	readonly addInstanceVirtualInstanceInitializer: Locator;
 	readonly addInstanceWebIdField: Locator;
+	readonly addStartMessage: Locator;
 	readonly globalMenuPage: GlobalMenuPage;
 	readonly errorMessage: Locator;
 	readonly errorMessageScreenName: Locator;
@@ -28,7 +29,6 @@ export class VirtualInstancesPage {
 	readonly errorMessagePassword: Locator;
 	readonly newVirtualInstanceButton: Locator;
 	readonly page: Page;
-	readonly startMessage: Locator;
 
 	constructor(page: Page) {
 		this.addInstanceFrame = page.frameLocator(
@@ -52,6 +52,9 @@ export class VirtualInstancesPage {
 		this.addInstanceVirtualInstanceInitializer =
 			this.addInstanceFrame.getByLabel('Virtual Instance Initializer');
 		this.addInstanceWebIdField = this.addInstanceFrame.getByLabel('Web ID');
+		this.addStartMessage = page.getByText(
+			'is being added. You will be notified when it is ready.'
+		);
 		this.globalMenuPage = new GlobalMenuPage(page);
 		this.errorMessage = this.addInstanceFrame.locator('.alert-danger');
 		this.errorMessageEmailAddress = this.addInstanceFrame.getByText(
@@ -65,9 +68,6 @@ export class VirtualInstancesPage {
 		);
 		this.newVirtualInstanceButton = page.getByRole('button', {name: 'Add'});
 		this.page = page;
-		this.startMessage = page.getByText(
-			'is being added. You will be notified when it is ready.'
-		);
 	}
 
 	async addNewVirtualInstance(
@@ -105,7 +105,7 @@ export class VirtualInstancesPage {
 		// Only wait for Virtual Instance creation if there are no errors
 
 		if (await this.errorMessage.isHidden()) {
-			await expect(this.startMessage).toBeVisible({
+			await expect(this.addStartMessage).toBeVisible({
 				timeout: 30 * 1000,
 			});
 
@@ -197,6 +197,20 @@ export class VirtualInstancesPage {
 			await expect(
 				this.page.getByRole('row').filter({hasText: name})
 			).toBeVisible({timeout: 10 * 1000});
+		}).toPass({timeout: 180 * 1000});
+	}
+
+	/**
+	 * The Delete operation runs in a background task, so the row only
+	 * disappears from the list once the task completes.
+	 */
+	async waitForVirtualInstanceDeletion(name: string) {
+		await expect(async () => {
+			await this.page.reload();
+
+			await expect(
+				this.page.getByRole('row').filter({hasText: name})
+			).toBeHidden({timeout: 10 * 1000});
 		}).toPass({timeout: 180 * 1000});
 	}
 }

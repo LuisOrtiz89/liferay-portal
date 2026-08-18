@@ -7,6 +7,7 @@ import {Page, expect} from '@playwright/test';
 
 import {VirtualInstancesPage} from '../../../pages/portal-instances-web/VirtualInstancesPage';
 import {UserPersonalBarPage} from '../../../pages/product-navigation-user-personal-bar-web/UserPersonalBarPage';
+import {clickAndExpectToBeVisible} from '../../../utils/clickAndExpectToBeVisible';
 import getRandomString from '../../../utils/getRandomString';
 
 const DEFAULT_WEB_ID = 'liferay.com';
@@ -43,7 +44,7 @@ export async function assertDuplicateWebIdIsRejected(
 
 	// Nothing was enqueued, so the start message must never appear
 
-	await expect(virtualInstancesPage.startMessage).toBeHidden();
+	await expect(virtualInstancesPage.addStartMessage).toBeHidden();
 }
 
 export async function assertVirtualInstanceIsAddedAndNotified(
@@ -71,13 +72,15 @@ export async function assertVirtualInstanceIsAddedAndNotified(
 			});
 		}).toPass({timeout: 120 * 1000});
 
-		await userPersonalBarPage.notificationBadge.click();
+		// The bell needs its handler retried, since a single click on it often
+		// lands before the notifications are wired up and then goes nowhere
 
-		await expect(
-			page.getByRole('link', {
+		await clickAndExpectToBeVisible({
+			target: page.getByRole('link', {
 				name: `The virtual instance ${name} was added successfully.`,
-			})
-		).toBeVisible();
+			}),
+			trigger: userPersonalBarPage.notificationBadge,
+		});
 	}
 	finally {
 		await virtualInstancesPage.deleteVirtualInstance(name);
