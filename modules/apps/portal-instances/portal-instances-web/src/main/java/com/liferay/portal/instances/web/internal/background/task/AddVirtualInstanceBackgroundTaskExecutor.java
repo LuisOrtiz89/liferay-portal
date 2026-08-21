@@ -11,6 +11,7 @@ import com.liferay.portal.instances.web.internal.constants.PortalInstancesPortle
 import com.liferay.portal.instances.web.internal.notifications.PortalInstancesNotificationPayload;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskExecutor;
+import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskResult;
 import com.liferay.portal.kernel.backgroundtask.BaseBackgroundTaskExecutor;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
@@ -32,6 +33,7 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.UserNotificationDeliveryConstants;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.CompanyService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -70,6 +72,7 @@ public class AddVirtualInstanceBackgroundTaskExecutor
 		Map<String, Serializable> taskContextMap =
 			backgroundTask.getTaskContextMap();
 
+		Long companyId = _getCompanyId(taskContextMap);
 		String webId = GetterUtil.getString(
 			taskContextMap.get(PortalInstancesBackgroundTaskConstants.WEB_ID));
 		String virtualHostname = GetterUtil.getString(
@@ -102,7 +105,7 @@ public class AddVirtualInstanceBackgroundTaskExecutor
 					PortalInstancesBackgroundTaskConstants.
 						SITE_INITIALIZER_KEY)),
 			() -> _companyService.addCompany(
-				null, webId, virtualHostname, mx, maxUsers, active,
+				companyId, webId, virtualHostname, mx, maxUsers, active,
 				defaultAdminPassword, defaultAdminScreenName,
 				defaultAdminEmailAddress, defaultAdminFirstName,
 				defaultAdminMiddleName, defaultAdminLastName));
@@ -145,6 +148,15 @@ public class AddVirtualInstanceBackgroundTaskExecutor
 			backgroundTask.getTaskContextMap();
 
 		try {
+			_persistErrorMessage(backgroundTask, _getErrorMessage(exception1));
+		}
+		catch (Exception exception2) {
+			_log.error(
+				"Unable to persist the virtual instance operation error",
+				exception2);
+		}
+
+		try {
 			_sendUserNotificationEvent(
 				backgroundTask.getUserId(),
 				PortalInstancesNotificationPayload.build(
@@ -175,6 +187,30 @@ public class AddVirtualInstanceBackgroundTaskExecutor
 			PortalInstances.getDefaultCompanyId());
 
 		return _encryptor.decrypt(company.getKeyObj(), defaultAdminPassword);
+	}
+
+	private Long _getCompanyId(Map<String, Serializable> taskContextMap) {
+		long companyId = GetterUtil.getLong(
+			taskContextMap.get(
+				PortalInstancesBackgroundTaskConstants.COMPANY_ID));
+
+		if (companyId <= 0) {
+			return null;
+		}
+
+		return companyId;
+	}
+
+	private String _getErrorMessage(Exception exception) {
+		String message = exception.getMessage();
+
+		if (Validator.isNull(message)) {
+			Class<?> clazz = exception.getClass();
+
+			return clazz.getName();
+		}
+
+		return message;
 	}
 
 	private String _getErrorMessageKey(Exception exception) {
@@ -229,6 +265,21 @@ public class AddVirtualInstanceBackgroundTaskExecutor
 		return "an-unexpected-error-occurred";
 	}
 
+	private void _persistErrorMessage(
+			BackgroundTask backgroundTask, String errorMessage)
+		throws Exception {
+
+		Map<String, Serializable> taskContextMap =
+			backgroundTask.getTaskContextMap();
+
+		taskContextMap.put(
+			PortalInstancesBackgroundTaskConstants.ERROR_MESSAGE, errorMessage);
+
+		_backgroundTaskManager.amendBackgroundTask(
+			backgroundTask.getBackgroundTaskId(), taskContextMap,
+			backgroundTask.getStatus(), new ServiceContext());
+	}
+
 	private void _sendUserNotificationEvent(
 			long userId, JSONObject payloadJSONObject)
 		throws Exception {
@@ -240,6 +291,9 @@ public class AddVirtualInstanceBackgroundTaskExecutor
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		AddVirtualInstanceBackgroundTaskExecutor.class);
+
+	@Reference
+	private BackgroundTaskManager _backgroundTaskManager;
 
 	@Reference
 	private CompanyLocalService _companyLocalService;

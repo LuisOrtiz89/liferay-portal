@@ -6,9 +6,11 @@
 package com.liferay.portal.instances.web.internal.background.task.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.counter.kernel.service.CounterLocalServiceUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.background.task.model.BackgroundTask;
 import com.liferay.portal.background.task.service.BackgroundTaskLocalService;
+import com.liferay.portal.instances.background.task.PortalInstancesOperationType;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.encryptor.EncryptorUtil;
 import com.liferay.portal.kernel.exception.CompanyWebIdException;
@@ -26,6 +28,7 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
@@ -63,7 +66,7 @@ public class AddVirtualInstanceBackgroundTaskExecutorTest {
 
 	@Test
 	public void testExecute() throws Exception {
-		BackgroundTask backgroundTask = _addBackgroundTask(null, null);
+		BackgroundTask backgroundTask = _addBackgroundTask(null, null, null);
 
 		Assert.assertEquals(
 			BackgroundTaskConstants.STATUS_SUCCESSFUL,
@@ -89,11 +92,31 @@ public class AddVirtualInstanceBackgroundTaskExecutorTest {
 	}
 
 	@Test
+	public void testExecuteWhenCompanyIdIsSpecified() throws Exception {
+		long companyId = CounterLocalServiceUtil.increment(
+			Company.class.getName());
+
+		BackgroundTask backgroundTask = _addBackgroundTask(
+			companyId, null, null);
+
+		Assert.assertEquals(
+			BackgroundTaskConstants.STATUS_SUCCESSFUL,
+			backgroundTask.getStatus());
+
+		_company = _companyLocalService.getCompanyByWebId(_WEB_ID);
+
+		Assert.assertEquals(companyId, _company.getCompanyId());
+	}
+
+	@Test
 	public void testExecuteWhenDefaultAdminEmailAddressIsInvalid()
 		throws Exception {
 
+		String defaultAdminEmailAddress = StringUtil.toLowerCase(
+			RandomTestUtil.randomString());
+
 		BackgroundTask backgroundTask = _addBackgroundTask(
-			RandomTestUtil.randomString(), null);
+			null, defaultAdminEmailAddress, null);
 
 		Assert.assertEquals(
 			BackgroundTaskConstants.STATUS_FAILED, backgroundTask.getStatus());
@@ -108,6 +131,16 @@ public class AddVirtualInstanceBackgroundTaskExecutorTest {
 			payloadJSONObject.getString("status"));
 
 		_company = _companyLocalService.getCompanyByWebId(_WEB_ID);
+
+		Map<String, Serializable> taskContextMap =
+			backgroundTask.getTaskContextMap();
+
+		String errorMessage = GetterUtil.getString(
+			taskContextMap.get("errorMessage"));
+
+		Assert.assertTrue(
+			"Unexpected error message " + errorMessage,
+			errorMessage.contains(defaultAdminEmailAddress));
 	}
 
 	@Test
@@ -120,7 +153,7 @@ public class AddVirtualInstanceBackgroundTaskExecutorTest {
 			PortalUtil.getDefaultCompanyId());
 
 		BackgroundTask backgroundTask = _addBackgroundTask(
-			null,
+			null, null,
 			EncryptorUtil.encrypt(
 				defaultCompany.getKeyObj(), defaultAdminPassword));
 
@@ -159,12 +192,15 @@ public class AddVirtualInstanceBackgroundTaskExecutorTest {
 	}
 
 	private BackgroundTask _addBackgroundTask(
-			String defaultAdminEmailAddress, String defaultAdminPassword)
+			Long companyId, String defaultAdminEmailAddress,
+			String defaultAdminPassword)
 		throws Exception {
 
 		Map<String, Serializable> taskContextMap =
 			HashMapBuilder.<String, Serializable>put(
 				"active", true
+			).put(
+				"companyId", () -> companyId
 			).put(
 				"defaultAdminEmailAddress", () -> defaultAdminEmailAddress
 			).put(
@@ -185,9 +221,9 @@ public class AddVirtualInstanceBackgroundTaskExecutorTest {
 			_backgroundTaskLocalService.addBackgroundTask(
 				TestPropsValues.getUserId(),
 				BackgroundTaskConstants.GROUP_ID_DEFAULT,
-				"AddVirtualInstance#" + _WEB_ID,
-				"com.liferay.portal.instances.web.internal.background.task." +
-					"AddVirtualInstanceBackgroundTaskExecutor",
+				PortalInstancesOperationType.ADD.getBackgroundTaskName(_WEB_ID),
+				PortalInstancesOperationType.ADD.
+					getBackgroundTaskExecutorClassName(),
 				taskContextMap, new ServiceContext());
 
 		_backgroundTasks.add(backgroundTask);
