@@ -10,6 +10,7 @@ import com.liferay.headless.portal.instances.dto.v1_0.PortalInstance;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceCopy;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceExport;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceImport;
+import com.liferay.headless.portal.instances.internal.util.PermissionUtil;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceResource;
 import com.liferay.portal.instances.exporter.PortalInstanceExporter;
 import com.liferay.portal.kernel.exception.UserEmailAddressException;
@@ -20,9 +21,6 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
-import com.liferay.portal.kernel.security.auth.PrincipalException;
-import com.liferay.portal.kernel.security.permission.PermissionChecker;
-import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.CompanyService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -146,7 +144,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		_checkFeatureFlag();
 
-		_checkPermission();
+		PermissionUtil.checkOmniadminPermission();
 
 		if (portalInstanceCopy == null) {
 			throw new BadRequestException("Copy configuration is required");
@@ -197,7 +195,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		_checkFeatureFlag();
 
-		_checkPermission();
+		PermissionUtil.checkOmniadminPermission();
 
 		try {
 			PortalInstanceExport portalInstanceExport =
@@ -233,7 +231,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		_checkFeatureFlag();
 
-		_checkPermission();
+		PermissionUtil.checkOmniadminPermission();
 
 		if (portalInstanceImport == null) {
 			throw new BadRequestException("Import configuration is required");
@@ -287,15 +285,6 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 				contextCompany.getCompanyId(), "LPD-11342")) {
 
 			throw new UnsupportedOperationException();
-		}
-	}
-
-	private void _checkPermission() throws Exception {
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
-		if (!permissionChecker.isOmniadmin()) {
-			throw new PrincipalException.MustBeOmniadmin(permissionChecker);
 		}
 	}
 
