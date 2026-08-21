@@ -5,10 +5,10 @@
 
 package com.liferay.portal.instances.web.internal.background.task;
 
-import com.liferay.portal.instances.web.internal.constants.PortalInstancesBackgroundTaskConstants;
+import com.liferay.portal.instances.background.task.PortalInstancesOperationType;
+import com.liferay.portal.instances.background.task.constants.PortalInstancesBackgroundTaskConstants;
 import com.liferay.portal.instances.web.internal.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.instances.web.internal.notifications.PortalInstancesNotificationPayload;
-import com.liferay.portal.instances.web.internal.notifications.PortalInstancesOperationType;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskExecutor;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskResult;
@@ -122,7 +122,7 @@ public class AddVirtualInstanceBackgroundTaskExecutor
 		}
 
 		JSONObject statusMessageJSONObject = JSONUtil.put(
-			PortalInstancesNotificationPayload.COMPANY_ID,
+			PortalInstancesBackgroundTaskConstants.COMPANY_ID,
 			company.getCompanyId());
 
 		return new BackgroundTaskResult(

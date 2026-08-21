@@ -5,6 +5,8 @@
 
 package com.liferay.portal.instances.web.internal.notifications;
 
+import com.liferay.portal.instances.background.task.PortalInstancesOperationType;
+import com.liferay.portal.instances.background.task.constants.PortalInstancesBackgroundTaskConstants;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -14,35 +16,25 @@ import com.liferay.portal.kernel.json.JSONUtil;
  */
 public class PortalInstancesNotificationPayload {
 
-	public static final String COMPANY_ID = "companyId";
-
-	public static final String ERROR_MESSAGE = "errorMessage";
-
-	public static final String OPERATION_TYPE = "operationType";
-
-	public static final String SCHEMA_NAME = "schemaName";
-
-	public static final String STATUS = "status";
-
-	public static final String WEB_ID = "webId";
-
 	public static JSONObject build(
 		long companyId, String errorMessage,
 		PortalInstancesOperationType portalInstancesOperationType,
 		String schemaName, int status, String webId) {
 
 		return JSONUtil.put(
-			COMPANY_ID, companyId
+			PortalInstancesBackgroundTaskConstants.COMPANY_ID, companyId
 		).put(
-			ERROR_MESSAGE, errorMessage
+			PortalInstancesBackgroundTaskConstants.ERROR_MESSAGE, errorMessage
 		).put(
-			OPERATION_TYPE, portalInstancesOperationType.getValue()
+			PortalInstancesBackgroundTaskConstants.OPERATION_TYPE,
+			portalInstancesOperationType.getValue()
 		).put(
-			SCHEMA_NAME, schemaName
+			PortalInstancesBackgroundTaskConstants.SCHEMA_NAME, schemaName
 		).put(
-			STATUS, BackgroundTaskConstants.getStatusLabel(status)
+			PortalInstancesBackgroundTaskConstants.STATUS,
+			BackgroundTaskConstants.getStatusLabel(status)
 		).put(
-			WEB_ID, webId
+			PortalInstancesBackgroundTaskConstants.WEB_ID, webId
 		);
 	}
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-package com.liferay.portal.instances.web.internal.notifications;
+package com.liferay.portal.instances.background.task;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -15,6 +15,25 @@ public enum PortalInstancesOperationType {
 
 	ADD("add"), COPY("copy"), DELETE("delete"), EXPORT("export"),
 	IMPORT("import");
+
+	public static PortalInstancesOperationType
+		fromBackgroundTaskExecutorClassName(
+			String backgroundTaskExecutorClassName) {
+
+		for (PortalInstancesOperationType portalInstancesOperationType :
+				values()) {
+
+			if (StringUtil.equals(
+					backgroundTaskExecutorClassName,
+					portalInstancesOperationType.
+						getBackgroundTaskExecutorClassName())) {
+
+				return portalInstancesOperationType;
+			}
+		}
+
+		return null;
+	}
 
 	public static PortalInstancesOperationType parse(String value) {
 		for (PortalInstancesOperationType portalInstancesOperationType :
@@ -31,6 +50,13 @@ public enum PortalInstancesOperationType {
 			"Unknown portal instances operation type \"" + value + "\"");
 	}
 
+	public String getBackgroundTaskExecutorClassName() {
+		return StringBundler.concat(
+			_BACKGROUND_TASK_EXECUTOR_PACKAGE_NAME,
+			StringUtil.upperCaseFirstLetter(_value),
+			"VirtualInstanceBackgroundTaskExecutor");
+	}
+
 	public String getBackgroundTaskName(String webId) {
 		return StringBundler.concat(
 			StringUtil.upperCaseFirstLetter(_value), "VirtualInstance#", webId);
@@ -43,6 +69,9 @@ public enum PortalInstancesOperationType {
 	private PortalInstancesOperationType(String value) {
 		_value = value;
 	}
+
+	private static final String _BACKGROUND_TASK_EXECUTOR_PACKAGE_NAME =
+		"com.liferay.portal.instances.web.internal.background.task.";
 
 	private final String _value;
 

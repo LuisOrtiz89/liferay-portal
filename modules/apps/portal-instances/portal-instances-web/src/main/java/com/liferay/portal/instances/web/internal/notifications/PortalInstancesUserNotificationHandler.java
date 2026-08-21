@@ -7,6 +7,8 @@ package com.liferay.portal.instances.web.internal.notifications;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.instances.background.task.PortalInstancesOperationType;
+import com.liferay.portal.instances.background.task.constants.PortalInstancesBackgroundTaskConstants;
 import com.liferay.portal.instances.web.internal.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -91,15 +93,15 @@ public class PortalInstancesUserNotificationHandler
 		PortalInstancesOperationType portalInstancesOperationType =
 			PortalInstancesOperationType.parse(
 				jsonObject.getString(
-					PortalInstancesNotificationPayload.OPERATION_TYPE));
+					PortalInstancesBackgroundTaskConstants.OPERATION_TYPE));
 
 		String status = jsonObject.getString(
-			PortalInstancesNotificationPayload.STATUS);
+			PortalInstancesBackgroundTaskConstants.STATUS);
 
 		if (portalInstancesOperationType == PortalInstancesOperationType.ADD) {
 			String webId = HtmlUtil.escape(
 				jsonObject.getString(
-					PortalInstancesNotificationPayload.WEB_ID));
+					PortalInstancesBackgroundTaskConstants.WEB_ID));
 
 			if (status.equals(BackgroundTaskConstants.LABEL_SUCCESSFUL)) {
 				return _language.format(
@@ -125,7 +127,7 @@ public class PortalInstancesUserNotificationHandler
 
 	private String _getErrorMessage(JSONObject jsonObject, Locale locale) {
 		String errorMessage = jsonObject.getString(
-			PortalInstancesNotificationPayload.ERROR_MESSAGE);
+			PortalInstancesBackgroundTaskConstants.ERROR_MESSAGE);
 
 		if (Validator.isNull(errorMessage)) {
 			return _language.get(locale, "an-unexpected-error-occurred");
