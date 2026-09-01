@@ -10,6 +10,7 @@ import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.field.util.ObjectFieldUtil;
 import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.model.ObjectField;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
@@ -127,27 +128,20 @@ public class ObjectFieldUpgradeProcessTest {
 			EntityCacheUtil.clearCache();
 		}
 
-		Assert.assertNotNull(
-			_objectFieldLocalService.getObjectField(
-				modifiableSystemObjectDefinition.getObjectDefinitionId(),
-				"displayDate"));
-		Assert.assertNotNull(
-			_objectFieldLocalService.getObjectField(
-				modifiableSystemObjectDefinition.getObjectDefinitionId(),
-				"expirationDate"));
-		Assert.assertNotNull(
-			_objectFieldLocalService.getObjectField(
-				modifiableSystemObjectDefinition.getObjectDefinitionId(),
-				"reviewDate"));
-		Assert.assertNotNull(
-			_objectFieldLocalService.getObjectField(
-				objectDefinition.getObjectDefinitionId(), "displayDate"));
-		Assert.assertNotNull(
-			_objectFieldLocalService.getObjectField(
-				objectDefinition.getObjectDefinitionId(), "expirationDate"));
-		Assert.assertNotNull(
-			_objectFieldLocalService.getObjectField(
-				objectDefinition.getObjectDefinitionId(), "reviewDate"));
+		_assertReadOnly(
+			"displayDate",
+			modifiableSystemObjectDefinition.getObjectDefinitionId());
+		_assertReadOnly(
+			"expirationDate",
+			modifiableSystemObjectDefinition.getObjectDefinitionId());
+		_assertReadOnly(
+			"reviewDate",
+			modifiableSystemObjectDefinition.getObjectDefinitionId());
+		_assertReadOnly(
+			"displayDate", objectDefinition.getObjectDefinitionId());
+		_assertReadOnly(
+			"expirationDate", objectDefinition.getObjectDefinitionId());
+		_assertReadOnly("reviewDate", objectDefinition.getObjectDefinitionId());
 		Assert.assertNull(
 			_objectFieldLocalService.fetchObjectField(
 				userObjectDefinition.getObjectDefinitionId(), "displayDate"));
@@ -158,6 +152,16 @@ public class ObjectFieldUpgradeProcessTest {
 		Assert.assertNull(
 			_objectFieldLocalService.fetchObjectField(
 				userObjectDefinition.getObjectDefinitionId(), "reviewDate"));
+	}
+
+	private void _assertReadOnly(String name, long objectDefinitionId)
+		throws Exception {
+
+		ObjectField objectField = _objectFieldLocalService.getObjectField(
+			objectDefinitionId, name);
+
+		Assert.assertEquals(
+			ObjectFieldConstants.READ_ONLY_FALSE, objectField.getReadOnly());
 	}
 
 	private static final String _CLASS_NAME =
