@@ -78,6 +78,26 @@ public class CompanyServiceWrapper
 	}
 
 	@Override
+	public long addCompanyInBackground(
+			java.lang.String webId, java.lang.String virtualHostname,
+			java.lang.String mx, int maxUsers, boolean active,
+			java.lang.String defaultAdminPassword,
+			java.lang.String defaultAdminScreenName,
+			java.lang.String defaultAdminEmailAddress,
+			java.lang.String defaultAdminFirstName,
+			java.lang.String defaultAdminMiddleName,
+			java.lang.String defaultAdminLastName,
+			java.lang.String siteInitializerKey)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _companyService.addCompanyInBackground(
+			webId, virtualHostname, mx, maxUsers, active, defaultAdminPassword,
+			defaultAdminScreenName, defaultAdminEmailAddress,
+			defaultAdminFirstName, defaultAdminMiddleName, defaultAdminLastName,
+			siteInitializerKey);
+	}
+
+	@Override
 	public com.liferay.portal.kernel.model.Company addDBPartitionCompany(
 			java.lang.String schemaName, java.lang.String name,
 			java.lang.String virtualHost, java.lang.String webId)
@@ -443,4 +463,4 @@ public class CompanyServiceWrapper
 	private CompanyService _companyService;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-1263371068
+// LIFERAY-SERVICE-BUILDER-HASH:-244290869

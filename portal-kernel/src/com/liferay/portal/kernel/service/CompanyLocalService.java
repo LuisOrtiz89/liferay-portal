@@ -95,6 +95,14 @@ public interface CompanyLocalService
 			String defaultAdminMiddleName, String defaultAdminLastName)
 		throws PortalException;
 
+	public long addCompanyInBackground(
+			long userId, String webId, String virtualHostname, String mx,
+			int maxUsers, boolean active, String defaultAdminPassword,
+			String defaultAdminScreenName, String defaultAdminEmailAddress,
+			String defaultAdminFirstName, String defaultAdminMiddleName,
+			String defaultAdminLastName, String siteInitializerKey)
+		throws PortalException;
+
 	public Company addDBPartitionCompany(
 			long companyId, String name, String virtualHostname, String webId)
 		throws PortalException;
@@ -610,4 +618,4 @@ public interface CompanyLocalService
 		throws PortalException;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-1452198032
+// LIFERAY-SERVICE-BUILDER-HASH:-1579786676
