@@ -85,19 +85,20 @@ public class AddInstanceMVCActionCommandTest {
 		long endTime = System.currentTimeMillis() + 600000;
 
 		while (System.currentTimeMillis() < endTime) {
-			BackgroundTask backgroundTask =
-				_backgroundTaskLocalService.fetchBackgroundTask(
-					backgroundTaskId);
+			backgroundTask = _backgroundTaskLocalService.fetchBackgroundTask(
+				backgroundTaskId);
 
 			if ((backgroundTask != null) && backgroundTask.isCompleted()) {
-				return;
+				break;
 			}
 
 			Thread.sleep(500);
 		}
 
-		throw new AssertionError(
-			"Background task " + backgroundTaskId + " did not complete");
+		if ((backgroundTask == null) || !backgroundTask.isCompleted()) {
+			throw new AssertionError(
+				"Background task " + backgroundTaskId + " did not complete");
+		}
 
 		Company company = _companyLocalService.getCompanyByWebId(_WEB_ID);
 
