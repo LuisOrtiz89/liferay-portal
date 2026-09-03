@@ -80,7 +80,24 @@ public class AddInstanceMVCActionCommandTest {
 		Assert.assertNotEquals(
 			defaultAdminPassword, storedDefaultAdminPassword);
 
-		_waitForCompletion(backgroundTask.getBackgroundTaskId());
+		long backgroundTaskId = backgroundTask.getBackgroundTaskId();
+
+		long endTime = System.currentTimeMillis() + 600000;
+
+		while (System.currentTimeMillis() < endTime) {
+			BackgroundTask backgroundTask =
+				_backgroundTaskLocalService.fetchBackgroundTask(
+					backgroundTaskId);
+
+			if ((backgroundTask != null) && backgroundTask.isCompleted()) {
+				return;
+			}
+
+			Thread.sleep(500);
+		}
+
+		throw new AssertionError(
+			"Background task " + backgroundTaskId + " did not complete");
 
 		Company company = _companyLocalService.getCompanyByWebId(_WEB_ID);
 
@@ -222,25 +239,6 @@ public class AddInstanceMVCActionCommandTest {
 			mockLiferayPortletActionRequest, mockLiferayPortletActionResponse);
 
 		return mockLiferayPortletActionResponse;
-	}
-
-	private void _waitForCompletion(long backgroundTaskId) throws Exception {
-		long endTime = System.currentTimeMillis() + 600000;
-
-		while (System.currentTimeMillis() < endTime) {
-			BackgroundTask backgroundTask =
-				_backgroundTaskLocalService.fetchBackgroundTask(
-					backgroundTaskId);
-
-			if ((backgroundTask != null) && backgroundTask.isCompleted()) {
-				return;
-			}
-
-			Thread.sleep(500);
-		}
-
-		throw new AssertionError(
-			"Background task " + backgroundTaskId + " did not complete");
 	}
 
 	private static final String _TASK_EXECUTOR_CLASS_NAME =
