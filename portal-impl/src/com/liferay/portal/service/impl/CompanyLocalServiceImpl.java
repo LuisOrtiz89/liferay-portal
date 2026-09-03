@@ -384,7 +384,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		validateCompany(webId, virtualHostname, mx, maxUsers);
 
-		String name = "AddPortalInstance#" + webId;
+		String name = "addPortalInstance-" + webId;
 
 		int count = BackgroundTaskManagerUtil.getBackgroundTasksCount(
 			BackgroundTaskConstants.GROUP_ID_DEFAULT, name,

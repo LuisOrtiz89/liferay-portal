@@ -212,7 +212,7 @@ public class AddPortalInstanceBackgroundTaskExecutorTest {
 			_backgroundTaskLocalService.addBackgroundTask(
 				TestPropsValues.getUserId(),
 				BackgroundTaskConstants.GROUP_ID_DEFAULT,
-				"AddPortalInstance#" + _WEB_ID,
+				"addPortalInstance-" + _WEB_ID,
 				"com.liferay.portal.instances.internal.background.task." +
 					"AddPortalInstanceBackgroundTaskExecutor",
 				taskContextMap, new ServiceContext());

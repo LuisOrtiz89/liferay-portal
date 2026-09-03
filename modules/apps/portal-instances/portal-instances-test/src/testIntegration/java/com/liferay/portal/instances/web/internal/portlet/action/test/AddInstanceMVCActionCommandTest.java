@@ -161,7 +161,7 @@ public class AddInstanceMVCActionCommandTest {
 		backgroundTask.setGroupId(BackgroundTaskConstants.GROUP_ID_DEFAULT);
 		backgroundTask.setCompanyId(TestPropsValues.getCompanyId());
 		backgroundTask.setUserId(TestPropsValues.getUserId());
-		backgroundTask.setName("AddPortalInstance#" + _WEB_ID);
+		backgroundTask.setName("addPortalInstance-" + _WEB_ID);
 		backgroundTask.setTaskExecutorClassName(_TASK_EXECUTOR_CLASS_NAME);
 		backgroundTask.setCompleted(false);
 		backgroundTask.setStatus(BackgroundTaskConstants.STATUS_IN_PROGRESS);
@@ -177,7 +177,7 @@ public class AddInstanceMVCActionCommandTest {
 
 			String name = backgroundTask.getName();
 
-			if (name.endsWith("#" + _WEB_ID)) {
+			if (name.endsWith("-" + _WEB_ID)) {
 				_backgroundTasks.add(backgroundTask);
 
 				return backgroundTask;
