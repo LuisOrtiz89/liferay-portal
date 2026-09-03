@@ -78,8 +78,7 @@ public class AddPortalInstanceBackgroundTaskExecutor
 		String mx = GetterUtil.getString(
 			taskContextMap.get(CompanyBackgroundTaskConstants.MX));
 		int maxUsers = GetterUtil.getInteger(
-			taskContextMap.get(
-				CompanyBackgroundTaskConstants.MAX_USERS));
+			taskContextMap.get(CompanyBackgroundTaskConstants.MAX_USERS));
 		boolean active = GetterUtil.getBoolean(
 			taskContextMap.get(CompanyBackgroundTaskConstants.ACTIVE));
 		String defaultAdminPassword = _decryptDefaultAdminPassword(
