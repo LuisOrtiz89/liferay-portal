@@ -55,11 +55,6 @@ public class PortalInstancesUserNotificationHandlerTest {
 
 	@Before
 	public void setUp() {
-		_serviceContext = new ServiceContext();
-
-		_serviceContext.setLanguageId("en_US");
-		_serviceContext.setRequest(new MockHttpServletRequest());
-
 		_portalInstancesUserNotificationHandler =
 			new PortalInstancesUserNotificationHandler();
 
@@ -79,6 +74,9 @@ public class PortalInstancesUserNotificationHandlerTest {
 
 		ReflectionTestUtil.setFieldValue(
 			_portalInstancesUserNotificationHandler, "_portal", portal);
+
+		_serviceContext.setLanguageId("en_US");
+		_serviceContext.setRequest(new MockHttpServletRequest());
 	}
 
 	@Test
@@ -208,6 +206,6 @@ public class PortalInstancesUserNotificationHandlerTest {
 
 	private PortalInstancesUserNotificationHandler
 		_portalInstancesUserNotificationHandler;
-	private ServiceContext _serviceContext;
+	private final ServiceContext _serviceContext = new ServiceContext();
 
 }
