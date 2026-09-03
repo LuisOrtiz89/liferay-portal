@@ -219,7 +219,23 @@ public class AddPortalInstanceBackgroundTaskExecutorTest {
 
 		_backgroundTasks.add(backgroundTask);
 
-		return _waitForCompletion(backgroundTask.getBackgroundTaskId());
+		long backgroundTaskId = backgroundTask.getBackgroundTaskId();
+
+		long endTime = System.currentTimeMillis() + 600000;
+
+		while (System.currentTimeMillis() < endTime) {
+			backgroundTask = _backgroundTaskLocalService.fetchBackgroundTask(
+				backgroundTaskId);
+
+			if ((backgroundTask != null) && backgroundTask.isCompleted()) {
+				return backgroundTask;
+			}
+
+			Thread.sleep(500);
+		}
+
+		throw new AssertionError(
+			"Background task " + backgroundTaskId + " did not complete");
 	}
 
 	private JSONObject _getUserNotificationEventJSONObject() throws Exception {
@@ -257,27 +273,6 @@ public class AddPortalInstanceBackgroundTaskExecutorTest {
 
 		throw new AssertionError(
 			"No user notification event was sent for web ID " + _WEB_ID);
-	}
-
-	private BackgroundTask _waitForCompletion(long backgroundTaskId)
-		throws Exception {
-
-		long endTime = System.currentTimeMillis() + 600000;
-
-		while (System.currentTimeMillis() < endTime) {
-			BackgroundTask backgroundTask =
-				_backgroundTaskLocalService.fetchBackgroundTask(
-					backgroundTaskId);
-
-			if ((backgroundTask != null) && backgroundTask.isCompleted()) {
-				return backgroundTask;
-			}
-
-			Thread.sleep(500);
-		}
-
-		throw new AssertionError(
-			"Background task " + backgroundTaskId + " did not complete");
 	}
 
 	private static final String _VIRTUAL_HOSTNAME =
