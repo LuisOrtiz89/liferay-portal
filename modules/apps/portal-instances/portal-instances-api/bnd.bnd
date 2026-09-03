@@ -5,6 +5,4 @@ Export-Package:\
 	com.liferay.portal.instances.background.task,\
 	com.liferay.portal.instances.background.task.constants,\
 	com.liferay.portal.instances.constants,\
-	com.liferay.portal.instances.exception,\
-	com.liferay.portal.instances.exporter,\
-	com.liferay.portal.instances.manager
+	com.liferay.portal.instances.exporter

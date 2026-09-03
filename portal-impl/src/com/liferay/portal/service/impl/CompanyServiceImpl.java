@@ -121,6 +121,29 @@ public class CompanyServiceImpl extends CompanyServiceBaseImpl {
 
 	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
 	@Override
+	public long addCompanyInBackground(
+			String webId, String virtualHostname, String mx, int maxUsers,
+			boolean active, String defaultAdminPassword,
+			String defaultAdminScreenName, String defaultAdminEmailAddress,
+			String defaultAdminFirstName, String defaultAdminMiddleName,
+			String defaultAdminLastName, String siteInitializerKey)
+		throws PortalException {
+
+		PermissionChecker permissionChecker = getPermissionChecker();
+
+		if (!permissionChecker.isOmniadmin()) {
+			throw new PrincipalException.MustBeOmniadmin(permissionChecker);
+		}
+
+		return companyLocalService.addCompanyInBackground(
+			getUserId(), webId, virtualHostname, mx, maxUsers, active,
+			defaultAdminPassword, defaultAdminScreenName,
+			defaultAdminEmailAddress, defaultAdminFirstName,
+			defaultAdminMiddleName, defaultAdminLastName, siteInitializerKey);
+	}
+
+	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
+	@Override
 	public Company addDBPartitionCompany(
 			String schemaName, String name, String virtualHost, String webId)
 		throws PortalException {

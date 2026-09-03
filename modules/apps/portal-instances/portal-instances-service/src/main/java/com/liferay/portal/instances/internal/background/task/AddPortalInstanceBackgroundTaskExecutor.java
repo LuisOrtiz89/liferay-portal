@@ -13,6 +13,7 @@ import com.liferay.portal.kernel.backgroundtask.BackgroundTaskExecutor;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskResult;
 import com.liferay.portal.kernel.backgroundtask.BaseBackgroundTaskExecutor;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
+import com.liferay.portal.kernel.backgroundtask.constants.CompanyBackgroundTaskConstants;
 import com.liferay.portal.kernel.backgroundtask.display.BackgroundTaskDisplay;
 import com.liferay.portal.kernel.encryptor.Encryptor;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
@@ -70,36 +71,35 @@ public class AddPortalInstanceBackgroundTaskExecutor
 			backgroundTask.getTaskContextMap();
 
 		String webId = GetterUtil.getString(
-			taskContextMap.get(PortalInstanceBackgroundTaskConstants.WEB_ID));
+			taskContextMap.get(CompanyBackgroundTaskConstants.WEB_ID));
 		String virtualHostname = GetterUtil.getString(
 			taskContextMap.get(
-				PortalInstanceBackgroundTaskConstants.VIRTUAL_HOSTNAME));
+				CompanyBackgroundTaskConstants.VIRTUAL_HOSTNAME));
 		String mx = GetterUtil.getString(
-			taskContextMap.get(PortalInstanceBackgroundTaskConstants.MX));
+			taskContextMap.get(CompanyBackgroundTaskConstants.MX));
 		int maxUsers = GetterUtil.getInteger(
 			taskContextMap.get(
-				PortalInstanceBackgroundTaskConstants.MAX_USERS));
+				CompanyBackgroundTaskConstants.MAX_USERS));
 		boolean active = GetterUtil.getBoolean(
-			taskContextMap.get(PortalInstanceBackgroundTaskConstants.ACTIVE));
+			taskContextMap.get(CompanyBackgroundTaskConstants.ACTIVE));
 		String defaultAdminPassword = _decryptDefaultAdminPassword(
 			(String)taskContextMap.get(
-				PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_PASSWORD));
+				CompanyBackgroundTaskConstants.DEFAULT_ADMIN_PASSWORD));
 		String defaultAdminScreenName = (String)taskContextMap.get(
-			PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_SCREEN_NAME);
+			CompanyBackgroundTaskConstants.DEFAULT_ADMIN_SCREEN_NAME);
 		String defaultAdminEmailAddress = (String)taskContextMap.get(
-			PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_EMAIL_ADDRESS);
+			CompanyBackgroundTaskConstants.DEFAULT_ADMIN_EMAIL_ADDRESS);
 		String defaultAdminFirstName = (String)taskContextMap.get(
-			PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_FIRST_NAME);
+			CompanyBackgroundTaskConstants.DEFAULT_ADMIN_FIRST_NAME);
 		String defaultAdminMiddleName = (String)taskContextMap.get(
-			PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_MIDDLE_NAME);
+			CompanyBackgroundTaskConstants.DEFAULT_ADMIN_MIDDLE_NAME);
 		String defaultAdminLastName = (String)taskContextMap.get(
-			PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_LAST_NAME);
+			CompanyBackgroundTaskConstants.DEFAULT_ADMIN_LAST_NAME);
 
 		Company company = PortalInstances.addCompany(
 			GetterUtil.getString(
 				taskContextMap.get(
-					PortalInstanceBackgroundTaskConstants.
-						SITE_INITIALIZER_KEY)),
+					CompanyBackgroundTaskConstants.SITE_INITIALIZER_KEY)),
 			() -> _companyService.addCompany(
 				null, webId, virtualHostname, mx, maxUsers, active,
 				defaultAdminPassword, defaultAdminScreenName,
