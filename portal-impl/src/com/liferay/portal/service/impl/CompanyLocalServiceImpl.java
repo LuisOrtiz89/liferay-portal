@@ -390,7 +390,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		int count = BackgroundTaskManagerUtil.getBackgroundTasksCount(
 			BackgroundTaskConstants.GROUP_ID_DEFAULT, name,
 			CompanyBackgroundTaskExecutorNames.
-				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR, false);
+				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
+			false);
 
 		if (count > 0) {
 			throw new CompanyAlreadyBeingAddedException(
@@ -401,7 +402,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 			BackgroundTaskManagerUtil.addBackgroundTask(
 				userId, BackgroundTaskConstants.GROUP_ID_DEFAULT, name,
 				CompanyBackgroundTaskExecutorNames.
-				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
+					ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
 				HashMapBuilder.<String, Serializable>put(
 					CompanyBackgroundTaskConstants.ACTIVE, active
 				).put(

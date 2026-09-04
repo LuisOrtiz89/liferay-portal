@@ -10,9 +10,8 @@ package com.liferay.portal.kernel.backgroundtask.constants;
  */
 public class CompanyBackgroundTaskExecutorNames {
 
-	public static final String
-		ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR =
-			"com.liferay.portal.instances.internal.background.task." +
-				"AddPortalInstanceBackgroundTaskExecutor";
+	public static final String ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR =
+		"com.liferay.portal.instances.internal.background.task." +
+			"AddPortalInstanceBackgroundTaskExecutor";
 
 }
