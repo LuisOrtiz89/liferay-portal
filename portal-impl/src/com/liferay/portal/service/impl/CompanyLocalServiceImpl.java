@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManagerUtil;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.backgroundtask.constants.CompanyBackgroundTaskConstants;
+import com.liferay.portal.kernel.backgroundtask.constants.CompanyBackgroundTaskExecutorNames;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
@@ -388,7 +389,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		int count = BackgroundTaskManagerUtil.getBackgroundTasksCount(
 			BackgroundTaskConstants.GROUP_ID_DEFAULT, name,
-			_ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR, false);
+			CompanyBackgroundTaskExecutorNames.
+				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR, false);
 
 		if (count > 0) {
 			throw new CompanyAlreadyBeingAddedException(
@@ -398,7 +400,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		BackgroundTask backgroundTask =
 			BackgroundTaskManagerUtil.addBackgroundTask(
 				userId, BackgroundTaskConstants.GROUP_ID_DEFAULT, name,
-				_ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
+				CompanyBackgroundTaskExecutorNames.
+				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
 				HashMapBuilder.<String, Serializable>put(
 					CompanyBackgroundTaskConstants.ACTIVE, active
 				).put(
@@ -2755,10 +2758,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		_groupLocalService.updateGroup(group);
 	}
-
-	private static final String _ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR =
-		"com.liferay.portal.instances.internal.background.task." +
-			"AddPortalInstanceBackgroundTaskExecutor";
 
 	private static final String _DEFAULT_VIRTUAL_HOST = "localhost";
 

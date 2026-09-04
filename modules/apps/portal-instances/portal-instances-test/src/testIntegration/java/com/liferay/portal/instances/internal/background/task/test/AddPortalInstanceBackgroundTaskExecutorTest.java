@@ -10,6 +10,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.background.task.model.BackgroundTask;
 import com.liferay.portal.background.task.service.BackgroundTaskLocalService;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
+import com.liferay.portal.kernel.backgroundtask.constants.CompanyBackgroundTaskExecutorNames;
 import com.liferay.portal.kernel.encryptor.EncryptorUtil;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -213,8 +214,8 @@ public class AddPortalInstanceBackgroundTaskExecutorTest {
 				TestPropsValues.getUserId(),
 				BackgroundTaskConstants.GROUP_ID_DEFAULT,
 				"addPortalInstance-" + _WEB_ID,
-				"com.liferay.portal.instances.internal.background.task." +
-					"AddPortalInstanceBackgroundTaskExecutor",
+				CompanyBackgroundTaskExecutorNames.
+					ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
 				taskContextMap, new ServiceContext());
 
 		_backgroundTasks.add(backgroundTask);
