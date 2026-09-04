@@ -10,6 +10,7 @@ import com.liferay.portal.instances.background.task.constants.PortalInstanceBack
 import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskExecutor;
+import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskResult;
 import com.liferay.portal.kernel.backgroundtask.BaseBackgroundTaskExecutor;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
@@ -32,6 +33,7 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.UserNotificationDeliveryConstants;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.CompanyService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -139,12 +141,22 @@ public class AddPortalInstanceBackgroundTaskExecutor
 		Map<String, Serializable> taskContextMap =
 			backgroundTask.getTaskContextMap();
 
+		String errorMessageKey = _getErrorMessageKey(exception1);
+
+		try {
+			_persistErrorMessageKey(backgroundTask, errorMessageKey);
+		}
+		catch (Exception exception2) {
+			_log.error(
+				"Unable to persist the portal instance operation error",
+				exception2);
+		}
+
 		try {
 			_sendUserNotificationEvent(
 				backgroundTask.getUserId(),
 				_getPayloadJSONObject(
-					0, _getErrorMessageKey(exception1),
-					BackgroundTaskConstants.STATUS_FAILED,
+					0, errorMessageKey, BackgroundTaskConstants.STATUS_FAILED,
 					GetterUtil.getString(
 						taskContextMap.get(
 							PortalInstanceBackgroundTaskConstants.WEB_ID))));
@@ -239,6 +251,22 @@ public class AddPortalInstanceBackgroundTaskExecutor
 		);
 	}
 
+	private void _persistErrorMessageKey(
+			BackgroundTask backgroundTask, String errorMessageKey)
+		throws Exception {
+
+		Map<String, Serializable> taskContextMap =
+			backgroundTask.getTaskContextMap();
+
+		taskContextMap.put(
+			PortalInstanceBackgroundTaskConstants.ERROR_MESSAGE_KEY,
+			errorMessageKey);
+
+		_backgroundTaskManager.amendBackgroundTask(
+			backgroundTask.getBackgroundTaskId(), taskContextMap,
+			backgroundTask.getStatus(), new ServiceContext());
+	}
+
 	private void _sendUserNotificationEvent(
 			long userId, JSONObject payloadJSONObject)
 		throws Exception {
@@ -250,6 +278,9 @@ public class AddPortalInstanceBackgroundTaskExecutor
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		AddPortalInstanceBackgroundTaskExecutor.class);
+
+	@Reference
+	private BackgroundTaskManager _backgroundTaskManager;
 
 	@Reference
 	private CompanyLocalService _companyLocalService;
