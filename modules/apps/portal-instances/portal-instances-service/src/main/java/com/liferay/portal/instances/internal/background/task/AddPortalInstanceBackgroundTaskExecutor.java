@@ -79,7 +79,8 @@ public class AddPortalInstanceBackgroundTaskExecutor
 		String mx = GetterUtil.getString(
 			taskContextMap.get(PortalInstanceBackgroundTaskConstants.MX));
 		int maxUsers = GetterUtil.getInteger(
-			taskContextMap.get(PortalInstanceBackgroundTaskConstants.MAX_USERS));
+			taskContextMap.get(
+				PortalInstanceBackgroundTaskConstants.MAX_USERS));
 		boolean active = GetterUtil.getBoolean(
 			taskContextMap.get(PortalInstanceBackgroundTaskConstants.ACTIVE));
 		String defaultAdminPassword = _decryptDefaultAdminPassword(
@@ -99,7 +100,8 @@ public class AddPortalInstanceBackgroundTaskExecutor
 		Company company = PortalInstances.addCompany(
 			GetterUtil.getString(
 				taskContextMap.get(
-					PortalInstanceBackgroundTaskConstants.SITE_INITIALIZER_KEY)),
+					PortalInstanceBackgroundTaskConstants.
+						SITE_INITIALIZER_KEY)),
 			() -> _companyService.addCompany(
 				null, webId, virtualHostname, mx, maxUsers, active,
 				defaultAdminPassword, defaultAdminScreenName,

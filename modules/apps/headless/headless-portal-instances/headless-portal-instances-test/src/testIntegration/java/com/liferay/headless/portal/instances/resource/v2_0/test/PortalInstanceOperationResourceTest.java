@@ -10,11 +10,11 @@ import com.liferay.headless.portal.instances.client.dto.v2_0.PortalInstanceOpera
 import com.liferay.headless.portal.instances.client.problem.Problem;
 import com.liferay.headless.portal.instances.client.resource.v2_0.PortalInstanceOperationResource;
 import com.liferay.headless.portal.instances.resource.v2_0.test.util.PortalInstanceOperationTestUtil;
+import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskConstants;
+import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskExecutorNames;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
-import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskConstants;
-import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskExecutorNames;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;

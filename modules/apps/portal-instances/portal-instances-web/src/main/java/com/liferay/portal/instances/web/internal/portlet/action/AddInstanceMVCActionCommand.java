@@ -104,8 +104,7 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 		return "an-unexpected-error-occurred";
 	}
 
-	private void _postPortalInstance(
-			ActionRequest actionRequest, String webId)
+	private void _postPortalInstance(ActionRequest actionRequest, String webId)
 		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
@@ -153,8 +152,7 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 										null));
 							}
 						});
-					setDomain(
-						() -> ParamUtil.getString(actionRequest, "mx"));
+					setDomain(() -> ParamUtil.getString(actionRequest, "mx"));
 					setMaxUsers(
 						() -> ParamUtil.getInteger(actionRequest, "maxUsers"));
 					setPortalInstanceId(() -> webId);

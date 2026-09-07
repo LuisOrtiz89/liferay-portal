@@ -56,7 +56,8 @@ public class PortalInstanceOperationUtil {
 					portalInstanceOperationType.getValue())));
 		portalInstanceOperation.setPortalInstanceId(
 			() -> GetterUtil.getString(
-				taskContextMap.get(PortalInstanceBackgroundTaskConstants.WEB_ID),
+				taskContextMap.get(
+					PortalInstanceBackgroundTaskConstants.WEB_ID),
 				null));
 		portalInstanceOperation.setStatus(
 			() -> _getStatus(backgroundTask.getStatus()));

@@ -19,7 +19,6 @@ import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.encryptor.Encryptor;
 import com.liferay.portal.kernel.encryptor.EncryptorException;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.exception.UserEmailAddressException;
 import com.liferay.portal.kernel.exception.UserScreenNameException;
@@ -177,7 +176,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 	}
 
 	private String _encryptDefaultAdminPassword(String defaultAdminPassword)
-		throws PortalException {
+		throws Exception {
 
 		if (Validator.isNull(defaultAdminPassword)) {
 			return null;
