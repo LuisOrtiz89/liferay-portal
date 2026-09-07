@@ -229,6 +229,14 @@ public class AddInstanceMVCActionCommandTest {
 		mockLiferayPortletActionRequest.setAttribute(
 			WebKeys.THEME_DISPLAY, themeDisplay);
 
+		mockLiferayPortletActionRequest.setParameter(
+			"defaultAdminEmailAddress", _WEB_ID + "@liferay.com");
+		mockLiferayPortletActionRequest.setParameter(
+			"defaultAdminFirstName", "Test");
+		mockLiferayPortletActionRequest.setParameter(
+			"defaultAdminLastName", "Test");
+		mockLiferayPortletActionRequest.setParameter(
+			"defaultAdminScreenName", _WEB_ID);
 		mockLiferayPortletActionRequest.setParameter("maxUsers", "0");
 		mockLiferayPortletActionRequest.setParameter("mx", _VIRTUAL_HOSTNAME);
 		mockLiferayPortletActionRequest.setParameter(

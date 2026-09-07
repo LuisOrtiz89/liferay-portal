@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import jakarta.portlet.ActionRequest;
@@ -84,6 +85,42 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 			actionRequest, actionResponse, jsonObject);
 	}
 
+	private Admin _getAdmin(ActionRequest actionRequest) {
+		String defaultAdminEmailAddress = ParamUtil.getString(
+			actionRequest, "defaultAdminEmailAddress", null);
+		String defaultAdminFirstName = ParamUtil.getString(
+			actionRequest, "defaultAdminFirstName", null);
+		String defaultAdminLastName = ParamUtil.getString(
+			actionRequest, "defaultAdminLastName", null);
+		String defaultAdminMiddleName = ParamUtil.getString(
+			actionRequest, "defaultAdminMiddleName", null);
+		String defaultAdminPassword = ParamUtil.getString(
+			actionRequest, "defaultAdminPassword", null);
+		String defaultAdminScreenName = ParamUtil.getString(
+			actionRequest, "defaultAdminScreenName", null);
+
+		if (Validator.isNull(defaultAdminEmailAddress) &&
+			Validator.isNull(defaultAdminFirstName) &&
+			Validator.isNull(defaultAdminLastName) &&
+			Validator.isNull(defaultAdminMiddleName) &&
+			Validator.isNull(defaultAdminPassword) &&
+			Validator.isNull(defaultAdminScreenName)) {
+
+			return null;
+		}
+
+		Admin admin = new Admin();
+
+		admin.setEmailAddress(() -> defaultAdminEmailAddress);
+		admin.setFamilyName(() -> defaultAdminLastName);
+		admin.setGivenName(() -> defaultAdminFirstName);
+		admin.setMiddleName(() -> defaultAdminMiddleName);
+		admin.setPassword(() -> defaultAdminPassword);
+		admin.setScreenName(() -> defaultAdminScreenName);
+
+		return admin;
+	}
+
 	private String _getErrorMessageKey(Exception exception) {
 		while (exception != null) {
 			String errorMessageKey = _toErrorMessageKey(exception);
@@ -123,35 +160,7 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 				{
 					setActive(
 						() -> ParamUtil.getBoolean(actionRequest, "active"));
-					setAdmin(
-						() -> new Admin() {
-							{
-								setEmailAddress(
-									() -> ParamUtil.getString(
-										actionRequest,
-										"defaultAdminEmailAddress", null));
-								setFamilyName(
-									() -> ParamUtil.getString(
-										actionRequest, "defaultAdminLastName",
-										null));
-								setGivenName(
-									() -> ParamUtil.getString(
-										actionRequest, "defaultAdminFirstName",
-										null));
-								setMiddleName(
-									() -> ParamUtil.getString(
-										actionRequest, "defaultAdminMiddleName",
-										null));
-								setPassword(
-									() -> ParamUtil.getString(
-										actionRequest, "defaultAdminPassword",
-										null));
-								setScreenName(
-									() -> ParamUtil.getString(
-										actionRequest, "defaultAdminScreenName",
-										null));
-							}
-						});
+					setAdmin(() -> _getAdmin(actionRequest));
 					setDomain(() -> ParamUtil.getString(actionRequest, "mx"));
 					setMaxUsers(
 						() -> ParamUtil.getInteger(actionRequest, "maxUsers"));

@@ -6,6 +6,7 @@
 package com.liferay.headless.portal.instances.resource.v2_0.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.counter.kernel.service.CounterLocalService;
 import com.liferay.headless.portal.instances.client.dto.v2_0.Admin;
 import com.liferay.headless.portal.instances.client.dto.v2_0.PortalInstance;
 import com.liferay.headless.portal.instances.client.dto.v2_0.PortalInstanceOperation;
@@ -14,15 +15,14 @@ import com.liferay.headless.portal.instances.client.problem.Problem;
 import com.liferay.headless.portal.instances.client.resource.v2_0.PortalInstanceResource;
 import com.liferay.headless.portal.instances.client.serdes.v2_0.PortalInstanceOperationSerDes;
 import com.liferay.headless.portal.instances.resource.v2_0.test.util.PortalInstanceOperationTestUtil;
+import com.liferay.portal.background.task.model.BackgroundTask;
+import com.liferay.portal.background.task.service.BackgroundTaskLocalService;
 import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskConstants;
 import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskExecutorNames;
-import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
-import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.CompanyLocalService;
-import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -32,6 +32,8 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 
 import java.io.Serializable;
@@ -150,18 +152,31 @@ public class PortalInstanceResourceTest
 
 		String portalInstanceId = portalInstance.getPortalInstanceId();
 
-		_backgroundTask = _backgroundTaskManager.addBackgroundTask(
-			TestPropsValues.getUserId(),
-			BackgroundTaskConstants.GROUP_ID_DEFAULT,
-			"addPortalInstance-" + portalInstanceId,
+		BackgroundTask backgroundTask =
+			_backgroundTaskLocalService.createBackgroundTask(
+				_counterLocalService.increment());
+
+		backgroundTask.setGroupId(BackgroundTaskConstants.GROUP_ID_DEFAULT);
+		backgroundTask.setCompanyId(TestPropsValues.getCompanyId());
+		backgroundTask.setUserId(TestPropsValues.getUserId());
+		backgroundTask.setName("addPortalInstance-" + portalInstanceId);
+		backgroundTask.setTaskExecutorClassName(
 			PortalInstanceBackgroundTaskExecutorNames.
-				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
+				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR);
+		backgroundTask.setTaskContextMap(
 			HashMapBuilder.<String, Serializable>put(
 				PortalInstanceBackgroundTaskConstants.WEB_ID, portalInstanceId
-			).build(),
-			new ServiceContext());
+			).build());
+		backgroundTask.setCompleted(false);
+		backgroundTask.setStatus(BackgroundTaskConstants.STATUS_IN_PROGRESS);
 
-		try {
+		backgroundTask = _backgroundTaskLocalService.updateBackgroundTask(
+			backgroundTask);
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				_CLASS_NAME_WEB_APPLICATION_EXCEPTION_MAPPER,
+				LoggerTestUtil.ERROR)) {
+
 			portalInstanceResource.postPortalInstance(portalInstance);
 
 			Assert.fail();
@@ -170,6 +185,13 @@ public class PortalInstanceResourceTest
 			Problem problem = problemException.getProblem();
 
 			Assert.assertEquals("CONFLICT", problem.getStatus());
+			Assert.assertEquals(
+				"Portal instance " + portalInstanceId +
+					" is already being added",
+				problem.getTitle());
+		}
+		finally {
+			_backgroundTaskLocalService.deleteBackgroundTask(backgroundTask);
 		}
 	}
 
@@ -243,19 +265,23 @@ public class PortalInstanceResourceTest
 		}
 	}
 
+	private static final String _CLASS_NAME_WEB_APPLICATION_EXCEPTION_MAPPER =
+		"com.liferay.portal.vulcan.internal.jaxrs.exception.mapper." +
+			"WebApplicationExceptionMapper";
+
 	private static final int _MAX_USERS = 42;
 
-	@DeleteAfterTestRun
-	private BackgroundTask _backgroundTask;
-
 	@Inject
-	private BackgroundTaskManager _backgroundTaskManager;
+	private BackgroundTaskLocalService _backgroundTaskLocalService;
 
 	@DeleteAfterTestRun
 	private Company _company;
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
+
+	@Inject
+	private CounterLocalService _counterLocalService;
 
 	@Inject
 	private UserLocalService _userLocalService;
