@@ -129,55 +129,6 @@ public class CompanyServiceHttp {
 		}
 	}
 
-	public static long addCompanyInBackground(
-			HttpPrincipal httpPrincipal, String webId, String virtualHostname,
-			String mx, int maxUsers, boolean active,
-			String defaultAdminPassword, String defaultAdminScreenName,
-			String defaultAdminEmailAddress, String defaultAdminFirstName,
-			String defaultAdminMiddleName, String defaultAdminLastName,
-			String siteInitializerKey)
-		throws com.liferay.portal.kernel.exception.PortalException {
-
-		try {
-			MethodKey methodKey = new MethodKey(
-				CompanyServiceUtil.class, "addCompanyInBackground",
-				_addCompanyInBackgroundParameterTypes2);
-
-			MethodHandler methodHandler = new MethodHandler(
-				methodKey, webId, virtualHostname, mx, maxUsers, active,
-				defaultAdminPassword, defaultAdminScreenName,
-				defaultAdminEmailAddress, defaultAdminFirstName,
-				defaultAdminMiddleName, defaultAdminLastName,
-				siteInitializerKey);
-
-			Object returnObj = null;
-
-			try {
-				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
-			}
-			catch (Exception exception) {
-				if (exception instanceof
-						com.liferay.portal.kernel.exception.PortalException) {
-
-					throw (com.liferay.portal.kernel.exception.PortalException)
-						exception;
-				}
-
-				throw new com.liferay.portal.kernel.exception.SystemException(
-					exception);
-			}
-
-			return ((Long)returnObj).longValue();
-		}
-		catch (com.liferay.portal.kernel.exception.SystemException
-					systemException) {
-
-			_log.error(systemException, systemException);
-
-			throw systemException;
-		}
-	}
-
 	public static com.liferay.portal.kernel.model.Company addDBPartitionCompany(
 			HttpPrincipal httpPrincipal, String schemaName, String name,
 			String virtualHost, String webId)
@@ -186,7 +137,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "addDBPartitionCompany",
-				_addDBPartitionCompanyParameterTypes3);
+				_addDBPartitionCompanyParameterTypes2);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, schemaName, name, virtualHost, webId);
@@ -228,7 +179,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "copyDBPartitionCompany",
-				_copyDBPartitionCompanyParameterTypes4);
+				_copyDBPartitionCompanyParameterTypes3);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, fromCompanyId, toCompanyId, name, virtualHost,
@@ -269,7 +220,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "deleteCompany",
-				_deleteCompanyParameterTypes5);
+				_deleteCompanyParameterTypes4);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId);
@@ -308,7 +259,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "deleteLogo",
-				_deleteLogoParameterTypes6);
+				_deleteLogoParameterTypes5);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId);
@@ -344,7 +295,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "exportCompany",
-				_exportCompanyParameterTypes7);
+				_exportCompanyParameterTypes6);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId);
@@ -387,7 +338,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "forEachCompany",
-				_forEachCompanyParameterTypes8);
+				_forEachCompanyParameterTypes7);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, unsafeConsumer);
@@ -419,7 +370,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "getCompanies",
-				_getCompaniesParameterTypes9);
+				_getCompaniesParameterTypes8);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey);
 
@@ -452,7 +403,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "getCompanyById",
-				_getCompanyByIdParameterTypes10);
+				_getCompanyByIdParameterTypes9);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId);
@@ -493,7 +444,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "getCompanyByVirtualHost",
-				_getCompanyByVirtualHostParameterTypes11);
+				_getCompanyByVirtualHostParameterTypes10);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, virtualHost);
@@ -533,7 +484,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "getCompanyByWebId",
-				_getCompanyByWebIdParameterTypes12);
+				_getCompanyByWebIdParameterTypes11);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey, webId);
 
@@ -572,7 +523,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "removePreferences",
-				_removePreferencesParameterTypes13);
+				_removePreferencesParameterTypes12);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId, keys);
@@ -609,7 +560,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "updateCompany",
-				_updateCompanyParameterTypes14);
+				_updateCompanyParameterTypes13);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId, virtualHost, mx, maxUsers, active);
@@ -653,7 +604,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "updateCompany",
-				_updateCompanyParameterTypes15);
+				_updateCompanyParameterTypes14);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId, virtualHost, mx, homeURL, hasLogo,
@@ -705,7 +656,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "updateCompany",
-				_updateCompanyParameterTypes16);
+				_updateCompanyParameterTypes15);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId, virtualHost, mx, homeURL, hasLogo,
@@ -749,7 +700,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "updateDisplay",
-				_updateDisplayParameterTypes17);
+				_updateDisplayParameterTypes16);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId, languageId, timeZoneId);
@@ -785,7 +736,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "updateLogo",
-				_updateLogoParameterTypes18);
+				_updateLogoParameterTypes17);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId, bytes);
@@ -826,7 +777,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "updateLogo",
-				_updateLogoParameterTypes19);
+				_updateLogoParameterTypes18);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId, inputStream);
@@ -867,7 +818,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "updatePreferences",
-				_updatePreferencesParameterTypes20);
+				_updatePreferencesParameterTypes19);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId, unicodeProperties);
@@ -905,7 +856,7 @@ public class CompanyServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				CompanyServiceUtil.class, "updateSecurity",
-				_updateSecurityParameterTypes21);
+				_updateSecurityParameterTypes20);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, companyId, authType, autoLogin, sendPassword,
@@ -946,49 +897,43 @@ public class CompanyServiceHttp {
 		boolean.class, String.class, String.class, String.class, String.class,
 		String.class, String.class
 	};
-	private static final Class<?>[] _addCompanyInBackgroundParameterTypes2 =
-		new Class[] {
-			String.class, String.class, String.class, int.class, boolean.class,
-			String.class, String.class, String.class, String.class,
-			String.class, String.class, String.class
-		};
-	private static final Class<?>[] _addDBPartitionCompanyParameterTypes3 =
+	private static final Class<?>[] _addDBPartitionCompanyParameterTypes2 =
 		new Class[] {String.class, String.class, String.class, String.class};
-	private static final Class<?>[] _copyDBPartitionCompanyParameterTypes4 =
+	private static final Class<?>[] _copyDBPartitionCompanyParameterTypes3 =
 		new Class[] {
 			long.class, Long.class, String.class, String.class, String.class
 		};
-	private static final Class<?>[] _deleteCompanyParameterTypes5 =
+	private static final Class<?>[] _deleteCompanyParameterTypes4 =
 		new Class[] {long.class};
-	private static final Class<?>[] _deleteLogoParameterTypes6 = new Class[] {
+	private static final Class<?>[] _deleteLogoParameterTypes5 = new Class[] {
 		long.class
 	};
-	private static final Class<?>[] _exportCompanyParameterTypes7 =
+	private static final Class<?>[] _exportCompanyParameterTypes6 =
 		new Class[] {long.class};
-	private static final Class<?>[] _forEachCompanyParameterTypes8 =
+	private static final Class<?>[] _forEachCompanyParameterTypes7 =
 		new Class[] {com.liferay.petra.function.UnsafeConsumer.class};
-	private static final Class<?>[] _getCompaniesParameterTypes9 =
+	private static final Class<?>[] _getCompaniesParameterTypes8 =
 		new Class[] {};
-	private static final Class<?>[] _getCompanyByIdParameterTypes10 =
+	private static final Class<?>[] _getCompanyByIdParameterTypes9 =
 		new Class[] {long.class};
-	private static final Class<?>[] _getCompanyByVirtualHostParameterTypes11 =
+	private static final Class<?>[] _getCompanyByVirtualHostParameterTypes10 =
 		new Class[] {String.class};
-	private static final Class<?>[] _getCompanyByWebIdParameterTypes12 =
+	private static final Class<?>[] _getCompanyByWebIdParameterTypes11 =
 		new Class[] {String.class};
-	private static final Class<?>[] _removePreferencesParameterTypes13 =
+	private static final Class<?>[] _removePreferencesParameterTypes12 =
 		new Class[] {long.class, String[].class};
-	private static final Class<?>[] _updateCompanyParameterTypes14 =
+	private static final Class<?>[] _updateCompanyParameterTypes13 =
 		new Class[] {
 			long.class, String.class, String.class, int.class, boolean.class
 		};
-	private static final Class<?>[] _updateCompanyParameterTypes15 =
+	private static final Class<?>[] _updateCompanyParameterTypes14 =
 		new Class[] {
 			long.class, String.class, String.class, String.class, boolean.class,
 			byte[].class, String.class, String.class, String.class,
 			String.class, String.class, String.class, String.class,
 			String.class, String.class
 		};
-	private static final Class<?>[] _updateCompanyParameterTypes16 =
+	private static final Class<?>[] _updateCompanyParameterTypes15 =
 		new Class[] {
 			long.class, String.class, String.class, String.class, boolean.class,
 			byte[].class, String.class, String.class, String.class,
@@ -998,23 +943,23 @@ public class CompanyServiceHttp {
 			java.util.List.class,
 			com.liferay.portal.kernel.util.UnicodeProperties.class
 		};
-	private static final Class<?>[] _updateDisplayParameterTypes17 =
+	private static final Class<?>[] _updateDisplayParameterTypes16 =
 		new Class[] {long.class, String.class, String.class};
-	private static final Class<?>[] _updateLogoParameterTypes18 = new Class[] {
+	private static final Class<?>[] _updateLogoParameterTypes17 = new Class[] {
 		long.class, byte[].class
 	};
-	private static final Class<?>[] _updateLogoParameterTypes19 = new Class[] {
+	private static final Class<?>[] _updateLogoParameterTypes18 = new Class[] {
 		long.class, java.io.InputStream.class
 	};
-	private static final Class<?>[] _updatePreferencesParameterTypes20 =
+	private static final Class<?>[] _updatePreferencesParameterTypes19 =
 		new Class[] {
 			long.class, com.liferay.portal.kernel.util.UnicodeProperties.class
 		};
-	private static final Class<?>[] _updateSecurityParameterTypes21 =
+	private static final Class<?>[] _updateSecurityParameterTypes20 =
 		new Class[] {
 			long.class, String.class, boolean.class, boolean.class,
 			boolean.class, boolean.class, boolean.class, boolean.class
 		};
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-225795224
+// LIFERAY-SERVICE-BUILDER-HASH:1205983260

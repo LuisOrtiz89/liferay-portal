@@ -79,21 +79,6 @@ public class CompanyLocalServiceUtil {
 			defaultAdminMiddleName, defaultAdminLastName);
 	}
 
-	public static long addCompanyInBackground(
-			long userId, String webId, String virtualHostname, String mx,
-			int maxUsers, boolean active, String defaultAdminPassword,
-			String defaultAdminScreenName, String defaultAdminEmailAddress,
-			String defaultAdminFirstName, String defaultAdminMiddleName,
-			String defaultAdminLastName, String siteInitializerKey)
-		throws PortalException {
-
-		return getService().addCompanyInBackground(
-			userId, webId, virtualHostname, mx, maxUsers, active,
-			defaultAdminPassword, defaultAdminScreenName,
-			defaultAdminEmailAddress, defaultAdminFirstName,
-			defaultAdminMiddleName, defaultAdminLastName, siteInitializerKey);
-	}
-
 	public static Company addDBPartitionCompany(
 			long companyId, String name, String virtualHostname, String webId)
 		throws PortalException {
@@ -755,4 +740,4 @@ public class CompanyLocalServiceUtil {
 	private static volatile CompanyLocalService _service;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:798464312
+// LIFERAY-SERVICE-BUILDER-HASH:-561410455
