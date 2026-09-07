@@ -13,6 +13,8 @@ import com.liferay.headless.portal.instances.resource.v2_0.test.util.PortalInsta
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
+import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskConstants;
+import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskExecutorNames;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
@@ -23,6 +25,7 @@ import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -73,11 +76,40 @@ public class PortalInstanceOperationResourceTest
 			String defaultAdminEmailAddress, String webId)
 		throws Exception {
 
-		return _companyLocalService.addCompanyInBackground(
-			TestPropsValues.getUserId(), webId, webId + ".com", webId + ".com",
-			0, true, null, null, defaultAdminEmailAddress,
-			RandomTestUtil.randomString(), null, RandomTestUtil.randomString(),
-			null);
+		BackgroundTask backgroundTask =
+			_backgroundTaskManager.addBackgroundTask(
+				TestPropsValues.getUserId(),
+				BackgroundTaskConstants.GROUP_ID_DEFAULT,
+				"addPortalInstance-" + webId,
+				PortalInstanceBackgroundTaskExecutorNames.
+					ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
+				HashMapBuilder.<String, Serializable>put(
+					PortalInstanceBackgroundTaskConstants.ACTIVE, true
+				).put(
+					PortalInstanceBackgroundTaskConstants.
+						DEFAULT_ADMIN_EMAIL_ADDRESS,
+					defaultAdminEmailAddress
+				).put(
+					PortalInstanceBackgroundTaskConstants.
+						DEFAULT_ADMIN_FIRST_NAME,
+					RandomTestUtil.randomString()
+				).put(
+					PortalInstanceBackgroundTaskConstants.
+						DEFAULT_ADMIN_LAST_NAME,
+					RandomTestUtil.randomString()
+				).put(
+					PortalInstanceBackgroundTaskConstants.MAX_USERS, 0
+				).put(
+					PortalInstanceBackgroundTaskConstants.MX, webId + ".com"
+				).put(
+					PortalInstanceBackgroundTaskConstants.VIRTUAL_HOSTNAME,
+					webId + ".com"
+				).put(
+					PortalInstanceBackgroundTaskConstants.WEB_ID, webId
+				).build(),
+				new ServiceContext());
+
+		return backgroundTask.getBackgroundTaskId();
 	}
 
 	private void _assertUnableToExecuteBackgroundTask(LogCapture logCapture) {
