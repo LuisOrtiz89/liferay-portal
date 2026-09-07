@@ -46,7 +46,7 @@ public abstract class BasePortalInstanceResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/headless-portal-instances/v2.0/portal-instances' -d $'{"admin": ___, "companyId": ___, "domain": ___, "portalInstanceId": ___, "siteInitializerKey": ___, "virtualHost": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/headless-portal-instances/v2.0/portal-instances' -d $'{"active": ___, "admin": ___, "companyId": ___, "domain": ___, "maxUsers": ___, "portalInstanceId": ___, "siteInitializerKey": ___, "virtualHost": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Operation(
 		description = "Adds a new portal instance asynchronously"
@@ -513,4 +513,4 @@ public abstract class BasePortalInstanceResourceImpl
 		LogFactoryUtil.getLog(BasePortalInstanceResourceImpl.class);
 
 }
-// LIFERAY-REST-BUILDER-HASH:2093884683
+// LIFERAY-REST-BUILDER-HASH:898627327
