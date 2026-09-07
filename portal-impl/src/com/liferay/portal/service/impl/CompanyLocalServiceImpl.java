@@ -18,11 +18,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.events.StartupHelperUtil;
-import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
-import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManagerUtil;
-import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
-import com.liferay.portal.kernel.backgroundtask.constants.CompanyBackgroundTaskConstants;
-import com.liferay.portal.kernel.backgroundtask.constants.CompanyBackgroundTaskExecutorNames;
 import com.liferay.portal.kernel.bean.BeanReference;
 import com.liferay.portal.kernel.cache.CacheRegistryUtil;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
@@ -39,7 +34,6 @@ import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.encryptor.EncryptorException;
 import com.liferay.portal.kernel.encryptor.EncryptorUtil;
-import com.liferay.portal.kernel.exception.CompanyAlreadyBeingAddedException;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
 import com.liferay.portal.kernel.exception.CompanyMxException;
 import com.liferay.portal.kernel.exception.CompanyNameException;
@@ -102,7 +96,6 @@ import com.liferay.portal.kernel.service.PortalPreferencesLocalService;
 import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
-import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.SystemEventLocalService;
 import com.liferay.portal.kernel.service.UserGroupLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
@@ -125,7 +118,6 @@ import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.transaction.Transactional;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -157,7 +149,6 @@ import jakarta.portlet.PortletPreferences;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 
 import java.net.IDN;
 import java.net.Inet6Address;
@@ -372,73 +363,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 			throw new PortalException(throwable);
 		}
-	}
-
-	@Override
-	public long addCompanyInBackground(
-			long userId, String webId, String virtualHostname, String mx,
-			int maxUsers, boolean active, String defaultAdminPassword,
-			String defaultAdminScreenName, String defaultAdminEmailAddress,
-			String defaultAdminFirstName, String defaultAdminMiddleName,
-			String defaultAdminLastName, String siteInitializerKey)
-		throws PortalException {
-
-		validateCompany(webId, virtualHostname, mx, maxUsers);
-
-		String name = "addPortalInstance-" + webId;
-
-		int count = BackgroundTaskManagerUtil.getBackgroundTasksCount(
-			BackgroundTaskConstants.GROUP_ID_DEFAULT, name,
-			CompanyBackgroundTaskExecutorNames.
-				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
-			false);
-
-		if (count > 0) {
-			throw new CompanyAlreadyBeingAddedException(
-				"Company " + webId + " is already being added");
-		}
-
-		BackgroundTask backgroundTask =
-			BackgroundTaskManagerUtil.addBackgroundTask(
-				userId, BackgroundTaskConstants.GROUP_ID_DEFAULT, name,
-				CompanyBackgroundTaskExecutorNames.
-					ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
-				HashMapBuilder.<String, Serializable>put(
-					CompanyBackgroundTaskConstants.ACTIVE, active
-				).put(
-					CompanyBackgroundTaskConstants.DEFAULT_ADMIN_EMAIL_ADDRESS,
-					defaultAdminEmailAddress
-				).put(
-					CompanyBackgroundTaskConstants.DEFAULT_ADMIN_FIRST_NAME,
-					defaultAdminFirstName
-				).put(
-					CompanyBackgroundTaskConstants.DEFAULT_ADMIN_LAST_NAME,
-					defaultAdminLastName
-				).put(
-					CompanyBackgroundTaskConstants.DEFAULT_ADMIN_MIDDLE_NAME,
-					defaultAdminMiddleName
-				).put(
-					CompanyBackgroundTaskConstants.DEFAULT_ADMIN_PASSWORD,
-					_encryptDefaultAdminPassword(defaultAdminPassword)
-				).put(
-					CompanyBackgroundTaskConstants.DEFAULT_ADMIN_SCREEN_NAME,
-					defaultAdminScreenName
-				).put(
-					CompanyBackgroundTaskConstants.MAX_USERS, maxUsers
-				).put(
-					CompanyBackgroundTaskConstants.MX, mx
-				).put(
-					CompanyBackgroundTaskConstants.SITE_INITIALIZER_KEY,
-					siteInitializerKey
-				).put(
-					CompanyBackgroundTaskConstants.VIRTUAL_HOSTNAME,
-					virtualHostname
-				).put(
-					CompanyBackgroundTaskConstants.WEB_ID, webId
-				).build(),
-				new ServiceContext());
-
-		return backgroundTask.getBackgroundTaskId();
 	}
 
 	@Override
@@ -2578,23 +2502,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 				return null;
 			});
-	}
-
-	private String _encryptDefaultAdminPassword(String defaultAdminPassword) {
-		if (Validator.isNull(defaultAdminPassword)) {
-			return null;
-		}
-
-		Company company = companyPersistence.fetchByPrimaryKey(
-			PortalInstancePool.getDefaultCompanyId());
-
-		try {
-			return EncryptorUtil.encrypt(
-				company.getKeyObj(), defaultAdminPassword);
-		}
-		catch (EncryptorException encryptorException) {
-			throw new SystemException(encryptorException);
-		}
 	}
 
 	private long _getNextCompanyId() {
