@@ -17,13 +17,30 @@ components:
                     description:
                         The admin's first name.
                     type: string
+                middleName:
+                    description:
+                        The admin's middle name.
+                    type: string
+                    writeOnly: true
+                password:
+                    description:
+                        The admin's initial password.
+                    format: password
+                    type: string
+                    writeOnly: true
+                screenName:
+                    description:
+                        The admin's screen name.
+                    type: string
+                    writeOnly: true
             type: object
         PortalInstance:
             description:
                 A portal instance.
             properties:
                 active:
-                    readOnly: true
+                    description:
+                        Whether the portal instance is active.
                     type: boolean
                 admin:
                     $ref: "#/components/schemas/Admin"
@@ -39,6 +56,10 @@ components:
                     description:
                         domain used for email authentication.
                     type: string
+                maxUsers:
+                    description:
+                        maximum number of users, or zero for unlimited.
+                    type: integer
                 portalInstanceId:
                     description:
                         public unique key (corresponds to company's webId field)
