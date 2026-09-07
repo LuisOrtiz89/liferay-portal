@@ -10,7 +10,7 @@ import com.liferay.counter.kernel.service.CounterLocalService;
 import com.liferay.portal.background.task.model.BackgroundTask;
 import com.liferay.portal.background.task.service.BackgroundTaskLocalService;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
-import com.liferay.portal.kernel.backgroundtask.constants.CompanyBackgroundTaskExecutorNames;
+import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskExecutorNames;
 import com.liferay.portal.kernel.exception.NoSuchCompanyException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -260,8 +260,7 @@ public class AddInstanceMVCActionCommandTest {
 	}
 
 	private static final String _TASK_EXECUTOR_CLASS_NAME =
-		CompanyBackgroundTaskExecutorNames.
-			ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR;
+		PortalInstanceBackgroundTaskExecutorNames.ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR;
 
 	private static final String _VIRTUAL_HOSTNAME =
 		StringUtil.toLowerCase(RandomTestUtil.randomString()) + ".com";

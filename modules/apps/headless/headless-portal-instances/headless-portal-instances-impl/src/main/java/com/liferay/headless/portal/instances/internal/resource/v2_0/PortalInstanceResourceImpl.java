@@ -13,7 +13,7 @@ import com.liferay.headless.portal.instances.resource.v2_0.PortalInstanceResourc
 import com.liferay.portal.instances.background.task.PortalInstanceOperationType;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
-import com.liferay.portal.kernel.exception.CompanyAlreadyBeingAddedException;
+import com.liferay.portal.instances.exception.PortalInstanceAlreadyBeingAddedException;
 import com.liferay.portal.kernel.exception.UserEmailAddressException;
 import com.liferay.portal.kernel.exception.UserScreenNameException;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -86,7 +86,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 					defaultAdminFirstName, null, defaultAdminLastName,
 					portalInstance.getSiteInitializerKey()));
 		}
-		catch (CompanyAlreadyBeingAddedException
+		catch (PortalInstanceAlreadyBeingAddedException
 					companyAlreadyBeingAddedException) {
 
 			throw new ClientErrorException(

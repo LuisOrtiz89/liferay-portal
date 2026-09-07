@@ -10,7 +10,6 @@ import com.liferay.portal.instances.background.task.PortalInstanceOperationType;
 import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskConstants;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
-import com.liferay.portal.kernel.backgroundtask.constants.CompanyBackgroundTaskConstants;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.Language;
@@ -57,7 +56,7 @@ public class PortalInstanceOperationUtil {
 					portalInstanceOperationType.getValue())));
 		portalInstanceOperation.setPortalInstanceId(
 			() -> GetterUtil.getString(
-				taskContextMap.get(CompanyBackgroundTaskConstants.WEB_ID),
+				taskContextMap.get(PortalInstanceBackgroundTaskConstants.WEB_ID),
 				null));
 		portalInstanceOperation.setStatus(
 			() -> _getStatus(backgroundTask.getStatus()));

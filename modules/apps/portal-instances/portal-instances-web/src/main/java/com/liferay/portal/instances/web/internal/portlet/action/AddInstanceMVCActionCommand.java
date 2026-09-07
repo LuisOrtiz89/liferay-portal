@@ -6,7 +6,7 @@
 package com.liferay.portal.instances.web.internal.portlet.action;
 
 import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
-import com.liferay.portal.kernel.exception.CompanyAlreadyBeingAddedException;
+import com.liferay.portal.instances.exception.PortalInstanceAlreadyBeingAddedException;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
 import com.liferay.portal.kernel.exception.CompanyMxException;
 import com.liferay.portal.kernel.exception.CompanyVirtualHostException;
@@ -103,7 +103,7 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 	}
 
 	private String _getErrorMessageKey(Exception exception) {
-		if (exception instanceof CompanyAlreadyBeingAddedException) {
+		if (exception instanceof PortalInstanceAlreadyBeingAddedException) {
 			return "a-virtual-instance-with-this-web-id-is-already-being-added";
 		}
 		else if (exception instanceof CompanyMaxUsersException) {

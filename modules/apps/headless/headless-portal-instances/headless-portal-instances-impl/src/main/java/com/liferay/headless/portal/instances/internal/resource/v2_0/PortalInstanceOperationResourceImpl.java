@@ -11,7 +11,7 @@ import com.liferay.headless.portal.instances.resource.v2_0.PortalInstanceOperati
 import com.liferay.portal.instances.background.task.PortalInstanceOperationType;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
-import com.liferay.portal.kernel.backgroundtask.constants.CompanyBackgroundTaskExecutorNames;
+import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskExecutorNames;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
@@ -72,8 +72,7 @@ public class PortalInstanceOperationResourceImpl
 
 		if (StringUtil.equals(
 				backgroundTask.getTaskExecutorClassName(),
-				CompanyBackgroundTaskExecutorNames.
-					ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR)) {
+				PortalInstanceBackgroundTaskExecutorNames.ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR)) {
 
 			return PortalInstanceOperationType.ADD;
 		}
