@@ -5,6 +5,9 @@
 
 package com.liferay.portal.instances.web.internal.portlet.action;
 
+import com.liferay.headless.portal.instances.dto.v2_0.Admin;
+import com.liferay.headless.portal.instances.dto.v2_0.PortalInstance;
+import com.liferay.headless.portal.instances.resource.v2_0.PortalInstanceResource;
 import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.instances.exception.PortalInstanceAlreadyBeingAddedException;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
@@ -20,10 +23,11 @@ import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
-import com.liferay.portal.kernel.service.CompanyService;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import jakarta.portlet.ActionRequest;
 import jakarta.portlet.ActionResponse;
@@ -59,7 +63,7 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 		try {
 			String webId = ParamUtil.getString(actionRequest, "webId");
 
-			_addCompanyInBackground(actionRequest, webId);
+			_postPortalInstance(actionRequest, webId);
 
 			jsonObject.put(
 				"startMessage",
@@ -80,29 +84,93 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 			actionRequest, actionResponse, jsonObject);
 	}
 
-	private void _addCompanyInBackground(
+	private String _getErrorMessageKey(Exception exception) {
+		while (exception != null) {
+			String errorMessageKey = _toErrorMessageKey(exception);
+
+			if (errorMessageKey != null) {
+				return errorMessageKey;
+			}
+
+			Throwable throwable = exception.getCause();
+
+			if (!(throwable instanceof Exception)) {
+				break;
+			}
+
+			exception = (Exception)throwable;
+		}
+
+		return "an-unexpected-error-occurred";
+	}
+
+	private void _postPortalInstance(
 			ActionRequest actionRequest, String webId)
 		throws Exception {
 
-		_companyService.addCompanyInBackground(
-			webId,
-			StringUtil.toLowerCase(
-				StringUtil.trim(
-					ParamUtil.getString(actionRequest, "virtualHostname"))),
-			ParamUtil.getString(actionRequest, "mx"),
-			ParamUtil.getInteger(actionRequest, "maxUsers"),
-			ParamUtil.getBoolean(actionRequest, "active"),
-			ParamUtil.getString(actionRequest, "defaultAdminPassword", null),
-			ParamUtil.getString(actionRequest, "defaultAdminScreenName", null),
-			ParamUtil.getString(
-				actionRequest, "defaultAdminEmailAddress", null),
-			ParamUtil.getString(actionRequest, "defaultAdminFirstName", null),
-			ParamUtil.getString(actionRequest, "defaultAdminMiddleName", null),
-			ParamUtil.getString(actionRequest, "defaultAdminLastName", null),
-			ParamUtil.getString(actionRequest, "siteInitializerKey"));
+		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		PortalInstanceResource portalInstanceResource =
+			_portalInstanceResourceFactory.create(
+			).preferredLocale(
+				actionRequest.getLocale()
+			).user(
+				themeDisplay.getUser()
+			).build();
+
+		portalInstanceResource.postPortalInstance(
+			new PortalInstance() {
+				{
+					setActive(
+						() -> ParamUtil.getBoolean(actionRequest, "active"));
+					setAdmin(
+						() -> new Admin() {
+							{
+								setEmailAddress(
+									() -> ParamUtil.getString(
+										actionRequest,
+										"defaultAdminEmailAddress", null));
+								setFamilyName(
+									() -> ParamUtil.getString(
+										actionRequest, "defaultAdminLastName",
+										null));
+								setGivenName(
+									() -> ParamUtil.getString(
+										actionRequest, "defaultAdminFirstName",
+										null));
+								setMiddleName(
+									() -> ParamUtil.getString(
+										actionRequest, "defaultAdminMiddleName",
+										null));
+								setPassword(
+									() -> ParamUtil.getString(
+										actionRequest, "defaultAdminPassword",
+										null));
+								setScreenName(
+									() -> ParamUtil.getString(
+										actionRequest, "defaultAdminScreenName",
+										null));
+							}
+						});
+					setDomain(
+						() -> ParamUtil.getString(actionRequest, "mx"));
+					setMaxUsers(
+						() -> ParamUtil.getInteger(actionRequest, "maxUsers"));
+					setPortalInstanceId(() -> webId);
+					setSiteInitializerKey(
+						() -> ParamUtil.getString(
+							actionRequest, "siteInitializerKey"));
+					setVirtualHost(
+						() -> StringUtil.toLowerCase(
+							StringUtil.trim(
+								ParamUtil.getString(
+									actionRequest, "virtualHostname"))));
+				}
+			});
 	}
 
-	private String _getErrorMessageKey(Exception exception) {
+	private String _toErrorMessageKey(Exception exception) {
 		if (exception instanceof PortalInstanceAlreadyBeingAddedException) {
 			return "a-virtual-instance-with-this-web-id-is-already-being-added";
 		}
@@ -122,19 +190,19 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 			return "you-must-be-an-admin-to-complete-this-action";
 		}
 
-		return "an-unexpected-error-occurred";
+		return null;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		AddInstanceMVCActionCommand.class);
 
 	@Reference
-	private CompanyService _companyService;
-
-	@Reference
 	private JSONFactory _jsonFactory;
 
 	@Reference
 	private Language _language;
+
+	@Reference
+	private PortalInstanceResource.Factory _portalInstanceResourceFactory;
 
 }
