@@ -11,24 +11,39 @@ import com.liferay.headless.portal.instances.dto.v2_0.PortalInstanceOperation;
 import com.liferay.headless.portal.instances.internal.dto.v2_0.util.PortalInstanceOperationUtil;
 import com.liferay.headless.portal.instances.resource.v2_0.PortalInstanceResource;
 import com.liferay.portal.instances.background.task.PortalInstanceOperationType;
+import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskConstants;
+import com.liferay.portal.instances.background.task.constants.PortalInstanceBackgroundTaskExecutorNames;
+import com.liferay.portal.instances.exception.PortalInstanceAlreadyBeingAddedException;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
-import com.liferay.portal.instances.exception.PortalInstanceAlreadyBeingAddedException;
+import com.liferay.portal.kernel.backgroundtask.constants.BackgroundTaskConstants;
+import com.liferay.portal.kernel.encryptor.Encryptor;
+import com.liferay.portal.kernel.encryptor.EncryptorException;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.exception.UserEmailAddressException;
 import com.liferay.portal.kernel.exception.UserScreenNameException;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.language.Language;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
-import com.liferay.portal.kernel.service.CompanyService;
+import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
 import com.liferay.portal.vulcan.status.Status;
 
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
+
+import java.io.Serializable;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -67,32 +82,89 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 			Admin admin, PortalInstance portalInstance)
 		throws Exception {
 
+		String webId = portalInstance.getPortalInstanceId();
+		String virtualHostname = StringUtil.toLowerCase(
+			StringUtil.trim(portalInstance.getVirtualHost()));
+		String mx = portalInstance.getDomain();
+		int maxUsers = GetterUtil.getInteger(portalInstance.getMaxUsers());
+
+		_companyLocalService.validateCompany(
+			webId, virtualHostname, mx, maxUsers);
+
+		String name = "addPortalInstance-" + webId;
+
+		int count = _backgroundTaskManager.getBackgroundTasksCount(
+			BackgroundTaskConstants.GROUP_ID_DEFAULT, name,
+			PortalInstanceBackgroundTaskExecutorNames.
+				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
+			false);
+
+		if (count > 0) {
+			throw new ClientErrorException(
+				"Portal instance " + webId + " is already being added",
+				Response.Status.CONFLICT,
+				new PortalInstanceAlreadyBeingAddedException(
+					"Portal instance " + webId + " is already being added"));
+		}
+
 		String defaultAdminEmailAddress = null;
 		String defaultAdminFirstName = null;
 		String defaultAdminLastName = null;
+		String defaultAdminMiddleName = null;
+		String defaultAdminPassword = null;
+		String defaultAdminScreenName = null;
 
 		if (admin != null) {
 			defaultAdminEmailAddress = admin.getEmailAddress();
 			defaultAdminFirstName = admin.getGivenName();
 			defaultAdminLastName = admin.getFamilyName();
+			defaultAdminMiddleName = admin.getMiddleName();
+			defaultAdminPassword = _encryptDefaultAdminPassword(
+				admin.getPassword());
+			defaultAdminScreenName = admin.getScreenName();
 		}
 
-		try {
-			return _backgroundTaskManager.getBackgroundTask(
-				_companyService.addCompanyInBackground(
-					portalInstance.getPortalInstanceId(),
-					portalInstance.getVirtualHost(), portalInstance.getDomain(),
-					_MAX_USERS, true, null, null, defaultAdminEmailAddress,
-					defaultAdminFirstName, null, defaultAdminLastName,
-					portalInstance.getSiteInitializerKey()));
-		}
-		catch (PortalInstanceAlreadyBeingAddedException
-					companyAlreadyBeingAddedException) {
-
-			throw new ClientErrorException(
-				companyAlreadyBeingAddedException.getMessage(),
-				Response.Status.CONFLICT, companyAlreadyBeingAddedException);
-		}
+		return _backgroundTaskManager.addBackgroundTask(
+			contextUser.getUserId(), BackgroundTaskConstants.GROUP_ID_DEFAULT,
+			name,
+			PortalInstanceBackgroundTaskExecutorNames.
+				ADD_PORTAL_INSTANCE_BACKGROUND_TASK_EXECUTOR,
+			HashMapBuilder.<String, Serializable>put(
+				PortalInstanceBackgroundTaskConstants.ACTIVE,
+				GetterUtil.getBoolean(portalInstance.getActive(), true)
+			).put(
+				PortalInstanceBackgroundTaskConstants.
+					DEFAULT_ADMIN_EMAIL_ADDRESS,
+				defaultAdminEmailAddress
+			).put(
+				PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_FIRST_NAME,
+				defaultAdminFirstName
+			).put(
+				PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_LAST_NAME,
+				defaultAdminLastName
+			).put(
+				PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_MIDDLE_NAME,
+				defaultAdminMiddleName
+			).put(
+				PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_PASSWORD,
+				defaultAdminPassword
+			).put(
+				PortalInstanceBackgroundTaskConstants.DEFAULT_ADMIN_SCREEN_NAME,
+				defaultAdminScreenName
+			).put(
+				PortalInstanceBackgroundTaskConstants.MAX_USERS, maxUsers
+			).put(
+				PortalInstanceBackgroundTaskConstants.MX, mx
+			).put(
+				PortalInstanceBackgroundTaskConstants.SITE_INITIALIZER_KEY,
+				portalInstance.getSiteInitializerKey()
+			).put(
+				PortalInstanceBackgroundTaskConstants.VIRTUAL_HOSTNAME,
+				virtualHostname
+			).put(
+				PortalInstanceBackgroundTaskConstants.WEB_ID, webId
+			).build(),
+			new ServiceContext());
 	}
 
 	private void _checkPermission() throws Exception {
@@ -101,6 +173,25 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		if (!permissionChecker.isOmniadmin()) {
 			throw new PrincipalException.MustBeOmniadmin(permissionChecker);
+		}
+	}
+
+	private String _encryptDefaultAdminPassword(String defaultAdminPassword)
+		throws PortalException {
+
+		if (Validator.isNull(defaultAdminPassword)) {
+			return null;
+		}
+
+		Company company = _companyLocalService.getCompany(
+			PortalInstancePool.getDefaultCompanyId());
+
+		try {
+			return _encryptor.encrypt(
+				company.getKeyObj(), defaultAdminPassword);
+		}
+		catch (EncryptorException encryptorException) {
+			throw new SystemException(encryptorException);
 		}
 	}
 
@@ -121,13 +212,14 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 		}
 	}
 
-	private static final int _MAX_USERS = 0;
-
 	@Reference
 	private BackgroundTaskManager _backgroundTaskManager;
 
 	@Reference
-	private CompanyService _companyService;
+	private CompanyLocalService _companyLocalService;
+
+	@Reference
+	private Encryptor _encryptor;
 
 	@Reference
 	private JSONFactory _jsonFactory;
