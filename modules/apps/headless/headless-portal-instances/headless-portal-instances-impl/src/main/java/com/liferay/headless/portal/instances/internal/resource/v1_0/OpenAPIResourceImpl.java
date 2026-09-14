@@ -85,6 +85,8 @@ public class OpenAPIResourceImpl {
 
 	private final Set<Class<?>> _resourceClasses = new HashSet<Class<?>>() {
 		{
+			add(DBPartitionExportResourceImpl.class);
+
 			add(PortalInstanceResourceImpl.class);
 
 			add(OpenAPIResourceImpl.class);
@@ -92,4 +94,4 @@ public class OpenAPIResourceImpl {
 	};
 
 }
-// LIFERAY-REST-BUILDER-HASH:645045538
+// LIFERAY-REST-BUILDER-HASH:-2146858360
