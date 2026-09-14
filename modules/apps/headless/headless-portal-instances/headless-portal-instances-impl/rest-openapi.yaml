@@ -22,6 +22,22 @@ components:
                         The admin's first name.
                     type: string
             type: object
+        DBPartitionExport:
+            description:
+                An export of a portal instance to a database partition schema.
+            properties:
+                exportedPartitionName:
+                    description:
+                        The name of the schema created by the export, lexported_ followed by the company ID.
+                    readOnly: true
+                    type: string
+                portalInstanceId:
+                    description:
+                        The web ID of the portal instance to export.
+                    type: string
+            required:
+                -   portalInstanceId
+            type: object
         PortalInstance:
             # @review
             properties:
@@ -126,6 +142,31 @@ info:
     version: v1.0
 openapi: 3.0.1
 paths:
+    /db-partition-exports:
+        post:
+            description:
+                Exports a portal instance to a database partition schema named lexported_ followed by its company ID. Through /db-partition-exports/batch the same operation runs asynchronously; poll the returned import task.
+            operationId: postDBPartitionExport
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/DBPartitionExport"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/DBPartitionExport"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/DBPartitionExport"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/DBPartitionExport"
+                    description:
+                        The export, with exportedPartitionName filled in.
+            tags: ["DBPartitionExport"]
     /portal-instances:
         get:
             description:
