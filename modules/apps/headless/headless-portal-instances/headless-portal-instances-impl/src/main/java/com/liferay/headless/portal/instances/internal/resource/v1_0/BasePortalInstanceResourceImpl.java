@@ -369,8 +369,10 @@ public abstract class BasePortalInstanceResourceImpl
 	 *
 	 * curl -X 'POST' 'http://localhost:8080/o/headless-portal-instances/v1.0/portal-instances/{portalInstanceId}/export'  -u 'test@liferay.com:test'
 	 */
+	@Deprecated
 	@io.swagger.v3.oas.annotations.Operation(
-		description = "Exports the portal instance"
+		deprecated = true,
+		description = "Exports the portal instance. Use POST /db-partition-exports instead, which also runs asynchronously through /db-partition-exports/batch."
 	)
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -1303,4 +1305,4 @@ public abstract class BasePortalInstanceResourceImpl
 		LogFactoryUtil.getLog(BasePortalInstanceResourceImpl.class);
 
 }
-// LIFERAY-REST-BUILDER-HASH:653996448
+// LIFERAY-REST-BUILDER-HASH:713902715
