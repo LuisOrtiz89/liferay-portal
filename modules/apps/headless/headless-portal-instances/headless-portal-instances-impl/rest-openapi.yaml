@@ -394,8 +394,9 @@ paths:
             tags: ["PortalInstance"]
     /portal-instances/{portalInstanceId}/export:
         post:
+            deprecated: true
             description:
-                Exports the portal instance
+                Exports the portal instance. Use POST /db-partition-exports instead, which also runs asynchronously through /db-partition-exports/batch.
             operationId: postPortalInstanceExport
             parameters:
                 -   in: path
