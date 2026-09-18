@@ -122,6 +122,11 @@ public class VulcanBatchEngineTaskItemDelegateAdaptor<T>
 	}
 
 	@Override
+	public Set<String> getSensitiveFieldNames() {
+		return _vulcanBatchEngineTaskItemDelegate.getSensitiveFieldNames();
+	}
+
+	@Override
 	public String getVersion() {
 		return _vulcanBatchEngineTaskItemDelegate.getVersion();
 	}

@@ -20,6 +20,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.io.Serializable;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +50,10 @@ public interface BatchEngineTaskItemDelegate<T> {
 
 	public default Class<T> getItemClass() {
 		return null;
+	}
+
+	public default Set<String> getSensitiveFieldNames() {
+		return Collections.emptySet();
 	}
 
 	public default String getVersion() {

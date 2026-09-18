@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.UriInfo;
 import java.io.Serializable;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +69,10 @@ public interface VulcanBatchEngineTaskItemDelegate<T> {
 
 	public default String getResourceName() {
 		return null;
+	}
+
+	public default Set<String> getSensitiveFieldNames() {
+		return Collections.emptySet();
 	}
 
 	public default String getVersion() {
