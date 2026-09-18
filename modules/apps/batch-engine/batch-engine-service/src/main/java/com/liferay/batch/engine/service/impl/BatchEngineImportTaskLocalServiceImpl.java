@@ -8,6 +8,7 @@ package com.liferay.batch.engine.service.impl;
 import com.liferay.batch.engine.BatchEngineTaskItemDelegate;
 import com.liferay.batch.engine.BatchEngineTaskItemDelegateRegistry;
 import com.liferay.batch.engine.exception.BatchEngineImportTaskParametersException;
+import com.liferay.batch.engine.internal.util.SensitiveFieldsUtil;
 import com.liferay.batch.engine.model.BatchEngineImportTask;
 import com.liferay.batch.engine.service.base.BatchEngineImportTaskLocalServiceBaseImpl;
 import com.liferay.batch.engine.service.persistence.BatchEngineImportTaskErrorPersistence;
@@ -16,6 +17,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.dao.jdbc.OutputBlob;
+import com.liferay.portal.kernel.encryptor.Encryptor;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
@@ -84,6 +86,12 @@ public class BatchEngineImportTaskLocalServiceImpl
 				batchEngineTaskItemDelegate,
 				(String)parameters.getOrDefault("createStrategy", null),
 				(String)parameters.getOrDefault("updateStrategy", null));
+		}
+
+		if (batchEngineTaskItemDelegate != null) {
+			content = SensitiveFieldsUtil.encrypt(
+				content, contentType, _encryptor,
+				batchEngineTaskItemDelegate.getSensitiveFieldNames());
 		}
 
 		BatchEngineImportTask batchEngineImportTask =
@@ -220,5 +228,8 @@ public class BatchEngineImportTaskLocalServiceImpl
 	@Reference
 	private BatchEngineTaskItemDelegateRegistry
 		_batchEngineTaskItemDelegateRegistry;
+
+	@Reference
+	private Encryptor _encryptor;
 
 }

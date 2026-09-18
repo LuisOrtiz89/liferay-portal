@@ -28,6 +28,7 @@ import com.liferay.batch.engine.internal.task.progress.BatchEngineTaskProgress;
 import com.liferay.batch.engine.internal.task.progress.BatchEngineTaskProgressFactory;
 import com.liferay.batch.engine.internal.util.ErrorMessageUtil;
 import com.liferay.batch.engine.internal.util.ItemIndexThreadLocal;
+import com.liferay.batch.engine.internal.util.SensitiveFieldsUtil;
 import com.liferay.batch.engine.internal.util.ZipInputStreamUtil;
 import com.liferay.batch.engine.language.LanguageKeyResolver;
 import com.liferay.batch.engine.model.BatchEngineImportTask;
@@ -48,6 +49,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskStatusMessageSender;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
+import com.liferay.portal.kernel.encryptor.Encryptor;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -73,6 +75,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.osgi.framework.BundleContext;
@@ -260,12 +263,21 @@ public class BatchEngineImportTaskExecutorImpl
 					String errorMessage = ErrorMessageUtil.getErrorMessage(
 						exception, batchEngineImportTask.getUserId());
 
+					// The item renders as JSON through a generated toString,
+					// which has no notion of a sensitive field, so an item
+					// declaring one is recorded without its rendering
+
+					Set<String> sensitiveFieldNames =
+						batchEngineTaskItemDelegate.getSensitiveFieldNames();
+
 					BatchEngineImportTaskErrorLocalServiceUtil.
 						addBatchEngineImportTaskError(
 							batchEngineImportTask.getCompanyId(),
 							batchEngineImportTask.getUserId(),
 							batchEngineImportTask.getBatchEngineImportTaskId(),
-							item.toString(), itemIndex, errorMessage);
+							sensitiveFieldNames.isEmpty() ? item.toString() :
+								null,
+							itemIndex, errorMessage);
 
 					_batchEngineImportTaskExceptionHandlers.forEach(
 						batchEngineImportTaskExceptionHandler ->
@@ -497,7 +509,8 @@ public class BatchEngineImportTaskExecutorImpl
 				try {
 					T item = _readItem(
 						batchEngineImportTask, batchEngineImportTaskItemReader,
-						batchEngineImportTask.getFieldNameMapping(), itemClass);
+						batchEngineImportTask.getFieldNameMapping(), itemClass,
+						batchEngineTaskItemDelegate.getSensitiveFieldNames());
 
 					if (item == null) {
 						break;
@@ -654,7 +667,8 @@ public class BatchEngineImportTaskExecutorImpl
 	private <T> T _readItem(
 			BatchEngineImportTask batchEngineImportTask,
 			BatchEngineImportTaskItemReader batchEngineImportTaskItemReader,
-			Map<String, Serializable> fieldNameMapping, Class<?> itemClass)
+			Map<String, Serializable> fieldNameMapping, Class<?> itemClass,
+			Set<String> sensitiveFieldNames)
 		throws Exception {
 
 		Map<String, Object> fieldNameValueMap =
@@ -663,6 +677,9 @@ public class BatchEngineImportTaskExecutorImpl
 		if (fieldNameValueMap == null) {
 			return null;
 		}
+
+		SensitiveFieldsUtil.decrypt(
+			fieldNameValueMap, _encryptor, sensitiveFieldNames);
 
 		_languageKeyResolver.expand(
 			batchEngineImportTask.getCompanyId(), fieldNameValueMap);
@@ -747,6 +764,9 @@ public class BatchEngineImportTaskExecutorImpl
 
 	@Reference
 	private ConfigurationProvider _configurationProvider;
+
+	@Reference
+	private Encryptor _encryptor;
 
 	private ServiceTrackerList<ImportTaskPostAction> _importTaskPostActions;
 	private ServiceTrackerList<ImportTaskPreAction> _importTaskPreActions;
