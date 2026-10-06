@@ -9,6 +9,7 @@ import com.liferay.batch.engine.jaxrs.uri.BatchEngineUriInfo;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceImportResource;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -119,6 +120,10 @@ public class AddDBPartitionCompanyMVCActionCommand
 				return "an-instance-for-this-schema-already-exists";
 			}
 
+			if (message.endsWith(" does not exist")) {
+				return "the-exported-schema-does-not-exist";
+			}
+
 			return "please-enter-a-valid-schema-name";
 		}
 
@@ -186,7 +191,7 @@ public class AddDBPartitionCompanyMVCActionCommand
 		}
 	}
 
-	private void _validateSchemaName(String schemaName) {
+	private void _validateSchemaName(String schemaName) throws PortalException {
 		String databaseExportedPartitionSchemaNamePrefix =
 			DBPartitionUtil.DATABASE_EXPORTED_PARTITION_SCHEMA_NAME_PREFIX;
 
@@ -211,6 +216,11 @@ public class AddDBPartitionCompanyMVCActionCommand
 		if (_companyLocalService.fetchCompany(companyId) != null) {
 			throw new IllegalArgumentException(
 				"Company ID " + companyId + " already exists");
+		}
+
+		if (!DBPartitionUtil.existsExportedPartition(companyId)) {
+			throw new IllegalArgumentException(
+				"Schema \"" + schemaName + "\" does not exist");
 		}
 	}
 
