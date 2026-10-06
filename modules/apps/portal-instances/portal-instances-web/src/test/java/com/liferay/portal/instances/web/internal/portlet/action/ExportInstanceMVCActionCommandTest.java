@@ -6,6 +6,7 @@
 package com.liferay.portal.instances.web.internal.portlet.action;
 
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceExportResource;
+import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.kernel.exception.NoSuchCompanyException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -34,6 +35,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -56,6 +58,13 @@ public class ExportInstanceMVCActionCommandTest {
 
 	@Before
 	public void setUp() throws Exception {
+		_dbPartitionUtilMockedStatic = Mockito.mockStatic(
+			DBPartitionUtil.class);
+
+		_dbPartitionUtilMockedStatic.when(
+			() -> DBPartitionUtil.getExportedPartitionName(_COMPANY_ID)
+		).thenCallRealMethod();
+
 		Mockito.when(
 			_actionRequest.getParameter("portalInstanceId")
 		).thenReturn(
@@ -84,6 +93,20 @@ public class ExportInstanceMVCActionCommandTest {
 			_exportInstanceMVCActionCommand,
 			"_vulcanBatchEngineImportTaskResourceFactory",
 			_vulcanBatchEngineImportTaskResourceFactory);
+
+		Company company = Mockito.mock(Company.class);
+
+		Mockito.when(
+			company.getCompanyId()
+		).thenReturn(
+			_COMPANY_ID
+		);
+
+		Mockito.when(
+			_companyLocalService.getCompanyByWebId(_PORTAL_INSTANCE_ID)
+		).thenReturn(
+			company
+		);
 
 		Mockito.when(
 			_jsonFactory.createJSONObject()
@@ -122,6 +145,11 @@ public class ExportInstanceMVCActionCommandTest {
 		);
 	}
 
+	@After
+	public void tearDown() {
+		_dbPartitionUtilMockedStatic.close();
+	}
+
 	@Test
 	public void testDoProcessAction() throws Exception {
 		_processAction();
@@ -137,6 +165,37 @@ public class ExportInstanceMVCActionCommandTest {
 		).put(
 			Mockito.eq("error"), Mockito.any(Object.class)
 		);
+	}
+
+	@Test
+	public void testDoProcessActionWhenTheExportedSchemaExists()
+		throws Exception {
+
+		_dbPartitionUtilMockedStatic.when(
+			() -> DBPartitionUtil.existsExportedPartition(_COMPANY_ID)
+		).thenReturn(
+			true
+		);
+
+		String message = RandomTestUtil.randomString();
+
+		Mockito.when(
+			_language.format(
+				LocaleUtil.US, "the-exported-schema-x-already-exists",
+				DBPartitionUtil.getExportedPartitionName(_COMPANY_ID))
+		).thenReturn(
+			message
+		);
+
+		_processAction();
+
+		Mockito.verify(
+			_jsonObject
+		).put(
+			"error", message
+		);
+
+		Mockito.verifyNoInteractions(_componentServiceObjects);
 	}
 
 	@Test
@@ -295,6 +354,12 @@ public class ExportInstanceMVCActionCommandTest {
 		);
 	}
 
+	private void _exportPortalInstance() throws Exception {
+		ReflectionTestUtil.invoke(
+			_exportInstanceMVCActionCommand, "_exportPortalInstance",
+			new Class<?>[] {ActionRequest.class}, _actionRequest);
+	}
+
 	private void _processAction() throws Exception {
 		Mockito.when(
 			_actionRequest.getLocale()
@@ -313,11 +378,7 @@ public class ExportInstanceMVCActionCommandTest {
 		}
 	}
 
-	private void _exportPortalInstance() throws Exception {
-		ReflectionTestUtil.invoke(
-			_exportInstanceMVCActionCommand, "_exportPortalInstance",
-			new Class<?>[] {ActionRequest.class}, _actionRequest);
-	}
+	private static final long _COMPANY_ID = RandomTestUtil.randomLong();
 
 	private static final String _PORTAL_INSTANCE_ID =
 		RandomTestUtil.randomString();
@@ -328,6 +389,7 @@ public class ExportInstanceMVCActionCommandTest {
 		CompanyLocalService.class);
 	private final ComponentServiceObjects<PortalInstanceExportResource>
 		_componentServiceObjects = Mockito.mock(ComponentServiceObjects.class);
+	private MockedStatic<DBPartitionUtil> _dbPartitionUtilMockedStatic;
 
 	private final ExportInstanceMVCActionCommand
 		_exportInstanceMVCActionCommand = new ExportInstanceMVCActionCommand() {
