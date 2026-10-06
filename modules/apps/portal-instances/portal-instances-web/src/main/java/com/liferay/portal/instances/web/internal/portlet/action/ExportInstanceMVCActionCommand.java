@@ -8,6 +8,7 @@ package com.liferay.portal.instances.web.internal.portlet.action;
 import com.liferay.batch.engine.jaxrs.uri.BatchEngineUriInfo;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceExportResource;
 import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
+import com.liferay.portal.kernel.exception.NoSuchCompanyException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.Language;
@@ -16,6 +17,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -62,8 +64,24 @@ public class ExportInstanceMVCActionCommand extends BaseMVCActionCommand {
 
 		JSONObject jsonObject = _jsonFactory.createJSONObject();
 
+		String portalInstanceId = ParamUtil.getString(
+			actionRequest, "portalInstanceId");
+
 		try {
+			_companyLocalService.getCompanyByWebId(portalInstanceId);
+
 			_exportPortalInstance(actionRequest);
+		}
+		catch (NoSuchCompanyException noSuchCompanyException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(noSuchCompanyException);
+			}
+
+			jsonObject.put(
+				"error",
+				_language.format(
+					actionRequest.getLocale(),
+					"the-instance-x-is-no-longer-available", portalInstanceId));
 		}
 		catch (Exception exception) {
 			_log.error(exception);
@@ -157,6 +175,9 @@ public class ExportInstanceMVCActionCommand extends BaseMVCActionCommand {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ExportInstanceMVCActionCommand.class);
+
+	@Reference
+	private CompanyLocalService _companyLocalService;
 
 	@Reference(scope = ReferenceScope.PROTOTYPE_REQUIRED)
 	private ComponentServiceObjects<PortalInstanceExportResource>

@@ -6,8 +6,14 @@
 package com.liferay.portal.instances.web.internal.portlet.action;
 
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceExportResource;
+import com.liferay.portal.kernel.exception.NoSuchCompanyException;
+import com.liferay.portal.kernel.json.JSONFactory;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -20,6 +26,8 @@ import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTa
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResourceFactory;
 
 import jakarta.portlet.ActionRequest;
+import jakarta.portlet.ActionResponse;
+import jakarta.portlet.PortletRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -32,6 +40,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import org.osgi.service.component.ComponentServiceObjects;
@@ -60,14 +69,27 @@ public class ExportInstanceMVCActionCommandTest {
 		);
 
 		ReflectionTestUtil.setFieldValue(
+			_exportInstanceMVCActionCommand, "_companyLocalService",
+			_companyLocalService);
+		ReflectionTestUtil.setFieldValue(
 			_exportInstanceMVCActionCommand, "_componentServiceObjects",
 			_componentServiceObjects);
+		ReflectionTestUtil.setFieldValue(
+			_exportInstanceMVCActionCommand, "_jsonFactory", _jsonFactory);
+		ReflectionTestUtil.setFieldValue(
+			_exportInstanceMVCActionCommand, "_language", _language);
 		ReflectionTestUtil.setFieldValue(
 			_exportInstanceMVCActionCommand, "_portal", _portal);
 		ReflectionTestUtil.setFieldValue(
 			_exportInstanceMVCActionCommand,
 			"_vulcanBatchEngineImportTaskResourceFactory",
 			_vulcanBatchEngineImportTaskResourceFactory);
+
+		Mockito.when(
+			_jsonFactory.createJSONObject()
+		).thenReturn(
+			_jsonObject
+		);
 
 		Mockito.when(
 			_portal.getCompany(_actionRequest)
@@ -98,6 +120,54 @@ public class ExportInstanceMVCActionCommandTest {
 		).thenReturn(
 			_vulcanBatchEngineImportTaskResource
 		);
+	}
+
+	@Test
+	public void testDoProcessAction() throws Exception {
+		_processAction();
+
+		Mockito.verify(
+			_portalInstanceExportResource
+		).postPortalInstanceExportBatch(
+			Mockito.isNull(), Mockito.any()
+		);
+
+		Mockito.verify(
+			_jsonObject, Mockito.never()
+		).put(
+			Mockito.eq("error"), Mockito.any(Object.class)
+		);
+	}
+
+	@Test
+	public void testDoProcessActionWhenThePortalInstanceIsDeleted()
+		throws Exception {
+
+		Mockito.when(
+			_companyLocalService.getCompanyByWebId(_PORTAL_INSTANCE_ID)
+		).thenThrow(
+			new NoSuchCompanyException()
+		);
+
+		String message = RandomTestUtil.randomString();
+
+		Mockito.when(
+			_language.format(
+				LocaleUtil.US, "the-instance-x-is-no-longer-available",
+				_PORTAL_INSTANCE_ID)
+		).thenReturn(
+			message
+		);
+
+		_processAction();
+
+		Mockito.verify(
+			_jsonObject
+		).put(
+			"error", message
+		);
+
+		Mockito.verifyNoInteractions(_componentServiceObjects);
 	}
 
 	@Test
@@ -225,6 +295,24 @@ public class ExportInstanceMVCActionCommandTest {
 		);
 	}
 
+	private void _processAction() throws Exception {
+		Mockito.when(
+			_actionRequest.getLocale()
+		).thenReturn(
+			LocaleUtil.US
+		);
+
+		try (MockedStatic<JSONPortletResponseUtil>
+				jsonPortletResponseUtilMockedStatic = Mockito.mockStatic(
+					JSONPortletResponseUtil.class)) {
+
+			ReflectionTestUtil.invoke(
+				_exportInstanceMVCActionCommand, "doProcessAction",
+				new Class<?>[] {ActionRequest.class, ActionResponse.class},
+				_actionRequest, Mockito.mock(ActionResponse.class));
+		}
+	}
+
 	private void _exportPortalInstance() throws Exception {
 		ReflectionTestUtil.invoke(
 			_exportInstanceMVCActionCommand, "_exportPortalInstance",
@@ -236,12 +324,26 @@ public class ExportInstanceMVCActionCommandTest {
 
 	private final ActionRequest _actionRequest = Mockito.mock(
 		ActionRequest.class);
+	private final CompanyLocalService _companyLocalService = Mockito.mock(
+		CompanyLocalService.class);
 	private final ComponentServiceObjects<PortalInstanceExportResource>
 		_componentServiceObjects = Mockito.mock(ComponentServiceObjects.class);
+
 	private final ExportInstanceMVCActionCommand
-		_exportInstanceMVCActionCommand = new ExportInstanceMVCActionCommand();
+		_exportInstanceMVCActionCommand = new ExportInstanceMVCActionCommand() {
+
+			@Override
+			protected void hideDefaultSuccessMessage(
+				PortletRequest portletRequest) {
+			}
+
+		};
+
 	private final HttpServletRequest _httpServletRequest = Mockito.mock(
 		HttpServletRequest.class);
+	private final JSONFactory _jsonFactory = Mockito.mock(JSONFactory.class);
+	private final JSONObject _jsonObject = Mockito.mock(JSONObject.class);
+	private final Language _language = Mockito.mock(Language.class);
 	private final Portal _portal = Mockito.mock(Portal.class);
 	private final PortalInstanceExportResource _portalInstanceExportResource =
 		Mockito.mock(PortalInstanceExportResource.class);
