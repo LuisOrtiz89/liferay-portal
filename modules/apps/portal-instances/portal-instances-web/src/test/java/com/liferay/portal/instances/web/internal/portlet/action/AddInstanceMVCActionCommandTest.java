@@ -16,6 +16,8 @@ import com.liferay.portal.kernel.exception.UserPasswordException;
 import com.liferay.portal.kernel.exception.UserScreenNameException;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
+import com.liferay.portal.kernel.security.auth.ScreenNameValidator;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
@@ -24,6 +26,8 @@ import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropsValues;
+import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
+import com.liferay.portal.security.auth.ScreenNameValidatorFactory;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResource;
@@ -43,6 +47,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import org.osgi.service.component.ComponentServiceObjects;
@@ -326,6 +331,23 @@ public class AddInstanceMVCActionCommandTest {
 	}
 
 	@Test
+	public void testValidateAdmin() throws Exception {
+		_validateAdmin(true, true);
+
+		Mockito.verify(
+			_emailAddressValidator
+		).validate(
+			0, _EMAIL_ADDRESS
+		);
+
+		Mockito.verify(
+			_screenNameValidator
+		).validate(
+			0, _SCREEN_NAME
+		);
+	}
+
+	@Test
 	public void testValidateAdminIgnoresTheAdminWithADefaultAdminPassword()
 		throws Exception {
 
@@ -340,18 +362,28 @@ public class AddInstanceMVCActionCommandTest {
 		_validateAdmin();
 	}
 
+	@Test(expected = UserEmailAddressException.MustValidate.class)
+	public void testValidateAdminWithAnInvalidEmailAddress() throws Exception {
+		_validateAdmin(false, true);
+	}
+
+	@Test(expected = UserScreenNameException.MustValidate.class)
+	public void testValidateAdminWithAnInvalidScreenName() throws Exception {
+		_validateAdmin(true, false);
+	}
+
 	@Test(expected = UserPasswordException.MustNotBeNull.class)
 	public void testValidateAdminWithoutAPassword() throws Exception {
 		_setParameter("defaultAdminPassword", null);
 
-		_validateAdmin();
+		_validateAdmin(true, true);
 	}
 
 	@Test(expected = UserScreenNameException.MustNotBeNull.class)
 	public void testValidateAdminWithoutAScreenName() throws Exception {
 		_setParameter("defaultAdminScreenName", null);
 
-		_validateAdmin();
+		_validateAdmin(true, true);
 	}
 
 	@Test(expected = UserEmailAddressException.MustNotBeNull.class)
@@ -418,6 +450,45 @@ public class AddInstanceMVCActionCommandTest {
 			new Class<?>[] {ActionRequest.class}, _actionRequest);
 	}
 
+	private void _validateAdmin(
+			boolean validEmailAddress, boolean validScreenName)
+		throws Exception {
+
+		Mockito.when(
+			_emailAddressValidator.validate(0, _EMAIL_ADDRESS)
+		).thenReturn(
+			validEmailAddress
+		);
+
+		Mockito.when(
+			_screenNameValidator.validate(0, _SCREEN_NAME)
+		).thenReturn(
+			validScreenName
+		);
+
+		try (MockedStatic<EmailAddressValidatorFactory>
+				emailAddressValidatorFactoryMockedStatic = Mockito.mockStatic(
+					EmailAddressValidatorFactory.class);
+			MockedStatic<ScreenNameValidatorFactory>
+				screenNameValidatorFactoryMockedStatic = Mockito.mockStatic(
+					ScreenNameValidatorFactory.class)) {
+
+			emailAddressValidatorFactoryMockedStatic.when(
+				EmailAddressValidatorFactory::getInstance
+			).thenReturn(
+				_emailAddressValidator
+			);
+
+			screenNameValidatorFactoryMockedStatic.when(
+				ScreenNameValidatorFactory::getInstance
+			).thenReturn(
+				_screenNameValidator
+			);
+
+			_validateAdmin();
+		}
+	}
+
 	private static final String _DOMAIN = RandomTestUtil.randomString();
 
 	private static final String _EMAIL_ADDRESS = RandomTestUtil.randomString();
@@ -451,11 +522,15 @@ public class AddInstanceMVCActionCommandTest {
 	private final ComponentServiceObjects<PortalInstanceResource>
 		_componentServiceObjects = Mockito.mock(ComponentServiceObjects.class);
 	private String _defaultAdminPassword;
+	private final EmailAddressValidator _emailAddressValidator = Mockito.mock(
+		EmailAddressValidator.class);
 	private final HttpServletRequest _httpServletRequest = Mockito.mock(
 		HttpServletRequest.class);
 	private final Portal _portal = Mockito.mock(Portal.class);
 	private final PortalInstanceResource _portalInstanceResource = Mockito.mock(
 		PortalInstanceResource.class);
+	private final ScreenNameValidator _screenNameValidator = Mockito.mock(
+		ScreenNameValidator.class);
 	private final VulcanBatchEngineImportTaskResource
 		_vulcanBatchEngineImportTaskResource = Mockito.mock(
 			VulcanBatchEngineImportTaskResource.class);
