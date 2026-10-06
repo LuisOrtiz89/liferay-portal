@@ -7,6 +7,7 @@ package com.liferay.portal.instances.web.internal.portlet.action;
 
 import com.liferay.batch.engine.jaxrs.uri.BatchEngineUriInfo;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceExportResource;
+import com.liferay.portal.db.partition.util.DBPartitionUtil;
 import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.exception.NoSuchCompanyException;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -14,6 +15,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
@@ -68,9 +70,23 @@ public class ExportInstanceMVCActionCommand extends BaseMVCActionCommand {
 			actionRequest, "portalInstanceId");
 
 		try {
-			_companyLocalService.getCompanyByWebId(portalInstanceId);
+			Company company = _companyLocalService.getCompanyByWebId(
+				portalInstanceId);
 
-			_exportPortalInstance(actionRequest);
+			if (DBPartitionUtil.existsExportedPartition(
+					company.getCompanyId())) {
+
+				jsonObject.put(
+					"error",
+					_language.format(
+						actionRequest.getLocale(),
+						"the-exported-schema-x-already-exists",
+						DBPartitionUtil.getExportedPartitionName(
+							company.getCompanyId())));
+			}
+			else {
+				_exportPortalInstance(actionRequest);
+			}
 		}
 		catch (NoSuchCompanyException noSuchCompanyException) {
 			if (_log.isDebugEnabled()) {
