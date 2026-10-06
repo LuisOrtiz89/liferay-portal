@@ -24,6 +24,8 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
+import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
+import com.liferay.portal.kernel.security.auth.ScreenNameValidator;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.util.ContentTypes;
@@ -34,6 +36,8 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
+import com.liferay.portal.security.auth.ScreenNameValidatorFactory;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResourceFactory;
 
@@ -267,11 +271,19 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 			return;
 		}
 
-		if (Validator.isNull(
-				ParamUtil.getString(
-					actionRequest, "defaultAdminEmailAddress"))) {
+		String emailAddress = ParamUtil.getString(
+			actionRequest, "defaultAdminEmailAddress");
 
+		if (Validator.isNull(emailAddress)) {
 			throw new UserEmailAddressException.MustNotBeNull();
+		}
+
+		EmailAddressValidator emailAddressValidator =
+			EmailAddressValidatorFactory.getInstance();
+
+		if (!emailAddressValidator.validate(0, emailAddress)) {
+			throw new UserEmailAddressException.MustValidate(
+				emailAddress, emailAddressValidator);
 		}
 
 		if (Validator.isNull(
@@ -280,10 +292,19 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 			throw new UserPasswordException.MustNotBeNull(0);
 		}
 
-		if (Validator.isNull(
-				ParamUtil.getString(actionRequest, "defaultAdminScreenName"))) {
+		String screenName = ParamUtil.getString(
+			actionRequest, "defaultAdminScreenName");
 
+		if (Validator.isNull(screenName)) {
 			throw new UserScreenNameException.MustNotBeNull();
+		}
+
+		ScreenNameValidator screenNameValidator =
+			ScreenNameValidatorFactory.getInstance();
+
+		if (!screenNameValidator.validate(0, screenName)) {
+			throw new UserScreenNameException.MustValidate(
+				0, screenName, screenNameValidator);
 		}
 	}
 
