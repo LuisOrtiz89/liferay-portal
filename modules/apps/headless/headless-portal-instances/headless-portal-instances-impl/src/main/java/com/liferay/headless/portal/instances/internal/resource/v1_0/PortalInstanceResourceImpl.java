@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.CompanyService;
+import com.liferay.portal.kernel.transaction.TransactionCallbackUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
@@ -116,9 +117,14 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		PortalInstance addedPortalInstance = _addPortalInstance(portalInstance);
 
-		_sendUserNotificationEvent(
-			PortalInstancesNotificationConstants.OPERATION_TYPE_ADD,
-			portalInstance.getPortalInstanceId());
+		TransactionCallbackUtil.registerCommitCallback(
+			() -> {
+				_sendUserNotificationEvent(
+					PortalInstancesNotificationConstants.OPERATION_TYPE_ADD,
+					portalInstance.getPortalInstanceId());
+
+				return null;
+			});
 
 		return addedPortalInstance;
 	}
