@@ -207,6 +207,16 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandler
 			return "please-enter-a-valid-first-middle-and-last-name";
 		}
 
+		if (throwable instanceof IllegalArgumentException) {
+			String message = GetterUtil.getString(throwable.getMessage());
+
+			if (message.startsWith("Site initializer ")) {
+				return "please-select-a-valid-virtual-instance-initializer";
+			}
+
+			return null;
+		}
+
 		if (throwable instanceof RequiredCompanyException) {
 			return "the-default-instance-cannot-be-deleted";
 		}

@@ -45,6 +45,8 @@ import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 
 import java.util.Arrays;
@@ -169,6 +171,8 @@ public class PortalInstanceResourceTest
 	public void testPostPortalInstance() throws Exception {
 		_testPostPortalInstanceBatchSendsUserNotificationEventAfterRegistration();
 		_testPostPortalInstanceBatchWithSeveralPortalInstances();
+		_testPostPortalInstanceBatchWithSiteInitializerKeyNonexistent();
+		_testPostPortalInstanceWithSiteInitializerKeyNonexistent();
 		_testPostPortalInstanceWithoutAdmin();
 		_testPostPortalInstanceWithAdmin();
 		_testPostPortalInstanceWithAdminAndCompanyStrangers();
@@ -781,6 +785,56 @@ public class PortalInstanceResourceTest
 		}
 	}
 
+	private void _testPostPortalInstanceBatchWithSiteInitializerKeyNonexistent()
+		throws Exception {
+
+		PortalInstance randomPortalInstance = randomPortalInstance();
+
+		randomPortalInstance.setSiteInitializerKey(
+			RandomTestUtil.randomString());
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.batch.engine.internal." +
+					"BatchEngineImportTaskExecutorImpl",
+				LoggerTestUtil.ERROR)) {
+
+			HttpResponse httpResponse =
+				portalInstanceResource.postPortalInstanceBatchHttpResponse(
+					null,
+					JSONUtil.put(
+						JSONFactoryUtil.createJSONObject(
+							randomPortalInstance.toString())));
+
+			Assert.assertEquals(202, httpResponse.getStatusCode());
+
+			waitForFinish(
+				"FAILED",
+				JSONFactoryUtil.createJSONObject(httpResponse.getContent()));
+		}
+
+		Assert.assertNull(
+			_companyLocalService.fetchCompanyByVirtualHost(
+				randomPortalInstance.getVirtualHost()));
+		Assert.assertNull(
+			_fetchUserNotificationEvent(
+				randomPortalInstance.getPortalInstanceId(),
+				PortalInstancesNotificationConstants.STATUS_SUCCESS));
+
+		UserNotificationEvent userNotificationEvent =
+			_fetchUserNotificationEvent(
+				randomPortalInstance.getPortalInstanceId(),
+				PortalInstancesNotificationConstants.STATUS_FAILED);
+
+		Assert.assertNotNull(userNotificationEvent);
+
+		JSONObject payloadJSONObject = JSONFactoryUtil.createJSONObject(
+			userNotificationEvent.getPayload());
+
+		Assert.assertEquals(
+			"please-select-a-valid-virtual-instance-initializer",
+			payloadJSONObject.getString("errorMessageKey"));
+	}
+
 	private void _testPostPortalInstanceWithAdmin() throws Exception {
 		PortalInstance randomPortalInstance = randomPortalInstance();
 
@@ -914,6 +968,34 @@ public class PortalInstanceResourceTest
 				"givenName", RandomTestUtil.randomString()
 			),
 			"Email address must not be null");
+	}
+
+	private void _testPostPortalInstanceWithSiteInitializerKeyNonexistent()
+		throws Exception {
+
+		PortalInstance randomPortalInstance = randomPortalInstance();
+
+		String siteInitializerKey = RandomTestUtil.randomString();
+
+		randomPortalInstance.setSiteInitializerKey(siteInitializerKey);
+
+		try {
+			portalInstanceResource.postPortalInstance(randomPortalInstance);
+
+			Assert.fail();
+		}
+		catch (Problem.ProblemException problemException) {
+			Problem problem = problemException.getProblem();
+
+			Assert.assertEquals("BAD_REQUEST", problem.getStatus());
+			Assert.assertEquals(
+				"Site initializer " + siteInitializerKey + " does not exist",
+				problem.getTitle());
+		}
+
+		Assert.assertNull(
+			_companyLocalService.fetchCompanyByVirtualHost(
+				randomPortalInstance.getVirtualHost()));
 	}
 
 	private void _testPostPortalInstanceWithoutAdmin() throws Exception {

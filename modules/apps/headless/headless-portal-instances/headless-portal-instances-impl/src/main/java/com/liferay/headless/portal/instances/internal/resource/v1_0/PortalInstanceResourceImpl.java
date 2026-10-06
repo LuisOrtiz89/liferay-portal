@@ -26,6 +26,8 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.vulcan.pagination.Page;
+import com.liferay.site.initializer.SiteInitializer;
+import com.liferay.site.initializer.SiteInitializerRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -158,6 +160,8 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 	private PortalInstance _addPortalInstance(PortalInstance portalInstance)
 		throws Exception {
 
+		_validateSiteInitializerKey(portalInstance.getSiteInitializerKey());
+
 		Admin admin = portalInstance.getAdmin();
 
 		Long companyId = portalInstance.getCompanyId();
@@ -254,7 +258,29 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 		}
 	}
 
+	private void _validateSiteInitializerKey(String siteInitializerKey) {
+		if (Validator.isNull(siteInitializerKey)) {
+			return;
+		}
+
+		SiteInitializer siteInitializer =
+			_siteInitializerRegistry.getSiteInitializer(siteInitializerKey);
+
+		if (siteInitializer == null) {
+			throw new IllegalArgumentException(
+				"Site initializer " + siteInitializerKey + " does not exist");
+		}
+
+		if (!siteInitializer.isActive(contextCompany.getCompanyId())) {
+			throw new IllegalArgumentException(
+				"Site initializer " + siteInitializerKey + " is inactive");
+		}
+	}
+
 	@Reference
 	private CompanyService _companyService;
+
+	@Reference
+	private SiteInitializerRegistry _siteInitializerRegistry;
 
 }
