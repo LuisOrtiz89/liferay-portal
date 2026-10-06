@@ -193,6 +193,8 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandlerTest {
 	public void testHandleMapsExceptions() throws Exception {
 		_assertErrorMessageKey(null, new Exception());
 		_assertErrorMessageKey(
+			null, new IllegalArgumentException(RandomTestUtil.randomString()));
+		_assertErrorMessageKey(
 			null,
 			new NoSuchCompanyException(
 				"No Company exists with the key {webId=missing}"));
@@ -240,6 +242,14 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandlerTest {
 			new CompanyVirtualHostException());
 		_assertErrorMessageKey(
 			"please-enter-a-valid-web-id", new CompanyWebIdException());
+		_assertErrorMessageKey(
+			"please-select-a-valid-virtual-instance-initializer",
+			new IllegalArgumentException(
+				"Site initializer does-not-exist does not exist"));
+		_assertErrorMessageKey(
+			"please-select-a-valid-virtual-instance-initializer",
+			new IllegalArgumentException(
+				"Site initializer inactive is inactive"));
 		_assertErrorMessageKey(
 			"the-default-instance-cannot-be-deleted",
 			new RequiredCompanyException());
