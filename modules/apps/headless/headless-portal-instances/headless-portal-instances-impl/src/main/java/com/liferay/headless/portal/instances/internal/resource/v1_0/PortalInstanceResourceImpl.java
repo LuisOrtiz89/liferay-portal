@@ -7,6 +7,7 @@ package com.liferay.headless.portal.instances.internal.resource.v1_0;
 
 import com.liferay.headless.portal.instances.dto.v1_0.Admin;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstance;
+import com.liferay.headless.portal.instances.internal.dto.v1_0.converter.constants.DTOConverterConstants;
 import com.liferay.headless.portal.instances.internal.notifications.PortalInstanceNotificationUtil;
 import com.liferay.headless.portal.instances.internal.security.permission.PortalInstancePermissionUtil;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceResource;
@@ -22,6 +23,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
 import com.liferay.portal.util.PortalInstances;
+import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.site.initializer.SiteInitializer;
 import com.liferay.site.initializer.SiteInitializerRegistry;
@@ -61,7 +63,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		PortalInstancePermissionUtil.check();
 
-		return _toPortalInstance(
+		return _portalInstanceDTOConverter.toDTO(
 			_companyService.getCompanyByWebId(portalInstanceId));
 	}
 
@@ -81,7 +83,8 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 					(PortalInstancePool.getDefaultCompanyId() !=
 						company.getCompanyId())) {
 
-					portalInstances.add(_toPortalInstance(company));
+					portalInstances.add(
+						_portalInstanceDTOConverter.toDTO(company));
 				}
 			});
 
@@ -102,7 +105,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 		String domain = GetterUtil.getString(
 			portalInstance.getDomain(), company.getMx());
 
-		return _toPortalInstance(
+		return _portalInstanceDTOConverter.toDTO(
 			_companyService.updateCompany(
 				company.getCompanyId(), virtualHostname, domain,
 				company.getMaxUsers(), company.isActive()));
@@ -171,7 +174,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 		if (admin != null) {
 			_validateAdmin(admin);
 
-			return _toPortalInstance(
+			return _portalInstanceDTOConverter.toDTO(
 				PortalInstances.addCompany(
 					portalInstance.getSiteInitializerKey(),
 					() -> _companyService.addCompany(
@@ -183,7 +186,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 						admin.getMiddleName(), admin.getFamilyName())));
 		}
 
-		return _toPortalInstance(
+		return _portalInstanceDTOConverter.toDTO(
 			PortalInstances.addCompany(
 				portalInstance.getSiteInitializerKey(),
 				() -> _companyService.addCompany(
@@ -204,19 +207,6 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 			).put(
 				"status", PortalInstancesNotificationConstants.STATUS_SUCCESS
 			));
-	}
-
-	private PortalInstance _toPortalInstance(Company company) {
-		return new PortalInstance() {
-			{
-				setActive(company::isActive);
-				setCompanyId(company::getCompanyId);
-				setDomain(company::getMx);
-				setMaxUsers(company::getMaxUsers);
-				setPortalInstanceId(company::getWebId);
-				setVirtualHost(company::getVirtualHostname);
-			}
-		};
 	}
 
 	private void _validateAdmin(Admin admin) throws Exception {
@@ -262,6 +252,9 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 	@Reference
 	private CompanyService _companyService;
+
+	@Reference(target = DTOConverterConstants.PORTAL_INSTANCE_DTO_CONVERTER)
+	private DTOConverter<Company, PortalInstance> _portalInstanceDTOConverter;
 
 	@Reference
 	private SiteInitializerRegistry _siteInitializerRegistry;

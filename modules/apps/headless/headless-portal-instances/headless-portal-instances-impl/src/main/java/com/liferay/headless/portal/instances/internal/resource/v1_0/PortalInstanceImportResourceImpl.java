@@ -7,6 +7,7 @@ package com.liferay.headless.portal.instances.internal.resource.v1_0;
 
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstance;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceImport;
+import com.liferay.headless.portal.instances.internal.dto.v1_0.converter.constants.DTOConverterConstants;
 import com.liferay.headless.portal.instances.internal.notifications.PortalInstanceNotificationUtil;
 import com.liferay.headless.portal.instances.internal.security.permission.PortalInstancePermissionUtil;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceImportResource;
@@ -17,6 +18,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.service.CompanyService;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 
 import jakarta.ws.rs.BadRequestException;
 
@@ -46,7 +48,7 @@ public class PortalInstanceImportResourceImpl
 		}
 
 		try {
-			PortalInstance portalInstance = _toPortalInstance(
+			PortalInstance portalInstance = _portalInstanceDTOConverter.toDTO(
 				_companyService.addDBPartitionCompany(
 					portalInstanceImport.getSchemaName(),
 					portalInstanceImport.getName(),
@@ -86,23 +88,13 @@ public class PortalInstanceImportResourceImpl
 			));
 	}
 
-	private PortalInstance _toPortalInstance(Company company) {
-		return new PortalInstance() {
-			{
-				setActive(company::isActive);
-				setCompanyId(company::getCompanyId);
-				setDomain(company::getMx);
-				setMaxUsers(company::getMaxUsers);
-				setPortalInstanceId(company::getWebId);
-				setVirtualHost(company::getVirtualHostname);
-			}
-		};
-	}
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		PortalInstanceImportResourceImpl.class);
 
 	@Reference
 	private CompanyService _companyService;
+
+	@Reference(target = DTOConverterConstants.PORTAL_INSTANCE_DTO_CONVERTER)
+	private DTOConverter<Company, PortalInstance> _portalInstanceDTOConverter;
 
 }
