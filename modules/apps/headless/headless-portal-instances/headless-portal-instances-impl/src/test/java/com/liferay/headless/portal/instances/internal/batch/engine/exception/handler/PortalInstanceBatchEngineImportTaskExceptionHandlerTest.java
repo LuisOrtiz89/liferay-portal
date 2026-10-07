@@ -7,10 +7,12 @@ package com.liferay.headless.portal.instances.internal.batch.engine.exception.ha
 
 import com.liferay.batch.engine.BatchEngineTaskOperation;
 import com.liferay.batch.engine.model.BatchEngineImportTask;
+import com.liferay.batch.engine.thread.local.BatchEngineThreadLocal;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstance;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceCopy;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceExport;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceImport;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.instances.constants.PortalInstancesPortletKeys;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
 import com.liferay.portal.kernel.exception.CompanyMxException;
@@ -30,12 +32,14 @@ import com.liferay.portal.kernel.model.UserNotificationDeliveryConstants;
 import com.liferay.portal.kernel.security.auth.FullNameValidator;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
+import com.liferay.portal.kernel.service.UserNotificationEventLocalServiceUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import jakarta.ws.rs.BadRequestException;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -55,12 +59,15 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandlerTest {
 
 	@Before
 	public void setUp() throws Exception {
+		_safeCloseable =
+			BatchEngineThreadLocal.setBatchImportInProcessWithSafeCloseable(
+				true);
+
 		ReflectionTestUtil.setFieldValue(
 			_portalInstanceBatchEngineImportTaskExceptionHandler,
 			"_companyLocalService", _companyLocalService);
-		ReflectionTestUtil.setFieldValue(
-			_portalInstanceBatchEngineImportTaskExceptionHandler,
-			"_userNotificationEventLocalService",
+
+		UserNotificationEventLocalServiceUtil.setService(
 			_userNotificationEventLocalService);
 
 		Company company = Mockito.mock(Company.class);
@@ -88,6 +95,11 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandlerTest {
 		).thenReturn(
 			_USER_ID
 		);
+	}
+
+	@After
+	public void tearDown() {
+		_safeCloseable.close();
 	}
 
 	@Test
@@ -607,6 +619,7 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandlerTest {
 	private final PortalInstanceBatchEngineImportTaskExceptionHandler
 		_portalInstanceBatchEngineImportTaskExceptionHandler =
 			new PortalInstanceBatchEngineImportTaskExceptionHandler();
+	private SafeCloseable _safeCloseable;
 	private final UserNotificationEventLocalService
 		_userNotificationEventLocalService = Mockito.mock(
 			UserNotificationEventLocalService.class);
