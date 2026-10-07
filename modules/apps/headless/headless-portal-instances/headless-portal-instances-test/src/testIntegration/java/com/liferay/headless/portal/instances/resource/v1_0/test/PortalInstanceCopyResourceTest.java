@@ -178,6 +178,13 @@ public class PortalInstanceCopyResourceTest
 				expectedCompanyId, copiedPortalInstance.getCompanyId());
 		}
 
+		Company persistedCompany = _companyLocalService.getCompany(
+			copiedPortalInstance.getCompanyId());
+
+		Assert.assertEquals(
+			Integer.valueOf(persistedCompany.getMaxUsers()),
+			copiedPortalInstance.getMaxUsers());
+
 		_deleteCompany(copiedPortalInstance.getCompanyId());
 	}
 

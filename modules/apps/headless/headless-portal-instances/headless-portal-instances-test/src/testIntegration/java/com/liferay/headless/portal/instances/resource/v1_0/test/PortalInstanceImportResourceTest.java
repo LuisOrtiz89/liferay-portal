@@ -475,6 +475,13 @@ public class PortalInstanceImportResourceTest
 				portalInstanceImport);
 
 		try {
+			Company persistedCompany = _companyLocalService.getCompany(
+				companyId);
+
+			Assert.assertEquals(
+				Integer.valueOf(persistedCompany.getMaxUsers()),
+				portalInstance.getMaxUsers());
+
 			Assert.assertEquals(
 				Long.valueOf(companyId), portalInstance.getCompanyId());
 			Assert.assertEquals(randomId, portalInstance.getPortalInstanceId());

@@ -225,6 +225,7 @@ public class PortalInstanceResourceTest
 		if (Validator.isNull(portalInstance.getActive()) ||
 			Validator.isNull(portalInstance.getCompanyId()) ||
 			Validator.isNull(portalInstance.getDomain()) ||
+			Validator.isNull(portalInstance.getMaxUsers()) ||
 			Validator.isNull(portalInstance.getPortalInstanceId()) ||
 			Validator.isNull(portalInstance.getVirtualHost())) {
 
@@ -237,7 +238,8 @@ public class PortalInstanceResourceTest
 	@Override
 	protected String[] getAdditionalAssertFieldNames() {
 		return new String[] {
-			"active", "companyId", "domain", "portalInstanceId", "virtualHost"
+			"active", "companyId", "domain", "maxUsers", "portalInstanceId",
+			"virtualHost"
 		};
 	}
 
@@ -255,6 +257,7 @@ public class PortalInstanceResourceTest
 				active = true;
 				companyId = RandomTestUtil.randomLong();
 				domain = randomDomain;
+				maxUsers = RandomTestUtil.randomInt(100, 1000);
 				portalInstanceId = randomPortalInstanceId;
 				virtualHost = randomDomain;
 			}
@@ -324,6 +327,7 @@ public class PortalInstanceResourceTest
 				setActive(company::isActive);
 				setCompanyId(company::getCompanyId);
 				setDomain(company::getMx);
+				setMaxUsers(company::getMaxUsers);
 				setPortalInstanceId(company::getWebId);
 				setVirtualHost(company::getVirtualHostname);
 			}

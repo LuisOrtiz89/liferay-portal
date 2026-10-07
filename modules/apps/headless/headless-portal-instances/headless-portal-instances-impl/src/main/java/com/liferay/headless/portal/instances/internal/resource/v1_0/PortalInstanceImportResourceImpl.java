@@ -103,6 +103,7 @@ public class PortalInstanceImportResourceImpl
 				setActive(company::isActive);
 				setCompanyId(company::getCompanyId);
 				setDomain(company::getMx);
+				setMaxUsers(company::getMaxUsers);
 				setPortalInstanceId(company::getWebId);
 				setVirtualHost(company::getVirtualHostname);
 			}
