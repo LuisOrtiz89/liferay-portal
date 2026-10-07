@@ -41,7 +41,7 @@ components:
             properties:
                 active:
                     description:
-                        whether the portal instance is active. Only used in the portal instance creation; use the activate and deactivate endpoints to change it.
+                        whether the portal instance is active. PATCH ignores it; use the activate and deactivate endpoints to change it.
                     type: boolean
                 admin:
                     $ref: "#/components/schemas/Admin"
@@ -60,7 +60,7 @@ components:
                     type: string
                 maxUsers:
                     description:
-                        maximum number of users, or 0 for unlimited. Only used in the portal instance creation.
+                        maximum number of users, or 0 for unlimited. PATCH ignores it.
                     format: int32
                     type: integer
                 portalInstanceId:
