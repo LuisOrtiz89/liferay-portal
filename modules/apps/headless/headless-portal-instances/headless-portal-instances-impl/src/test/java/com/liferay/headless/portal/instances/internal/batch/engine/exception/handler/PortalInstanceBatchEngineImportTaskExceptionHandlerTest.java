@@ -153,7 +153,7 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandlerTest {
 		_assertCopyErrorMessageKey(
 			"copying-an-instance-is-already-in-progress",
 			new UnsupportedOperationException(
-				"Company in copy process company ID is not null"));
+				"Copying an instance is already in progress"));
 		_assertCopyErrorMessageKey(
 			"database-partitioning-must-be-enabled",
 			new UnsupportedOperationException(
@@ -302,7 +302,7 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandlerTest {
 		_assertImportErrorMessageKey(
 			"importing-an-instance-is-already-in-progress",
 			new UnsupportedOperationException(
-				"Company in import process company ID is not null"));
+				"Importing an instance is already in progress"));
 		_assertImportErrorMessageKey(
 			"please-enter-a-valid-name", new CompanyNameException());
 		_assertImportErrorMessageKey(

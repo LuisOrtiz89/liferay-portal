@@ -107,9 +107,7 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandler
 		if (exception instanceof UnsupportedOperationException) {
 			String message = GetterUtil.getString(exception.getMessage());
 
-			if (message.equals(
-					"Company in copy process company ID is not null")) {
-
+			if (message.equals("Copying an instance is already in progress")) {
 				return "copying-an-instance-is-already-in-progress";
 			}
 
@@ -275,7 +273,7 @@ public class PortalInstanceBatchEngineImportTaskExceptionHandler
 			String message = GetterUtil.getString(exception.getMessage());
 
 			if (message.equals(
-					"Company in import process company ID is not null")) {
+					"Importing an instance is already in progress")) {
 
 				return "importing-an-instance-is-already-in-progress";
 			}

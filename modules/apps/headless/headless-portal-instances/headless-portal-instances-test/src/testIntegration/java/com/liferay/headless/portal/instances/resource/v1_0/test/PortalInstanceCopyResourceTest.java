@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.util.PortalInstances;
 
 import java.util.Arrays;
 
@@ -114,6 +115,7 @@ public class PortalInstanceCopyResourceTest
 
 		_testPostPortalInstanceCopyBatch();
 		_testPostPortalInstanceCopyDefaultCompany();
+		_testPostPortalInstanceCopyInProgress();
 		_testPostPortalInstanceCopyMissingRequiredFields();
 		_testPostPortalInstanceCopySuccess();
 		_testPostPortalInstanceCopySuccessWithDestinationCompanyId();
@@ -288,6 +290,29 @@ public class PortalInstanceCopyResourceTest
 			Assert.assertEquals(
 				"Company ID " + defaultCompany.getCompanyId() +
 					" is the default company ID",
+				problem.getTitle());
+		}
+	}
+
+	private void _testPostPortalInstanceCopyInProgress() throws Exception {
+		try (SafeCloseable safeCloseable =
+				PortalInstances.setCopyInProcessCompanyIdWithSafeCloseable(
+					RandomTestUtil.randomLong());
+			LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				_CLASS_NAME_PORTAL_INSTANCE_COPY_RESOURCE_IMPL,
+				LoggerTestUtil.ERROR)) {
+
+			portalInstanceCopyResource.postPortalInstanceCopy(
+				_randomPortalInstanceCopy());
+
+			Assert.fail();
+		}
+		catch (Problem.ProblemException problemException) {
+			Problem problem = problemException.getProblem();
+
+			Assert.assertEquals("BAD_REQUEST", problem.getStatus());
+			Assert.assertEquals(
+				"Copying an instance is already in progress",
 				problem.getTitle());
 		}
 	}
