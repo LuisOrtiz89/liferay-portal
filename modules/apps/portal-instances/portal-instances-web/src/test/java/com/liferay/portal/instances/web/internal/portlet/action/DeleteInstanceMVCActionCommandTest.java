@@ -132,7 +132,7 @@ public class DeleteInstanceMVCActionCommandTest {
 			"delegated"
 		);
 
-		_deletePortalInstance();
+		_processAction();
 
 		ArgumentCaptor<HttpServletRequest> argumentCaptor =
 			ArgumentCaptor.forClass(HttpServletRequest.class);
@@ -156,7 +156,7 @@ public class DeleteInstanceMVCActionCommandTest {
 	public void testDeletePortalInstanceSendsThePortalInstanceId()
 		throws Exception {
 
-		_deletePortalInstance();
+		_processAction();
 
 		ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(
 			Object.class);
@@ -181,7 +181,7 @@ public class DeleteInstanceMVCActionCommandTest {
 	public void testDeletePortalInstanceSetsThePreferredLocale()
 		throws Exception {
 
-		_deletePortalInstance();
+		_processAction();
 
 		ArgumentCaptor<AcceptLanguage> argumentCaptor = ArgumentCaptor.forClass(
 			AcceptLanguage.class);
@@ -201,7 +201,7 @@ public class DeleteInstanceMVCActionCommandTest {
 	public void testDeletePortalInstanceSetsTheVulcanBatchEngineResource()
 		throws Exception {
 
-		_deletePortalInstance();
+		_processAction();
 
 		Mockito.verify(
 			_portalInstanceResource
@@ -212,33 +212,7 @@ public class DeleteInstanceMVCActionCommandTest {
 
 	@Test
 	public void testDeletePortalInstanceUngetsTheService() throws Exception {
-		_deletePortalInstance();
-
-		Mockito.verify(
-			_componentServiceObjects
-		).ungetService(
-			_portalInstanceResource
-		);
-	}
-
-	@Test
-	public void testDeletePortalInstanceUngetsTheServiceWhenTheBatchFails()
-		throws Exception {
-
-		Mockito.when(
-			_portalInstanceResource.deletePortalInstanceBatch(
-				Mockito.isNull(), Mockito.any())
-		).thenThrow(
-			new IllegalStateException()
-		);
-
-		try {
-			_deletePortalInstance();
-
-			Assert.fail();
-		}
-		catch (IllegalStateException illegalStateException) {
-		}
+		_processAction();
 
 		Mockito.verify(
 			_componentServiceObjects
@@ -261,6 +235,38 @@ public class DeleteInstanceMVCActionCommandTest {
 			_jsonObject, Mockito.never()
 		).put(
 			Mockito.eq("error"), Mockito.any(Object.class)
+		);
+	}
+
+	@Test
+	public void testDoProcessActionWhenTheBatchFails() throws Exception {
+		Mockito.when(
+			_portalInstanceResource.deletePortalInstanceBatch(
+				Mockito.isNull(), Mockito.any())
+		).thenThrow(
+			new IllegalStateException()
+		);
+
+		String message = RandomTestUtil.randomString();
+
+		Mockito.when(
+			_language.get(LocaleUtil.US, "an-unexpected-error-occurred")
+		).thenReturn(
+			message
+		);
+
+		_processAction();
+
+		Mockito.verify(
+			_componentServiceObjects
+		).ungetService(
+			_portalInstanceResource
+		);
+
+		Mockito.verify(
+			_jsonObject
+		).put(
+			"error", message
 		);
 	}
 
@@ -293,12 +299,6 @@ public class DeleteInstanceMVCActionCommandTest {
 		);
 
 		Mockito.verifyNoInteractions(_componentServiceObjects);
-	}
-
-	private void _deletePortalInstance() throws Exception {
-		ReflectionTestUtil.invoke(
-			_deleteInstanceMVCActionCommand, "_deletePortalInstance",
-			new Class<?>[] {ActionRequest.class}, _actionRequest);
 	}
 
 	private void _processAction() throws Exception {
