@@ -8,15 +8,13 @@ package com.liferay.headless.portal.instances.internal.resource.v1_0;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstance;
 import com.liferay.headless.portal.instances.dto.v1_0.PortalInstanceImport;
 import com.liferay.headless.portal.instances.internal.notifications.PortalInstanceNotificationUtil;
+import com.liferay.headless.portal.instances.internal.security.permission.PortalInstancePermissionUtil;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceImportResource;
 import com.liferay.portal.instances.constants.PortalInstancesNotificationConstants;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.security.auth.PrincipalException;
-import com.liferay.portal.kernel.security.permission.PermissionChecker;
-import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.CompanyService;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -41,7 +39,7 @@ public class PortalInstanceImportResourceImpl
 			PortalInstanceImport portalInstanceImport)
 		throws Exception {
 
-		_checkPermission();
+		PortalInstancePermissionUtil.check();
 
 		if (Validator.isNull(portalInstanceImport.getSchemaName())) {
 			throw new BadRequestException("Schema name is required");
@@ -68,15 +66,6 @@ public class PortalInstanceImportResourceImpl
 				exception);
 
 			throw exception;
-		}
-	}
-
-	private void _checkPermission() throws Exception {
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
-
-		if (!permissionChecker.isOmniadmin()) {
-			throw new PrincipalException.MustBeOmniadmin(permissionChecker);
 		}
 	}
 
