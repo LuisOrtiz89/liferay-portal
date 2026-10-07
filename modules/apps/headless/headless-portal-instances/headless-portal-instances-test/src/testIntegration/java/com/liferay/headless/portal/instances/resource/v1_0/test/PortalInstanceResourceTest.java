@@ -172,6 +172,7 @@ public class PortalInstanceResourceTest
 	@Test
 	public void testPostPortalInstance() throws Exception {
 		_testPostPortalInstanceBatchSendsUserNotificationEventAfterRegistration();
+		_testPostPortalInstanceBatchSendsUserNotificationEventWhenInitializationFails();
 		_testPostPortalInstanceBatchWithSeveralPortalInstances();
 		_testPostPortalInstanceBatchWithSiteInitializerKeyNonexistent();
 		_testPostPortalInstanceWithSiteInitializerKeyNonexistent();
@@ -711,6 +712,83 @@ public class PortalInstanceResourceTest
 			userNotificationEvent.getTimestamp() >= registeredTime);
 
 		serviceRegistration.unregister();
+
+		Company company = _companyLocalService.getCompanyByWebId(
+			randomPortalInstance.getPortalInstanceId());
+
+		_deletePortalInstance(_toPortalInstance(company));
+	}
+
+	private void _testPostPortalInstanceBatchSendsUserNotificationEventWhenInitializationFails()
+		throws Exception {
+
+		PortalInstance randomPortalInstance = randomPortalInstance();
+
+		Bundle bundle = FrameworkUtil.getBundle(
+			PortalInstanceResourceTest.class);
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
+		ServiceRegistration<PortalInstanceLifecycleListener>
+			serviceRegistration = bundleContext.registerService(
+				PortalInstanceLifecycleListener.class,
+				new BasePortalInstanceLifecycleListener() {
+
+					@Override
+					public void portalInstanceRegistered(Company company)
+						throws Exception {
+
+						if (Objects.equals(
+								company.getWebId(),
+								randomPortalInstance.getPortalInstanceId())) {
+
+							throw new Exception();
+						}
+					}
+
+				},
+				null);
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.instance.lifecycle.internal." +
+					"PortalInstanceLifecycleListenerManagerImpl",
+				LoggerTestUtil.WARN)) {
+
+			HttpResponse httpResponse =
+				portalInstanceResource.postPortalInstanceBatchHttpResponse(
+					null,
+					JSONUtil.put(
+						JSONFactoryUtil.createJSONObject(
+							randomPortalInstance.toString())));
+
+			Assert.assertEquals(202, httpResponse.getStatusCode());
+
+			waitForFinish(
+				"COMPLETED",
+				JSONFactoryUtil.createJSONObject(httpResponse.getContent()));
+		}
+
+		serviceRegistration.unregister();
+
+		Assert.assertNull(
+			_fetchUserNotificationEvent(
+				randomPortalInstance.getPortalInstanceId(),
+				PortalInstancesNotificationConstants.STATUS_SUCCESS));
+
+		UserNotificationEvent userNotificationEvent =
+			_fetchUserNotificationEvent(
+				randomPortalInstance.getPortalInstanceId(),
+				PortalInstancesNotificationConstants.STATUS_FAILED);
+
+		Assert.assertNotNull(userNotificationEvent);
+
+		JSONObject payloadJSONObject = JSONFactoryUtil.createJSONObject(
+			userNotificationEvent.getPayload());
+
+		Assert.assertEquals(
+			"the-instance-was-created-but-its-initialization-failed-check-" +
+				"the-server-logs",
+			payloadJSONObject.getString("errorMessageKey"));
 
 		Company company = _companyLocalService.getCompanyByWebId(
 			randomPortalInstance.getPortalInstanceId());

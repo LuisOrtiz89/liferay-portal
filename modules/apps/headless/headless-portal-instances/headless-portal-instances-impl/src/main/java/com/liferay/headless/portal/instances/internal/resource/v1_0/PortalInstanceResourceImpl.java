@@ -11,6 +11,7 @@ import com.liferay.headless.portal.instances.internal.dto.v1_0.converter.constan
 import com.liferay.headless.portal.instances.internal.notifications.PortalInstanceNotificationUtil;
 import com.liferay.headless.portal.instances.internal.security.permission.PortalInstancePermissionUtil;
 import com.liferay.headless.portal.instances.resource.v1_0.PortalInstanceResource;
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.portal.instances.constants.PortalInstancesNotificationConstants;
 import com.liferay.portal.kernel.exception.ContactNameException;
 import com.liferay.portal.kernel.exception.UserEmailAddressException;
@@ -19,7 +20,6 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.security.auth.EmailAddressValidator;
 import com.liferay.portal.kernel.service.CompanyService;
-import com.liferay.portal.kernel.transaction.TransactionCallbackUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
@@ -118,18 +118,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		PortalInstancePermissionUtil.check();
 
-		PortalInstance addedPortalInstance = _addPortalInstance(portalInstance);
-
-		TransactionCallbackUtil.registerCommitCallback(
-			() -> {
-				_sendUserNotificationEvent(
-					PortalInstancesNotificationConstants.OPERATION_TYPE_ADD,
-					portalInstance.getPortalInstanceId());
-
-				return null;
-			});
-
-		return addedPortalInstance;
+		return _addPortalInstance(portalInstance);
 	}
 
 	@Override
@@ -177,11 +166,16 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 			portalInstance.getActive(), true);
 		int maxUsers = GetterUtil.getInteger(portalInstance.getMaxUsers());
 
+		UnsafeConsumer<Boolean, Exception> initializedUnsafeConsumer =
+			initialized -> _sendAddUserNotificationEvent(
+				initialized, portalInstance.getPortalInstanceId());
+
 		if (admin != null) {
 			_validateAdmin(admin);
 
 			return _portalInstanceDTOConverter.toDTO(
 				PortalInstances.addCompany(
+					initializedUnsafeConsumer,
 					portalInstance.getSiteInitializerKey(),
 					() -> _companyService.addCompany(
 						finalCompanyId, portalInstance.getPortalInstanceId(),
@@ -194,11 +188,39 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		return _portalInstanceDTOConverter.toDTO(
 			PortalInstances.addCompany(
+				initializedUnsafeConsumer,
 				portalInstance.getSiteInitializerKey(),
 				() -> _companyService.addCompany(
 					finalCompanyId, portalInstance.getPortalInstanceId(),
 					portalInstance.getVirtualHost(), portalInstance.getDomain(),
 					maxUsers, active)));
+	}
+
+	private void _sendAddUserNotificationEvent(
+		boolean initialized, String portalInstanceId) {
+
+		if (initialized) {
+			_sendUserNotificationEvent(
+				PortalInstancesNotificationConstants.OPERATION_TYPE_ADD,
+				portalInstanceId);
+
+			return;
+		}
+
+		PortalInstanceNotificationUtil.sendUserNotificationEvent(
+			contextUser.getUserId(),
+			JSONUtil.put(
+				"errorMessageKey",
+				"the-instance-was-created-but-its-initialization-failed-" +
+					"check-the-server-logs"
+			).put(
+				"operationType",
+				PortalInstancesNotificationConstants.OPERATION_TYPE_ADD
+			).put(
+				"portalInstanceId", portalInstanceId
+			).put(
+				"status", PortalInstancesNotificationConstants.STATUS_FAILED
+			));
 	}
 
 	private void _sendUserNotificationEvent(
