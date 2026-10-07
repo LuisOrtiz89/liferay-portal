@@ -176,6 +176,8 @@ public class CopyDBPartitionCompanyMVCActionCommand
 			return "please-enter-a-valid-destination-company-id";
 		}
 
+		_log.error(exception);
+
 		return "an-unexpected-error-occurred";
 	}
 

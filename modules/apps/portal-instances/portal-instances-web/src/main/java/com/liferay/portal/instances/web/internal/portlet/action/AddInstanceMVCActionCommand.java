@@ -180,6 +180,8 @@ public class AddInstanceMVCActionCommand extends BaseMVCActionCommand {
 			return "please-enter-a-valid-screen-name";
 		}
 
+		_log.error(exception);
+
 		return "an-unexpected-error-occurred";
 	}
 

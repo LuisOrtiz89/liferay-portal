@@ -96,6 +96,8 @@ public class AddDBPartitionCompanyMVCActionCommand
 			return "please-enter-a-valid-schema-name";
 		}
 
+		_log.error(exception);
+
 		return "an-unexpected-error-occurred";
 	}
 
