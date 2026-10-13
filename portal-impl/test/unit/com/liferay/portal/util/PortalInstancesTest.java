@@ -141,6 +141,18 @@ public class PortalInstancesTest {
 			_getCompanyIdsInDeletionProcess();
 
 		companyIdsInDeletionProcess.clear();
+
+		CentralizedThreadLocal<Set<Long>> initializationFailedCompanyIds =
+			ReflectionTestUtil.getFieldValue(
+				PortalInstances.class, "_initializationFailedCompanyIds");
+
+		initializationFailedCompanyIds.remove();
+
+		CentralizedThreadLocal<Integer> initializationTrackingCount =
+			ReflectionTestUtil.getFieldValue(
+				PortalInstances.class, "_initializationTrackingCount");
+
+		initializationTrackingCount.remove();
 	}
 
 	@Test
@@ -193,6 +205,29 @@ public class PortalInstancesTest {
 	}
 
 	@Test
+	public void testAddCompanyWithInitializedUnsafeConsumerWhenInitializedUnsafeConsumerFails()
+		throws Exception {
+
+		Company company = _mockCompany();
+		Exception exception = new Exception();
+
+		try {
+			PortalInstances.addCompany(
+				initialized -> {
+					throw exception;
+				},
+				null, () -> company);
+
+			Assert.fail();
+		}
+		catch (RuntimeException runtimeException) {
+			Assert.assertSame(exception, runtimeException.getCause());
+
+			_assertInitializationTrackingEnded();
+		}
+	}
+
+	@Test
 	public void testAddCompanyWithInitializedUnsafeConsumerWhenUnsafeSupplierFails() {
 		AtomicReference<Boolean> initializedAtomicReference =
 			new AtomicReference<>();
@@ -207,6 +242,31 @@ public class PortalInstancesTest {
 			Assert.fail();
 		}
 		catch (PortalException portalException) {
+			Assert.assertNull(initializedAtomicReference.get());
+
+			_assertInitializationTrackingEnded();
+		}
+	}
+
+	@Test
+	public void testAddCompanyWithInitializedUnsafeConsumerWhenUnsafeSupplierThrowsError()
+		throws Exception {
+
+		AtomicReference<Boolean> initializedAtomicReference =
+			new AtomicReference<>();
+		Error error1 = new Error();
+
+		try {
+			PortalInstances.addCompany(
+				initializedAtomicReference::set, null,
+				() -> {
+					throw error1;
+				});
+
+			Assert.fail();
+		}
+		catch (Error error) {
+			Assert.assertSame(error1, error);
 			Assert.assertNull(initializedAtomicReference.get());
 
 			_assertInitializationTrackingEnded();
