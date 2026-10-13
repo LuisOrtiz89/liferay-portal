@@ -63,6 +63,9 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.transaction.Propagation;
+import com.liferay.portal.kernel.transaction.TransactionConfig;
+import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
@@ -97,6 +100,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.felix.cm.PersistenceManager;
 
@@ -276,6 +281,47 @@ public class CompanyLocalServiceDBPartitionTest
 			_company2.getVirtualHostname());
 
 		Assert.assertEquals(counter + 2, virtualHost.getVirtualHostId());
+	}
+
+	@Test
+	public void testAddCompanyWhenCallerTransactionRollsBack()
+		throws Throwable {
+
+		long[] companyIds = CompanyLocalServiceTestUtil.getCompanyIdsBySQL();
+		int dbPartitionsCount = _getDBPartitionsCount();
+
+		AtomicReference<Company> companyAtomicReference =
+			new AtomicReference<>();
+
+		try {
+			_invokeInRolledBackTransaction(
+				() -> {
+					companyAtomicReference.set(CompanyTestUtil.addCompany());
+
+					return null;
+				});
+
+			Company company = companyAtomicReference.get();
+
+			Assert.assertArrayEquals(
+				companyIds, CompanyLocalServiceTestUtil.getCompanyIdsBySQL());
+			Assert.assertEquals(dbPartitionsCount, _getDBPartitionsCount());
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					PortalInstancePool.getCompanyIds(),
+					company.getCompanyId()));
+		}
+		finally {
+			Company company = companyAtomicReference.get();
+
+			if ((company != null) &&
+				ArrayUtil.contains(
+					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
+					company.getCompanyId())) {
+
+				companyLocalService.deleteCompany(company);
+			}
+		}
 	}
 
 	@Test
@@ -1485,6 +1531,27 @@ public class CompanyLocalServiceDBPartitionTest
 		return false;
 	}
 
+	private void _invokeInRolledBackTransaction(Callable<?> callable)
+		throws Throwable {
+
+		Exception exception1 = new Exception();
+
+		try {
+			TransactionInvokerUtil.invoke(
+				_transactionConfig,
+				() -> {
+					callable.call();
+
+					throw exception1;
+				});
+
+			Assert.fail();
+		}
+		catch (Exception exception2) {
+			Assert.assertSame(exception1, exception2);
+		}
+	}
+
 	private static final String _CLASS_NAME_1 =
 		CompanyLocalServiceDBPartitionTest.class.getName() + 1;
 
@@ -1494,6 +1561,9 @@ public class CompanyLocalServiceDBPartitionTest
 	private static BundleContext _bundleContext;
 	private static long _defaultCompanyId;
 	private static SafeCloseable _safeCloseable;
+	private static final TransactionConfig _transactionConfig =
+		TransactionConfig.Factory.create(
+			Propagation.REQUIRES_NEW, new Class<?>[] {Exception.class});
 
 	private ClassName _className1;
 	private ClassName _className2;
