@@ -506,8 +506,6 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 						if (newCompany) {
 							PortalInstances.initCompany(finalCompany, true);
-
-							_synchronizePortalInstances();
 						}
 					}
 					catch (Exception exception) {
@@ -515,6 +513,10 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 							finalCompany.getCompanyId());
 
 						throw exception;
+					}
+
+					if (newCompany) {
+						_synchronizePortalInstances();
 					}
 
 					return null;
