@@ -90,38 +90,36 @@ public class PortalInstances {
 		_initializationTrackingCount.set(
 			_initializationTrackingCount.get() + 1);
 
-		Company company = null;
-
 		try {
-			company = addCompany(siteInitializerKey, unsafeSupplier);
+			Company company = addCompany(siteInitializerKey, unsafeSupplier);
+
+			long companyId = company.getCompanyId();
+
+			TransactionCallbackUtil.registerCommitCallback(
+				() -> {
+					Set<Long> initializationFailedCompanyIds =
+						_initializationFailedCompanyIds.get();
+
+					initializedUnsafeConsumer.accept(
+						!initializationFailedCompanyIds.remove(companyId));
+
+					return null;
+				});
+
+			TransactionCallbackUtil.registerCompletionCallback(
+				() -> {
+					_endInitializationTracking();
+
+					return null;
+				});
+
+			return company;
 		}
-		catch (PortalException | RuntimeException exception) {
+		catch (Throwable throwable) {
 			_endInitializationTracking();
 
-			throw exception;
+			throw throwable;
 		}
-
-		long companyId = company.getCompanyId();
-
-		TransactionCallbackUtil.registerCommitCallback(
-			() -> {
-				Set<Long> initializationFailedCompanyIds =
-					_initializationFailedCompanyIds.get();
-
-				initializedUnsafeConsumer.accept(
-					!initializationFailedCompanyIds.remove(companyId));
-
-				return null;
-			});
-
-		TransactionCallbackUtil.registerCompletionCallback(
-			() -> {
-				_endInitializationTracking();
-
-				return null;
-			});
-
-		return company;
 	}
 
 	public static long getCompanyId(HttpServletRequest httpServletRequest) {
