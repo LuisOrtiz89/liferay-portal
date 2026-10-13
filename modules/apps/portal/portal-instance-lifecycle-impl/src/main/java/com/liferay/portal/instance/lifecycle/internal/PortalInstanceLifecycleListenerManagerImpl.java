@@ -147,6 +147,9 @@ public class PortalInstanceLifecycleListenerManagerImpl
 							"Unable to preregister portal instance " + company,
 							exception);
 					}
+
+					PortalInstances.markInitializationFailed(
+						company.getCompanyId());
 				}
 			});
 	}
