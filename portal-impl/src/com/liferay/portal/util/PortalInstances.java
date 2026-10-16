@@ -100,8 +100,15 @@ public class PortalInstances {
 					Set<Long> initializationFailedCompanyIds =
 						_initializationFailedCompanyIds.get();
 
-					initializedUnsafeConsumer.accept(
-						!initializationFailedCompanyIds.remove(companyId));
+					boolean initialized = false;
+
+					if (!initializationFailedCompanyIds.remove(companyId) &&
+						(PortalInstancePool.getWebId(companyId) != null)) {
+
+						initialized = true;
+					}
+
+					initializedUnsafeConsumer.accept(initialized);
 
 					return null;
 				});

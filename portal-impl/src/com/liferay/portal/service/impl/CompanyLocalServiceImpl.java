@@ -501,21 +501,11 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 			TransactionCallbackUtil.registerCommitCallback(
 				() -> {
-					try {
-						registerCompany(finalCompany);
-
-						if (newCompany) {
-							PortalInstances.initCompany(finalCompany, true);
-						}
-					}
-					catch (Exception exception) {
-						PortalInstances.markInitializationFailed(
-							finalCompany.getCompanyId());
-
-						throw exception;
-					}
+					registerCompany(finalCompany);
 
 					if (newCompany) {
+						PortalInstances.initCompany(finalCompany, true);
+
 						_synchronizePortalInstances();
 					}
 

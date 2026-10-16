@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.cluster.ClusterNode;
 import com.liferay.portal.kernel.cluster.ClusterRequest;
 import com.liferay.portal.kernel.cluster.FutureClusterResponses;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
@@ -133,6 +134,10 @@ public class PortalInstancesTest {
 		_clusterEnabled = false;
 		_clusterRequests.clear();
 		_localClusterNode = null;
+
+		_portalInstancePoolCacheEnabled =
+			ReflectionTestUtil.getAndSetFieldValue(
+				PortalInstancePool.class, "_cacheEnabled", true);
 	}
 
 	@After
@@ -153,6 +158,14 @@ public class PortalInstancesTest {
 				PortalInstances.class, "_initializationTrackingCount");
 
 		initializationTrackingCount.remove();
+
+		_companyIds.forEach(PortalInstancePool::remove);
+
+		_companyIds.clear();
+
+		ReflectionTestUtil.setFieldValue(
+			PortalInstancePool.class, "_cacheEnabled",
+			_portalInstancePoolCacheEnabled);
 	}
 
 	@Test
@@ -172,10 +185,30 @@ public class PortalInstancesTest {
 					PortalInstances.markInitializationFailed(
 						RandomTestUtil.randomLong());
 
+					PortalInstancePool.add(company);
+
 					return company;
 				}));
 
 		Assert.assertTrue(initializedAtomicReference.get());
+
+		_assertInitializationTrackingEnded();
+	}
+
+	@Test
+	public void testAddCompanyWithInitializedUnsafeConsumerWhenCompanyIsNotInPortalInstancePool()
+		throws Exception {
+
+		Company company = _mockCompany();
+		AtomicReference<Boolean> initializedAtomicReference =
+			new AtomicReference<>();
+
+		Assert.assertSame(
+			company,
+			PortalInstances.addCompany(
+				initializedAtomicReference::set, null, () -> company));
+
+		Assert.assertFalse(initializedAtomicReference.get());
 
 		_assertInitializationTrackingEnded();
 	}
@@ -195,6 +228,8 @@ public class PortalInstancesTest {
 				() -> {
 					PortalInstances.markInitializationFailed(
 						company.getCompanyId());
+
+					PortalInstancePool.add(company);
 
 					return company;
 				}));
@@ -531,11 +566,21 @@ public class PortalInstancesTest {
 	private Company _mockCompany() {
 		Company company = Mockito.mock(Company.class);
 
+		long companyId = RandomTestUtil.randomLong();
+
 		Mockito.when(
 			company.getCompanyId()
 		).thenReturn(
-			RandomTestUtil.randomLong()
+			companyId
 		);
+
+		Mockito.when(
+			company.getWebId()
+		).thenReturn(
+			RandomTestUtil.randomString()
+		);
+
+		_companyIds.add(companyId);
 
 		return company;
 	}
@@ -555,5 +600,8 @@ public class PortalInstancesTest {
 		new ArrayList<>();
 	private static ClusterNode _localClusterNode;
 	private static ServiceRegistration<ClusterExecutor> _serviceRegistration;
+
+	private final List<Long> _companyIds = new ArrayList<>();
+	private boolean _portalInstancePoolCacheEnabled;
 
 }
