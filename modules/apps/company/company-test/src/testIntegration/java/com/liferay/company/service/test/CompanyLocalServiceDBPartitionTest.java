@@ -64,6 +64,9 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.transaction.Propagation;
+import com.liferay.portal.kernel.transaction.TransactionConfig;
+import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
@@ -100,8 +103,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.felix.cm.PersistenceManager;
 
@@ -284,6 +289,101 @@ public class CompanyLocalServiceDBPartitionTest
 			_company2.getVirtualHostname());
 
 		Assert.assertEquals(counter + 2, virtualHost.getVirtualHostId());
+	}
+
+	@Test
+	public void testAddCompanyWhenCallerSavepointRollsBack() throws Throwable {
+		AtomicReference<Company> companyAtomicReference =
+			new AtomicReference<>();
+
+		try {
+			TransactionInvokerUtil.invoke(
+				_transactionConfig,
+				() -> {
+					Exception exception = new Exception();
+
+					try {
+						TransactionInvokerUtil.invoke(
+							_nestedTransactionConfig,
+							() -> {
+								companyAtomicReference.set(
+									CompanyTestUtil.addCompany());
+
+								throw exception;
+							});
+
+						Assert.fail();
+					}
+					catch (Throwable throwable) {
+						if (db.getDBType() == DBType.MYSQL) {
+							Assert.assertTrue(
+								ArrayUtil.contains(
+									throwable.getSuppressed(), exception));
+						}
+						else {
+							Assert.assertSame(exception, throwable);
+						}
+					}
+
+					Company company = companyAtomicReference.get();
+
+					Assert.assertTrue(
+						ArrayUtil.contains(
+							PortalInstancePool.getCompanyIds(),
+							company.getCompanyId()));
+
+					return null;
+				});
+
+			Company company = companyAtomicReference.get();
+
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
+					company.getCompanyId()));
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					PortalInstancePool.getCompanyIds(),
+					company.getCompanyId()));
+
+			_checkPartitionDoesNotExist(company.getCompanyId());
+		}
+		finally {
+			_deleteCompany(companyAtomicReference.get());
+		}
+	}
+
+	@Test
+	public void testAddCompanyWhenCallerTransactionRollsBack()
+		throws Throwable {
+
+		long[] companyIds = CompanyLocalServiceTestUtil.getCompanyIdsBySQL();
+		int dbPartitionsCount = _getDBPartitionsCount();
+
+		AtomicReference<Company> companyAtomicReference =
+			new AtomicReference<>();
+
+		try {
+			_invokeInRolledBackTransaction(
+				() -> {
+					companyAtomicReference.set(CompanyTestUtil.addCompany());
+
+					return null;
+				});
+
+			Company company = companyAtomicReference.get();
+
+			Assert.assertArrayEquals(
+				companyIds, CompanyLocalServiceTestUtil.getCompanyIdsBySQL());
+			Assert.assertEquals(dbPartitionsCount, _getDBPartitionsCount());
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					PortalInstancePool.getCompanyIds(),
+					company.getCompanyId()));
+		}
+		finally {
+			_deleteCompany(companyAtomicReference.get());
+		}
 	}
 
 	@Test
@@ -493,6 +593,62 @@ public class CompanyLocalServiceDBPartitionTest
 
 			if (exportedValuesCompany != null) {
 				companyLocalService.deleteCompany(exportedValuesCompany);
+			}
+		}
+	}
+
+	@Test
+	public void testAddDBPartitionCompanyWhenCallerTransactionRollsBack()
+		throws Throwable {
+
+		Company company = CompanyTestUtil.addCompany();
+
+		try {
+			companyLocalService.exportCompany(company.getCompanyId());
+
+			_companyLocalService.deleteCompany(company);
+
+			_invokeInRolledBackTransaction(
+				() -> companyLocalService.addDBPartitionCompany(
+					company.getCompanyId(), null, null, null));
+
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
+					company.getCompanyId()));
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					PortalInstancePool.getCompanyIds(),
+					company.getCompanyId()));
+
+			CompanyLocalServiceTestUtil.checkStandaloneDBPartitionTables(
+				connection, dbPartitionDB,
+				DBPartitionUtil.getExportedPartitionName(
+					company.getCompanyId()),
+				"Company", "VirtualHost");
+
+			companyLocalService.addDBPartitionCompany(
+				company.getCompanyId(), null, null, null);
+
+			Assert.assertTrue(
+				ArrayUtil.contains(
+					PortalInstancePool.getCompanyIds(),
+					company.getCompanyId()));
+		}
+		finally {
+			db.runSQL(
+				dbPartitionDB.getDropPartitionSQL(
+					DBPartitionUtil.getExportedPartitionName(
+						company.getCompanyId())));
+
+			if (ArrayUtil.contains(
+					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
+					company.getCompanyId())) {
+
+				companyLocalService.deleteCompany(company);
+			}
+			else {
+				removeDBPartitions(new long[] {company.getCompanyId()});
 			}
 		}
 	}
@@ -763,6 +919,39 @@ public class CompanyLocalServiceDBPartitionTest
 			if (copiedCompany != null) {
 				companyLocalService.deleteCompany(copiedCompany.getCompanyId());
 			}
+		}
+	}
+
+	@Test
+	public void testCopyDBPartitionCompanyWhenCallerTransactionRollsBack()
+		throws Throwable {
+
+		Company company = CompanyTestUtil.addCompany();
+
+		long toCompanyId = RandomTestUtil.nextLong();
+
+		try {
+			_invokeInRolledBackTransaction(
+				() -> companyLocalService.copyDBPartitionCompany(
+					company.getCompanyId(), toCompanyId,
+					RandomTestUtil.randomString(),
+					StringUtil.toLowerCase(RandomTestUtil.randomString()),
+					RandomTestUtil.randomString()));
+
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					CompanyLocalServiceTestUtil.getCompanyIdsBySQL(),
+					toCompanyId));
+			Assert.assertFalse(
+				ArrayUtil.contains(
+					PortalInstancePool.getCompanyIds(), toCompanyId));
+
+			_checkPartitionDoesNotExist(toCompanyId);
+		}
+		finally {
+			_deleteCompany(toCompanyId);
+
+			companyLocalService.deleteCompany(company);
 		}
 	}
 
@@ -1443,6 +1632,20 @@ public class CompanyLocalServiceDBPartitionTest
 		}
 	}
 
+	private void _deleteCompany(Company company) throws Exception {
+		if (company != null) {
+			_deleteCompany(company.getCompanyId());
+		}
+	}
+
+	private void _deleteCompany(long companyId) throws Exception {
+		if (ArrayUtil.contains(
+				CompanyLocalServiceTestUtil.getCompanyIdsBySQL(), companyId)) {
+
+			companyLocalService.deleteCompany(companyId);
+		}
+	}
+
 	private void _deleteResourcePermissions(
 			String partitionName, long companyId)
 		throws Exception {
@@ -1540,6 +1743,27 @@ public class CompanyLocalServiceDBPartitionTest
 		return false;
 	}
 
+	private void _invokeInRolledBackTransaction(Callable<?> callable)
+		throws Throwable {
+
+		Exception exception1 = new Exception();
+
+		try {
+			TransactionInvokerUtil.invoke(
+				_transactionConfig,
+				() -> {
+					callable.call();
+
+					throw exception1;
+				});
+
+			Assert.fail();
+		}
+		catch (Exception exception2) {
+			Assert.assertSame(exception1, exception2);
+		}
+	}
+
 	private void _waitForConfigurationUpdates() throws Exception {
 		CountDownLatch countDownLatch = new CountDownLatch(1);
 
@@ -1565,7 +1789,13 @@ public class CompanyLocalServiceDBPartitionTest
 
 	private static BundleContext _bundleContext;
 	private static long _defaultCompanyId;
+	private static final TransactionConfig _nestedTransactionConfig =
+		TransactionConfig.Factory.create(
+			Propagation.NESTED, new Class<?>[] {Exception.class});
 	private static SafeCloseable _safeCloseable;
+	private static final TransactionConfig _transactionConfig =
+		TransactionConfig.Factory.create(
+			Propagation.REQUIRES_NEW, new Class<?>[] {Exception.class});
 
 	private ClassName _className1;
 	private ClassName _className2;
