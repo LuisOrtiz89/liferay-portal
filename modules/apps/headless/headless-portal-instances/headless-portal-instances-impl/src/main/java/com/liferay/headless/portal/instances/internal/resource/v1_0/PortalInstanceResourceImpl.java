@@ -117,13 +117,7 @@ public class PortalInstanceResourceImpl extends BasePortalInstanceResourceImpl {
 
 		PortalInstancePermissionUtil.check();
 
-		PortalInstance addedPortalInstance = _addPortalInstance(portalInstance);
-
-		_sendUserNotificationEvent(
-			PortalInstancesNotificationConstants.OPERATION_TYPE_ADD,
-			portalInstance.getPortalInstanceId());
-
-		return addedPortalInstance;
+		return _addPortalInstance(portalInstance);
 	}
 
 	@Override
