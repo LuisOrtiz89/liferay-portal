@@ -47,7 +47,11 @@ public class SchemaManifestBuilder {
 		String module = arguments.get("schema.manifest.module");
 
 		try {
-			new SchemaManifestBuilder(baseDirName, manifestFileName, module);
+			SchemaManifestBuilder schemaManifestBuilder =
+				new SchemaManifestBuilder(
+					baseDirName, manifestFileName, module);
+
+			schemaManifestBuilder.build();
 		}
 		catch (Exception exception) {
 			ArgumentsUtil.processMainException(arguments, exception);
@@ -55,10 +59,17 @@ public class SchemaManifestBuilder {
 	}
 
 	public SchemaManifestBuilder(
-			String baseDirName, String manifestFileName, String module)
-		throws IOException {
+		String baseDirName, String manifestFileName, String module) {
 
-		File baseDir = new File(baseDirName);
+		_baseDirName = baseDirName;
+		_manifestFileName = manifestFileName;
+		_module = module;
+	}
+
+	public void build() throws IOException {
+		File baseDir = new File(_baseDirName);
+
+		String module = _module;
 
 		if (Validator.isNull(module)) {
 			module = _getBundleSymbolicName(new File(baseDir, "bnd.bnd"));
@@ -78,7 +89,7 @@ public class SchemaManifestBuilder {
 			"module", module
 		);
 
-		_write(new File(baseDir, manifestFileName), manifestJSONObject);
+		_write(new File(baseDir, _manifestFileName), manifestJSONObject);
 	}
 
 	private String _getBundleSymbolicName(File bndFile) throws IOException {
@@ -144,5 +155,9 @@ public class SchemaManifestBuilder {
 
 	private static final Pattern _timestampPattern = Pattern.compile(
 		"^\t\"timestamp\": \"([^\"]*)\"", Pattern.MULTILINE);
+
+	private final String _baseDirName;
+	private final String _manifestFileName;
+	private final String _module;
 
 }

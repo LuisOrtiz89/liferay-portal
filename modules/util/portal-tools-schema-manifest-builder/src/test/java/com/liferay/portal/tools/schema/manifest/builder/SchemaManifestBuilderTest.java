@@ -39,12 +39,12 @@ public class SchemaManifestBuilderTest {
 	}
 
 	@Test
-	public void testSchemaManifestBuilder() throws Exception {
+	public void testBuild() throws Exception {
 		String module = RandomTestUtil.randomString();
 
 		_writeBndFile(module);
 
-		_buildSchemaManifest(null);
+		_build(null);
 
 		String timestamp = _assertManifest(module);
 
@@ -57,13 +57,13 @@ public class SchemaManifestBuilderTest {
 			StringUtil.replace(
 				_read(_manifestFile), timestamp, randomTimestamp));
 
-		_buildSchemaManifest(null);
+		_build(null);
 
 		Assert.assertEquals(randomTimestamp, _assertManifest(module));
 
 		_writeManifest("{}");
 
-		_buildSchemaManifest(null);
+		_build(null);
 
 		Assert.assertNotEquals(randomTimestamp, _assertManifest(module));
 
@@ -71,42 +71,40 @@ public class SchemaManifestBuilderTest {
 
 		_writeBndFile(module);
 
-		_buildSchemaManifest(null);
+		_build(null);
 
 		_assertManifest(module);
 	}
 
 	@Test
-	public void testSchemaManifestBuilderWithCRLFLineEndings()
-		throws Exception {
-
+	public void testBuildWithCRLFLineEndings() throws Exception {
 		_writeBndFile(RandomTestUtil.randomString());
 
-		_buildSchemaManifest(null);
+		_build(null);
 
 		String content = StringUtil.replace(_read(_manifestFile), "\n", "\r\n");
 
 		_writeManifest(content);
 
-		_buildSchemaManifest(null);
+		_build(null);
 
 		Assert.assertEquals(content, _read(_manifestFile));
 	}
 
 	@Test
-	public void testSchemaManifestBuilderWithModule() throws Exception {
+	public void testBuildWithModule() throws Exception {
 		_writeBndFile(RandomTestUtil.randomString());
 
 		String module = RandomTestUtil.randomString();
 
-		_buildSchemaManifest(module);
+		_build(module);
 
 		_assertManifest(module);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testSchemaManifestBuilderWithoutBndFile() throws Exception {
-		_buildSchemaManifest(null);
+	public void testBuildWithoutBndFile() throws Exception {
+		_build(null);
 	}
 
 	@Rule
@@ -135,10 +133,12 @@ public class SchemaManifestBuilderTest {
 		return timestamp;
 	}
 
-	private void _buildSchemaManifest(String module) throws Exception {
-		new SchemaManifestBuilder(
+	private void _build(String module) throws Exception {
+		SchemaManifestBuilder schemaManifestBuilder = new SchemaManifestBuilder(
 			_baseDir.getAbsolutePath(),
 			"src/main/resources/META-INF/schema/manifest.json", module);
+
+		schemaManifestBuilder.build();
 	}
 
 	private String _read(File file) throws Exception {
