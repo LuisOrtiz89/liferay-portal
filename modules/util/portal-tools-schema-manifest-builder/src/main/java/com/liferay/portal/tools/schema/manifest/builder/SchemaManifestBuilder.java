@@ -146,9 +146,10 @@ public class SchemaManifestBuilder {
 
 		Files.createDirectories(manifestPath.getParent());
 
-		String json = JSONUtil.toString(manifestJSONObject);
+		String manifestJSON = JSONUtil.toString(manifestJSONObject);
 
-		Files.write(manifestPath, json.getBytes(StandardCharsets.UTF_8));
+		Files.write(
+			manifestPath, manifestJSON.getBytes(StandardCharsets.UTF_8));
 
 		System.out.println("Writing " + manifestFile);
 	}
