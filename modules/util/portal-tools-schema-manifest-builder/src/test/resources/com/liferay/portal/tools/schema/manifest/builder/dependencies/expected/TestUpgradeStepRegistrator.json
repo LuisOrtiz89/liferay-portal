@@ -3,8 +3,8 @@
 		"changes": [
 			{
 				"className": "com.liferay.portal.kernel.upgrade.DummyUpgradeStep",
-				"op": "customChange",
-				"registratorLine": 21
+				"op": "noop",
+				"registratorLine": 22
 			}
 		],
 		"fromSchemaVersion": "0.0.1",
@@ -16,17 +16,17 @@
 			{
 				"className": "com.liferay.portal.kernel.upgrade.UpgradeProcessFactory",
 				"op": "customChange",
-				"registratorLine": 25
+				"registratorLine": 26
 			},
 			{
 				"className": "com.liferay.test.internal.upgrade.v1_0_0.util.TestTable",
 				"op": "customChange",
-				"registratorLine": 27
+				"registratorLine": 28
 			},
 			{
 				"className": "com.liferay.test.internal.upgrade.v1_0_0.TestUpgradeProcess",
 				"op": "customChange",
-				"registratorLine": 28
+				"registratorLine": 29
 			}
 		],
 		"fromSchemaVersion": "1.0.0",
@@ -38,12 +38,12 @@
 			{
 				"className": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator$1",
 				"op": "customChange",
-				"registratorLine": 33
+				"registratorLine": 34
 			},
 			{
 				"className": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
 				"op": "customChange",
-				"registratorLine": 43
+				"registratorLine": 44
 			}
 		],
 		"fromSchemaVersion": "1.0.0.step-1",
@@ -55,17 +55,17 @@
 			{
 				"className": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator$2",
 				"op": "customChange",
-				"registratorLine": 50
+				"registratorLine": 51
 			},
 			{
-				"className": "com.liferay.portal.kernel.upgrade.DummyUpgradeStep",
-				"op": "customChange",
-				"registratorLine": 51
+				"className": "com.liferay.portal.kernel.upgrade.DummyUpgradeProcess",
+				"op": "noop",
+				"registratorLine": 52
 			},
 			{
 				"className": "com.liferay.portal.configuration.upgrade.ConfigurationUpgradeStepFactory",
 				"op": "customChange",
-				"registratorLine": 52
+				"registratorLine": 53
 			}
 		],
 		"fromSchemaVersion": "1.9.0",
@@ -77,7 +77,7 @@
 			{
 				"className": "com.liferay.test.internal.upgrade.registry.TestUpgradeStepRegistrator",
 				"op": "customChange",
-				"registratorLine": 56
+				"registratorLine": 57
 			}
 		],
 		"fromSchemaVersion": "1.10.0",
