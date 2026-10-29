@@ -406,9 +406,9 @@ public class SchemaManifestBuilderTest {
 			"src/main/java/com/liferay/test/internal/upgrade/registry/" +
 				className + ".java");
 
-		File dir = file.getParentFile();
+		File parentFile = file.getParentFile();
 
-		dir.mkdirs();
+		parentFile.mkdirs();
 
 		String content = _read(className + ".testjava");
 
