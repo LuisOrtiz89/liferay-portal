@@ -483,9 +483,10 @@ public class SchemaManifestBuilderTest {
 		"upgrade log entry '<class>:<line> - ...' matches the change whose ",
 		"edge 'registrator' is <class> and whose 'registratorLine' is <line>. ",
 		"'customChange' means the step's effect could NOT be determined, not ",
-		"that it made no change. A database's own schemaVersion for this ",
-		"module is in its Release_ table, in the row where servletContextName ",
-		"equals 'module'.");
+		"that it made no change; 'noop' means the step is a Dummy* step, ",
+		"which by contract occupies a version slot and makes no change. A ",
+		"database's own schemaVersion for this module is in its Release_ ",
+		"table, in the row where servletContextName equals 'module'.");
 
 	private static final String _MANIFEST_FILE_NAME =
 		"src/main/resources/META-INF/schema/manifest.json";

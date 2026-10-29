@@ -170,10 +170,11 @@ public class SchemaManifestBuilder {
 				"call, an upgrade log entry '<class>:<line> - ...' matches ",
 				"the change whose edge 'registrator' is <class> and whose ",
 				"'registratorLine' is <line>. 'customChange' means the step's ",
-				"effect could NOT be determined, not that it made no change. ",
-				"A database's own schemaVersion for this module is in its ",
-				"Release_ table, in the row where servletContextName equals ",
-				"'module'.")
+				"effect could NOT be determined, not that it made no change; ",
+				"'noop' means the step is a Dummy* step, which by contract ",
+				"occupies a version slot and makes no change. A database's ",
+				"own schemaVersion for this module is in its Release_ table, ",
+				"in the row where servletContextName equals 'module'.")
 		).put(
 			"history", historyJSONArray
 		).put(
@@ -343,19 +344,19 @@ public class SchemaManifestBuilder {
 				parameterPosition = content.indexOf(
 					parameter, parameterPosition);
 
+				String className = _getClassName(
+					anonymousClassPositions, classNames, content, packageName,
+					parameter, parameterPosition, registrator);
+
 				int newLinesCount = StringUtil.count(
 					content, 0, parameterPosition, CharPool.NEW_LINE);
 
 				changesJSONArray.put(
 					new JSONObjectImpl(
 					).put(
-						"className",
-						_getClassName(
-							anonymousClassPositions, classNames, content,
-							packageName, parameter, parameterPosition,
-							registrator)
+						"className", className
 					).put(
-						"op", "customChange"
+						"op", _getOp(className)
 					).put(
 						"registratorLine", newLinesCount + 1
 					));
@@ -553,6 +554,18 @@ public class SchemaManifestBuilder {
 		}
 
 		return classNames;
+	}
+
+	private String _getOp(String className) {
+		if (className.equals(
+				"com.liferay.portal.kernel.upgrade.DummyUpgradeProcess") ||
+			className.equals(
+				"com.liferay.portal.kernel.upgrade.DummyUpgradeStep")) {
+
+			return "noop";
+		}
+
+		return "customChange";
 	}
 
 	private List<String> _getParameters(String methodCall) {
