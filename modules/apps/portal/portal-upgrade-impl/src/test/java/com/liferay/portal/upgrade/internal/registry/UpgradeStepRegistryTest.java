@@ -160,6 +160,28 @@ public class UpgradeStepRegistryTest {
 	}
 
 	@Test
+	public void testGetUpgradeStepRegistratorClassName() {
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
+
+		ServiceRegistration<UpgradeStepRegistrator> serviceRegistration =
+			bundleContext.registerService(
+				UpgradeStepRegistrator.class, new TestUpgradeStepRegistrator(),
+				null);
+
+		try {
+			UpgradeStepRegistry upgradeStepRegistry = new UpgradeStepRegistry(
+				bundleContext, true, serviceRegistration.getReference());
+
+			Assert.assertEquals(
+				TestUpgradeStepRegistrator.class.getName(),
+				upgradeStepRegistry.getUpgradeStepRegistratorClassName());
+		}
+		finally {
+			serviceRegistration.unregister();
+		}
+	}
+
+	@Test
 	public void testSkipInitializationStepWhenAnUpgradeProcessIsRegisteredAndPortalNotUpgraded() {
 		UpgradeStepRegistry upgradeStepRegistry = _createUpgradeStepRegistry(
 			false);
@@ -252,6 +274,18 @@ public class UpgradeStepRegistryTest {
 
 		@Override
 		public void upgrade() {
+		}
+
+	}
+
+	private static class TestUpgradeStepRegistrator
+		implements UpgradeStepRegistrator {
+
+		@Override
+		public void register(Registry registry) {
+			registry.registerInitialization();
+
+			registry.register("1.0.0", "2.0.0", new TestUpgradeStep());
 		}
 
 	}

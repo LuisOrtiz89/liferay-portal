@@ -165,6 +165,12 @@ public class UpgradeExecutor {
 			upgradeInfos);
 	}
 
+	public UpgradeStepRegistry getUpgradeStepRegistry(
+		String bundleSymbolicName) {
+
+		return _serviceTrackerMap.getService(bundleSymbolicName);
+	}
+
 	@Activate
 	protected void activate(BundleContext bundleContext) {
 		_bundleContext = bundleContext;

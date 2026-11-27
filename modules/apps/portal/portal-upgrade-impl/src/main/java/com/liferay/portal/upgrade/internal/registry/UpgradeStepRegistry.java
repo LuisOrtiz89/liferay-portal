@@ -51,6 +51,12 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 		return _upgradeInfosDCLSingleton.getSingleton(this::_getUpgradeInfos);
 	}
 
+	public String getUpgradeStepRegistratorClassName() {
+		getUpgradeInfos();
+
+		return _upgradeStepRegistratorClassName;
+	}
+
 	@Override
 	public void register(
 		String fromSchemaVersionString, String toSchemaVersionString,
@@ -119,6 +125,10 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 		UpgradeStepRegistrator upgradeStepRegistrator =
 			_bundleContext.getService(_serviceReference);
 
+		Class<?> clazz = upgradeStepRegistrator.getClass();
+
+		_upgradeStepRegistratorClassName = clazz.getName();
+
 		try {
 			upgradeStepRegistrator.register(this);
 		}
@@ -161,5 +171,6 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 	private final List<UpgradeInfo> _upgradeInfos = new ArrayList<>();
 	private final DCLSingleton<List<UpgradeInfo>> _upgradeInfosDCLSingleton =
 		new DCLSingleton<>();
+	private String _upgradeStepRegistratorClassName;
 
 }

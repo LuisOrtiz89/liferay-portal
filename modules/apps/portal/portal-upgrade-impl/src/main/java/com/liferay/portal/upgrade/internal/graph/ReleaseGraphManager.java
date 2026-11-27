@@ -44,6 +44,21 @@ public class ReleaseGraphManager {
 		}
 	}
 
+	public List<String> getEndVertices() {
+		return TransformUtil.transform(
+			_directedGraph.vertexSet(),
+			vertex -> {
+				Set<UpgradeProcessEdge> upgradeProcessEdges =
+					_directedGraph.outgoingEdgesOf(vertex);
+
+				if (upgradeProcessEdges.isEmpty()) {
+					return vertex;
+				}
+
+				return null;
+			});
+	}
+
 	public List<UpgradeInfo> getUpgradeInfos(
 		String fromVersionString, String toVersionString) {
 
@@ -93,21 +108,6 @@ public class ReleaseGraphManager {
 
 				if (!upgradeInfos.isEmpty()) {
 					return upgradeInfos;
-				}
-
-				return null;
-			});
-	}
-
-	protected List<String> getEndVertices() {
-		return TransformUtil.transform(
-			_directedGraph.vertexSet(),
-			vertex -> {
-				Set<UpgradeProcessEdge> upgradeProcessEdges =
-					_directedGraph.outgoingEdgesOf(vertex);
-
-				if (upgradeProcessEdges.isEmpty()) {
-					return vertex;
 				}
 
 				return null;

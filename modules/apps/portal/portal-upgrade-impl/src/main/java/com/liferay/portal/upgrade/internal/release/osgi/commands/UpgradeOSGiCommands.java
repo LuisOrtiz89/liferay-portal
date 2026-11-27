@@ -9,6 +9,7 @@ import com.liferay.gogo.shell.logging.TeeLoggingUtil;
 import com.liferay.osgi.util.osgi.commands.OSGiCommands;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.util.BundleUtil;
@@ -17,6 +18,7 @@ import com.liferay.portal.kernel.upgrade.ReleaseManager;
 import com.liferay.portal.upgrade.internal.executor.UpgradeExecutor;
 import com.liferay.portal.upgrade.internal.graph.ReleaseGraphManager;
 import com.liferay.portal.upgrade.internal.registry.UpgradeInfo;
+import com.liferay.portal.upgrade.internal.release.UpgradeDescriber;
 import com.liferay.portal.upgrade.internal.release.util.ReleaseManagerUtil;
 
 import java.util.HashSet;
@@ -37,8 +39,9 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	property = {
 		"osgi.command.function=check", "osgi.command.function=checkAll",
-		"osgi.command.function=execute", "osgi.command.function=executeAll",
-		"osgi.command.function=list", "osgi.command.scope=upgrade"
+		"osgi.command.function=describe", "osgi.command.function=execute",
+		"osgi.command.function=executeAll", "osgi.command.function=list",
+		"osgi.command.scope=upgrade"
 	},
 	service = OSGiCommands.class
 )
@@ -52,6 +55,27 @@ public class UpgradeOSGiCommands implements OSGiCommands {
 	@Descriptor("List pending upgrade processes and their upgrade steps")
 	public String checkAll() {
 		return _releaseManager.getStatusMessage(true);
+	}
+
+	@Descriptor(
+		"Describe the pending upgrades as JSON, or every registered upgrade " +
+			"with --full, optionally only for the given modules"
+	)
+	public String describe(String... arguments) {
+		boolean full = false;
+		Set<String> bundleSymbolicNames = new HashSet<>();
+
+		for (String argument : arguments) {
+			if (argument.equals("--full")) {
+				full = true;
+			}
+			else {
+				bundleSymbolicNames.add(argument);
+			}
+		}
+
+		return JSONUtil.toString(
+			_upgradeDescriber.describe(full, bundleSymbolicNames));
 	}
 
 	@Descriptor("Execute upgrade for a specific module")
@@ -308,6 +332,9 @@ public class UpgradeOSGiCommands implements OSGiCommands {
 
 	@Reference
 	private ReleaseManager _releaseManager;
+
+	@Reference
+	private UpgradeDescriber _upgradeDescriber;
 
 	@Reference
 	private UpgradeExecutor _upgradeExecutor;
