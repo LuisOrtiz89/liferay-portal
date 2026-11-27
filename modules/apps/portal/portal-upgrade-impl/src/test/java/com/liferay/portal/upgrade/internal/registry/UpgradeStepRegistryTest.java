@@ -6,7 +6,6 @@
 package com.liferay.portal.upgrade.internal.registry;
 
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
-import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
@@ -58,8 +57,8 @@ public class UpgradeStepRegistryTest {
 			Arrays.asList(
 				testUpgradeStep, testUpgradeStep, testUpgradeStep,
 				testUpgradeStep),
-			ReflectionTestUtil.getFieldValue(
-				upgradeInfo.getUpgradeStep(), "arg$1"));
+			upgradeInfo.getUpgradeSteps());
+		Assert.assertFalse(upgradeInfo.isInitialization());
 	}
 
 	@Test
@@ -127,8 +126,12 @@ public class UpgradeStepRegistryTest {
 
 		Assert.assertEquals("0.0.0", upgradeInfo.getFromSchemaVersionString());
 		Assert.assertEquals("1.0.0", upgradeInfo.getToSchemaVersionString());
-		Assert.assertTrue(
-			upgradeInfo.getUpgradeStep() instanceof DummyUpgradeStep);
+		Assert.assertTrue(upgradeInfo.isInitialization());
+
+		List<UpgradeStep> upgradeSteps = upgradeInfo.getUpgradeSteps();
+
+		Assert.assertEquals(upgradeSteps.toString(), 1, upgradeSteps.size());
+		Assert.assertTrue(upgradeSteps.get(0) instanceof DummyUpgradeStep);
 	}
 
 	@Test
@@ -148,8 +151,12 @@ public class UpgradeStepRegistryTest {
 
 		Assert.assertEquals("0.0.0", upgradeInfo.getFromSchemaVersionString());
 		Assert.assertEquals("2.0.0", upgradeInfo.getToSchemaVersionString());
-		Assert.assertTrue(
-			upgradeInfo.getUpgradeStep() instanceof DummyUpgradeStep);
+		Assert.assertTrue(upgradeInfo.isInitialization());
+
+		List<UpgradeStep> upgradeSteps = upgradeInfo.getUpgradeSteps();
+
+		Assert.assertEquals(upgradeSteps.toString(), 1, upgradeSteps.size());
+		Assert.assertTrue(upgradeSteps.get(0) instanceof DummyUpgradeStep);
 	}
 
 	@Test
@@ -238,9 +245,7 @@ public class UpgradeStepRegistryTest {
 		Assert.assertEquals("0.0.0", upgradeInfo.getFromSchemaVersionString());
 		Assert.assertEquals("1.0.0", upgradeInfo.getToSchemaVersionString());
 		Assert.assertEquals(
-			Arrays.asList(sortedUpgradeSteps),
-			ReflectionTestUtil.getFieldValue(
-				upgradeInfo.getUpgradeStep(), "arg$1"));
+			Arrays.asList(sortedUpgradeSteps), upgradeInfo.getUpgradeSteps());
 	}
 
 	private static class TestUpgradeStep implements UpgradeStep {

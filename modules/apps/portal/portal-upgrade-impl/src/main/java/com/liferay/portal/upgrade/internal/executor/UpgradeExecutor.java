@@ -245,9 +245,9 @@ public class UpgradeExecutor {
 			}
 
 			for (UpgradeInfo upgradeInfo : upgradeInfos) {
-				UpgradeStep upgradeStep = upgradeInfo.getUpgradeStep();
-
-				upgradeStep.upgrade();
+				for (UpgradeStep upgradeStep : upgradeInfo.getUpgradeSteps()) {
+					upgradeStep.upgrade();
+				}
 
 				_releaseLocalService.updateRelease(
 					bundleSymbolicName, upgradeInfo.getToSchemaVersionString(),

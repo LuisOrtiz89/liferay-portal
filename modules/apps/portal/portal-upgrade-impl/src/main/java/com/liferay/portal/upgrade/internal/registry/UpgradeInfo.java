@@ -9,6 +9,9 @@ import com.liferay.petra.lang.HashUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -19,11 +22,22 @@ public class UpgradeInfo {
 
 	public UpgradeInfo(
 		String fromSchemaVersionString, String toSchemaVersionString,
-		UpgradeStep upgradeStep) {
+		boolean initialization, UpgradeStep... upgradeSteps) {
 
 		_fromSchemaVersionString = fromSchemaVersionString;
 		_toSchemaVersionString = toSchemaVersionString;
-		_upgradeStep = upgradeStep;
+		_initialization = initialization;
+		_upgradeSteps = Collections.unmodifiableList(
+			Arrays.asList(upgradeSteps.clone()));
+	}
+
+	public UpgradeInfo(
+		String fromSchemaVersionString, String toSchemaVersionString,
+		UpgradeStep... upgradeSteps) {
+
+		this(
+			fromSchemaVersionString, toSchemaVersionString, false,
+			upgradeSteps);
 	}
 
 	@Override
@@ -43,7 +57,8 @@ public class UpgradeInfo {
 				upgradeInfo._fromSchemaVersionString) &&
 			Objects.equals(
 				_toSchemaVersionString, upgradeInfo._toSchemaVersionString) &&
-			Objects.equals(_upgradeStep, upgradeInfo._upgradeStep)) {
+			(_initialization == upgradeInfo._initialization) &&
+			Objects.equals(_upgradeSteps, upgradeInfo._upgradeSteps)) {
 
 			return true;
 		}
@@ -59,8 +74,8 @@ public class UpgradeInfo {
 		return _toSchemaVersionString;
 	}
 
-	public UpgradeStep getUpgradeStep() {
-		return _upgradeStep;
+	public List<UpgradeStep> getUpgradeSteps() {
+		return _upgradeSteps;
 	}
 
 	@Override
@@ -68,21 +83,34 @@ public class UpgradeInfo {
 		int hash = HashUtil.hash(0, _fromSchemaVersionString);
 
 		hash = HashUtil.hash(hash, _toSchemaVersionString);
-		hash = HashUtil.hash(hash, _upgradeStep);
+		hash = HashUtil.hash(hash, _initialization);
+		hash = HashUtil.hash(hash, _upgradeSteps);
 
 		return hash;
 	}
 
+	public boolean isInitialization() {
+		return _initialization;
+	}
+
 	@Override
 	public String toString() {
+		if (_upgradeSteps.size() == 1) {
+			return StringBundler.concat(
+				"{fromSchemaVersionString=", _fromSchemaVersionString,
+				", toSchemaVersionString=", _toSchemaVersionString,
+				", upgradeStep=", _upgradeSteps.get(0), "}");
+		}
+
 		return StringBundler.concat(
 			"{fromSchemaVersionString=", _fromSchemaVersionString,
 			", toSchemaVersionString=", _toSchemaVersionString,
-			", upgradeStep=", _upgradeStep, "}");
+			", upgradeSteps=", _upgradeSteps, "}");
 	}
 
 	private final String _fromSchemaVersionString;
+	private final boolean _initialization;
 	private final String _toSchemaVersionString;
-	private final UpgradeStep _upgradeStep;
+	private final List<UpgradeStep> _upgradeSteps;
 
 }

@@ -77,22 +77,10 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 			}
 		}
 
-		if (upgradeStepsList.size() == 1) {
-			_upgradeInfos.add(
-				new UpgradeInfo(
-					fromSchemaVersionString, toSchemaVersionString,
-					upgradeStepsList.get(0)));
-		}
-		else {
-			_upgradeInfos.add(
-				new UpgradeInfo(
-					fromSchemaVersionString, toSchemaVersionString,
-					() -> {
-						for (UpgradeStep upgradeStep : upgradeStepsList) {
-							upgradeStep.upgrade();
-						}
-					}));
-		}
+		_upgradeInfos.add(
+			new UpgradeInfo(
+				fromSchemaVersionString, toSchemaVersionString,
+				upgradeStepsList.toArray(new UpgradeStep[0])));
 	}
 
 	@Override
@@ -149,13 +137,14 @@ public class UpgradeStepRegistry implements UpgradeStepRegistrator.Registry {
 		if (_initialization && _portalUpgraded) {
 			if (_upgradeInfos.isEmpty()) {
 				return Arrays.asList(
-					new UpgradeInfo("0.0.0", "1.0.0", new DummyUpgradeStep()));
+					new UpgradeInfo(
+						"0.0.0", "1.0.0", true, new DummyUpgradeStep()));
 			}
 
 			return ListUtil.concat(
 				Arrays.asList(
 					new UpgradeInfo(
-						"0.0.0", _getFinalSchemaVersion(_upgradeInfos),
+						"0.0.0", _getFinalSchemaVersion(_upgradeInfos), true,
 						new DummyUpgradeStep())),
 				_upgradeInfos);
 		}

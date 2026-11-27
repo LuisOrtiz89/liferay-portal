@@ -5,6 +5,7 @@
 
 package com.liferay.portal.upgrade.internal.release;
 
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
@@ -252,13 +253,11 @@ public class ReleaseManagerImpl implements ReleaseManager {
 				sb.append(StringPool.COLON);
 
 				for (UpgradeInfo upgradeInfo : upgradeInfos) {
-					UpgradeStep upgradeStep = upgradeInfo.getUpgradeStep();
-
 					sb.append(StringPool.NEW_LINE);
 					sb.append(StringPool.TAB);
 					sb.append(
 						_getPendingUpgradeProcessMessage(
-							upgradeStep.getClass(),
+							_getClassNames(upgradeInfo.getUpgradeSteps()),
 							upgradeInfo.getFromSchemaVersionString(),
 							upgradeInfo.getToSchemaVersionString()));
 				}
@@ -305,9 +304,12 @@ public class ReleaseManagerImpl implements ReleaseManager {
 							entry.getValue();
 						Version version = entry.getKey();
 
+						Class<?> upgradeProcessesClass =
+							upgradeProcesses.getClass();
+
 						sb.append(
 							_getPendingUpgradeProcessMessage(
-								upgradeProcesses.getClass(),
+								upgradeProcessesClass.getName(),
 								currentSchemaVersion.toString(),
 								version.toString()));
 
@@ -331,6 +333,18 @@ public class ReleaseManagerImpl implements ReleaseManager {
 		return StringPool.BLANK;
 	}
 
+	private String _getClassNames(List<UpgradeStep> upgradeSteps) {
+		return StringUtil.merge(
+			TransformUtil.transform(
+				upgradeSteps,
+				upgradeStep -> {
+					Class<?> clazz = upgradeStep.getClass();
+
+					return clazz.getName();
+				}),
+			StringPool.COMMA_AND_SPACE);
+	}
+
 	private String _getModulePendingUpgradeMessage(
 		String moduleName, String currentSchemaVersion,
 		String finalSchemaVersion) {
@@ -341,8 +355,7 @@ public class ReleaseManagerImpl implements ReleaseManager {
 	}
 
 	private String _getPendingUpgradeProcessMessage(
-		Class<?> upgradeClass, String fromSchemaVersion,
-		String toSchemaVersion) {
+		String className, String fromSchemaVersion, String toSchemaVersion) {
 
 		StringBundler sb = new StringBundler(6);
 
@@ -360,7 +373,7 @@ public class ReleaseManagerImpl implements ReleaseManager {
 		sb.append(toMessage);
 		sb.append(StringPool.COLON);
 		sb.append(StringPool.SPACE);
-		sb.append(upgradeClass.getName());
+		sb.append(className);
 
 		return sb.toString();
 	}

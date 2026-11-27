@@ -7,14 +7,18 @@ package com.liferay.portal.upgrade.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.service.ReleaseLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.PropsValuesTestUtil;
+import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.kernel.upgrade.ReleaseManager;
 import com.liferay.portal.kernel.upgrade.UpgradeException;
+import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.upgrade.UpgradeStep;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -62,6 +66,50 @@ public class ReleaseManagerTest {
 	public void tearDown() throws Exception {
 		if (_serviceRegistration != null) {
 			_serviceRegistration.unregister();
+		}
+	}
+
+	@Test
+	public void testGetStatusMessage() throws Exception {
+		Bundle bundle = FrameworkUtil.getBundle(ReleaseManagerTest.class);
+
+		String bundleSymbolicName = bundle.getSymbolicName();
+
+		Release release = _releaseLocalService.addRelease(
+			bundleSymbolicName, "1.0.0");
+
+		try (SafeCloseable safeCloseable =
+				PropsValuesTestUtil.swapWithSafeCloseable(
+					"UPGRADE_DATABASE_AUTO_RUN", false, false)) {
+
+			BundleContext bundleContext = bundle.getBundleContext();
+
+			_serviceRegistration = bundleContext.registerService(
+				UpgradeStepRegistrator.class,
+				upgradeStepRegistry -> {
+					upgradeStepRegistry.register(
+						"1.0.0", "2.0.0", new TestUpgradeProcess());
+					upgradeStepRegistry.register(
+						"2.0.0", "2.0.1", new DummyUpgradeStep());
+				},
+				null);
+
+			String statusMessage = _releaseManager.getStatusMessage(true);
+
+			Assert.assertTrue(
+				statusMessage,
+				statusMessage.contains(
+					StringBundler.concat(
+						"There are upgrade processes available for ",
+						bundleSymbolicName, " from 1.0.0 to 2.0.1:\n\t",
+						"1.0.0 to 2.0.0 (REQUIRED): ",
+						TestUpgradeProcess.class.getName(), ", ",
+						DummyUpgradeStep.class.getName(), "\n\t",
+						"2.0.0 to 2.0.1: ", DummyUpgradeStep.class.getName(),
+						"\n")));
+		}
+		finally {
+			_releaseLocalService.deleteRelease(release);
 		}
 	}
 
@@ -426,6 +474,19 @@ public class ReleaseManagerTest {
 	private ServiceComponentRuntime _serviceComponentRuntime;
 
 	private ServiceRegistration<?> _serviceRegistration;
+
+	private static class TestUpgradeProcess extends UpgradeProcess {
+
+		@Override
+		protected void doUpgrade() {
+		}
+
+		@Override
+		protected UpgradeStep[] getPostUpgradeSteps() {
+			return new UpgradeStep[] {new DummyUpgradeStep()};
+		}
+
+	}
 
 	private static class TestUpgradeStepRegistrator
 		implements UpgradeStepRegistrator {
