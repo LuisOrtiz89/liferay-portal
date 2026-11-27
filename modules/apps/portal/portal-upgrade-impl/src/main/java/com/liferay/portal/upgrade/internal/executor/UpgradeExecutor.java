@@ -27,7 +27,6 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.version.Version;
 import com.liferay.portal.tools.DBUpgrader;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
-import com.liferay.portal.upgrade.internal.graph.ReleaseGraphManager;
 import com.liferay.portal.upgrade.internal.registry.UpgradeInfo;
 import com.liferay.portal.upgrade.internal.registry.UpgradeStepRegistry;
 import com.liferay.portal.upgrade.internal.release.ReleasePublisher;
@@ -59,101 +58,59 @@ import org.osgi.service.component.annotations.Reference;
 public class UpgradeExecutor {
 
 	public void execute(Bundle bundle, List<UpgradeInfo> upgradeInfos) {
-		ReleaseGraphManager releaseGraphManager = new ReleaseGraphManager(
-			upgradeInfos);
+		execute(bundle, getUpgradePlan(bundle, upgradeInfos));
+	}
 
-		String schemaVersionString = "0.0.0";
+	public void execute(Bundle bundle, UpgradePlan upgradePlan) {
+		String schemaVersion = upgradePlan.getSchemaVersion();
 
-		Release release = _releaseLocalService.fetchRelease(
-			bundle.getSymbolicName());
+		List<UpgradeInfo> upgradeInfos = upgradePlan.getUpgradeInfos();
 
-		if ((release != null) &&
-			Validator.isNotNull(release.getSchemaVersion())) {
+		if (!upgradeInfos.isEmpty()) {
+			Release release = _executeUpgradePlan(bundle, upgradePlan);
 
-			schemaVersionString = release.getSchemaVersion();
-		}
+			schemaVersion = null;
 
-		List<List<UpgradeInfo>> upgradeInfosList =
-			releaseGraphManager.getUpgradeInfosList(schemaVersionString);
-
-		int size = upgradeInfosList.size();
-
-		if (size > 1) {
-			throw new IllegalStateException(
-				StringBundler.concat(
-					"There are ", size, " possible end nodes for ",
-					schemaVersionString));
-		}
-
-		if (size != 0) {
-			release = executeUpgradeInfos(bundle, upgradeInfosList.get(0));
+			if (release != null) {
+				schemaVersion = release.getSchemaVersion();
+			}
 		}
 
 		_failedBundleSymbolicNames.remove(bundle.getSymbolicName());
 
-		if (release != null) {
-			String schemaVersion = release.getSchemaVersion();
+		if (Validator.isNull(schemaVersion)) {
+			return;
+		}
 
-			if (Validator.isNull(schemaVersion)) {
-				return;
-			}
+		Dictionary<String, String> headers = bundle.getHeaders(
+			StringPool.BLANK);
 
-			Dictionary<String, String> headers = bundle.getHeaders(
-				StringPool.BLANK);
+		Version requiredVersion = Version.parseVersion(
+			headers.get("Liferay-Require-SchemaVersion"));
 
-			Version requiredVersion = Version.parseVersion(
-				headers.get("Liferay-Require-SchemaVersion"));
+		if (requiredVersion == null) {
+			return;
+		}
 
-			if (requiredVersion == null) {
-				return;
-			}
+		if (requiredVersion.compareTo(Version.parseVersion(schemaVersion)) >
+				0) {
 
-			if (requiredVersion.compareTo(Version.parseVersion(schemaVersion)) >
-					0) {
-
-				throw new IllegalStateException(
-					StringBundler.concat(
-						"Unable to upgrade ", bundle.getSymbolicName(), " to ",
-						requiredVersion, " from ", schemaVersion));
-			}
+			throw new IllegalStateException(
+				StringBundler.concat(
+					"Unable to upgrade ", bundle.getSymbolicName(), " to ",
+					requiredVersion, " from ", schemaVersion));
 		}
 	}
 
 	public Release executeUpgradeInfos(
 		Bundle bundle, List<UpgradeInfo> upgradeInfos) {
 
-		String bundleSymbolicName = bundle.getSymbolicName();
-
-		try {
-			UpgradeLogContext.setContext(bundleSymbolicName);
-
-			_executeUpgradeInfos(bundle, upgradeInfos);
-
-			_failedBundleSymbolicNames.remove(bundleSymbolicName);
-
-			Release release = _releaseLocalService.fetchRelease(
-				bundleSymbolicName);
-
-			if (release != null) {
-				_releasePublisher.publish(
-					release, _isInitialRelease(upgradeInfos));
-			}
-
-			return release;
-		}
-		catch (Exception exception) {
-			Release release = _releaseLocalService.fetchRelease(
-				bundleSymbolicName);
-
-			if (release != null) {
-				_releasePublisher.unpublish(release);
-			}
-
-			return ReflectionUtil.throwException(exception);
-		}
-		finally {
-			UpgradeLogContext.clearContext();
-		}
+		return _executeUpgradePlan(
+			bundle,
+			new UpgradePlan(
+				bundle.getSymbolicName(), _isSchemaBundle(bundle),
+				_releaseLocalService.fetchRelease(bundle.getSymbolicName()),
+				upgradeInfos));
 	}
 
 	public Set<String> getBundleSymbolicNames() {
@@ -187,6 +144,27 @@ public class UpgradeExecutor {
 		}
 	}
 
+	public UpgradePlan getUpgradePlan(
+		Bundle bundle, List<UpgradeInfo> upgradeInfos) {
+
+		return UpgradePlan.create(
+			bundle.getSymbolicName(), _isSchemaBundle(bundle),
+			_releaseLocalService.fetchRelease(bundle.getSymbolicName()),
+			upgradeInfos);
+	}
+
+	public UpgradePlan getUpgradePlan(String bundleSymbolicName) {
+		List<UpgradeInfo> upgradeInfos = getUpgradeInfos(bundleSymbolicName);
+
+		if (upgradeInfos == null) {
+			return null;
+		}
+
+		return getUpgradePlan(
+			BundleUtil.getBundle(_bundleContext, bundleSymbolicName),
+			upgradeInfos);
+	}
+
 	@Activate
 	protected void activate(BundleContext bundleContext) {
 		_bundleContext = bundleContext;
@@ -214,9 +192,54 @@ public class UpgradeExecutor {
 		_serviceTrackerMap.close();
 	}
 
-	private void _executeUpgradeInfos(
-		Bundle bundle, List<UpgradeInfo> upgradeInfos) {
+	private Release _executeUpgradePlan(
+		Bundle bundle, UpgradePlan upgradePlan) {
 
+		String bundleSymbolicName = bundle.getSymbolicName();
+
+		try {
+			UpgradeLogContext.setContext(bundleSymbolicName);
+
+			_runUpgradePlan(bundle, upgradePlan);
+
+			_failedBundleSymbolicNames.remove(bundleSymbolicName);
+
+			Release release = _releaseLocalService.fetchRelease(
+				bundleSymbolicName);
+
+			if (release != null) {
+				_releasePublisher.publish(
+					release, upgradePlan.isInitialRelease());
+			}
+
+			return release;
+		}
+		catch (Exception exception) {
+			Release release = _releaseLocalService.fetchRelease(
+				bundleSymbolicName);
+
+			if (release != null) {
+				_releasePublisher.unpublish(release);
+			}
+
+			return ReflectionUtil.throwException(exception);
+		}
+		finally {
+			UpgradeLogContext.clearContext();
+		}
+	}
+
+	private boolean _isSchemaBundle(Bundle bundle) {
+		if (BundleUtil.isLiferayRequireSchemaVersionBundle(bundle) ||
+			BundleUtil.isLiferayServiceBundle(bundle)) {
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private void _runUpgradePlan(Bundle bundle, UpgradePlan upgradePlan) {
 		int state = ReleaseConstants.STATE_GOOD;
 
 		String bundleSymbolicName = bundle.getSymbolicName();
@@ -244,7 +267,7 @@ public class UpgradeExecutor {
 				StartupHelperUtil.setRunOnPortalUpgradeVerifiers(true);
 			}
 
-			for (UpgradeInfo upgradeInfo : upgradeInfos) {
+			for (UpgradeInfo upgradeInfo : upgradePlan.getUpgradeInfos()) {
 				for (UpgradeStep upgradeStep : upgradeInfo.getUpgradeSteps()) {
 					upgradeStep.upgrade();
 				}
@@ -271,7 +294,7 @@ public class UpgradeExecutor {
 			}
 		}
 
-		if (_requiresUpdateIndexes(bundle, upgradeInfos)) {
+		if (upgradePlan.isUpdateIndexes()) {
 			try {
 				IndexUpdaterUtil.updateIndexes(bundle);
 			}
@@ -281,30 +304,6 @@ public class UpgradeExecutor {
 		}
 
 		CacheRegistryUtil.clear();
-	}
-
-	private boolean _isInitialRelease(List<UpgradeInfo> upgradeInfos) {
-		UpgradeInfo upgradeInfo = upgradeInfos.get(0);
-
-		String fromSchemaVersion = upgradeInfo.getFromSchemaVersionString();
-
-		return fromSchemaVersion.equals("0.0.0");
-	}
-
-	private boolean _requiresUpdateIndexes(
-		Bundle bundle, List<UpgradeInfo> upgradeInfos) {
-
-		if (!BundleUtil.isLiferayRequireSchemaVersionBundle(bundle) &&
-			!BundleUtil.isLiferayServiceBundle(bundle)) {
-
-			return false;
-		}
-
-		if (upgradeInfos.size() != 1) {
-			return true;
-		}
-
-		return !_isInitialRelease(upgradeInfos);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -364,7 +363,10 @@ public class UpgradeExecutor {
 				if (DBUpgrader.isUpgradeDatabaseAutoRunEnabled() ||
 					(release == null)) {
 
-					execute(bundle, upgradeStepRegistry.getUpgradeInfos());
+					UpgradePlan upgradePlan = getUpgradePlan(
+						bundle, upgradeStepRegistry.getUpgradeInfos());
+
+					execute(bundle, upgradePlan);
 				}
 			}
 			catch (Throwable throwable) {
